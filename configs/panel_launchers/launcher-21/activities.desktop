@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Activities
+Comment=Search and Launch Applications
+Exec=xfce4-appfinder
+Icon=/usr/share/icons/hicolor/scalable/apps/ubuntu-workspace-pill.svg
+Terminal=false
+Categories=System;

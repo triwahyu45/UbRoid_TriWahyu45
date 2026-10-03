@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Help
+Comment=Ubuntu Help and System Info
+Exec=xfce4-about
+Icon=/usr/share/icons/Yaru/48x48/apps/system-help.png
+Terminal=false
+Categories=System;

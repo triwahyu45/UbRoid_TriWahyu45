@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Settings
-Comment=System Settings
-Exec=xfce4-settings-manager
-Icon=org.gnome.Settings
-Terminal=false
-Categories=Settings;

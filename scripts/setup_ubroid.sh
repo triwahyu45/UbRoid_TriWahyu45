@@ -76,10 +76,8 @@ proot-distro login ubuntu -- bash -c "
     # Pasang vector icon
     mkdir -p /usr/share/icons/hicolor/scalable/apps
     mkdir -p /usr/share/icons/Yaru/scalable/apps
-    cp '$REPO_DIR/assets/icons/firefox.svg' /usr/share/icons/hicolor/scalable/apps/firefox.svg
-    cp '$REPO_DIR/assets/icons/firefox.svg' /usr/share/icons/Yaru/scalable/apps/firefox.svg
-    cp '$REPO_DIR/assets/icons/google-chrome.svg' /usr/share/icons/hicolor/scalable/apps/google-chrome.svg
-    cp '$REPO_DIR/assets/icons/google-chrome.svg' /usr/share/icons/Yaru/scalable/apps/google-chrome.svg
+    cp "$REPO_DIR"/assets/icons/*.svg /usr/share/icons/hicolor/scalable/apps/ 2>/dev/null || true
+    cp "$REPO_DIR"/assets/icons/*.svg /usr/share/icons/Yaru/scalable/apps/ 2>/dev/null || true
     gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
     gtk-update-icon-cache -f /usr/share/icons/Yaru 2>/dev/null || true
 "

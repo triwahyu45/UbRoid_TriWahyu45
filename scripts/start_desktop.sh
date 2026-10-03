@@ -22,4 +22,17 @@ rm -rf /root/.cache/sessions/* 2>/dev/null
 
 /usr/sbin/sshd 2>/dev/null || true
 
+# Ensure top panel stays elevated above left dock
+(
+  for i in $(seq 1 10); do
+    sleep 1
+    for id in $(xdotool search --class xfce4-panel 2>/dev/null); do
+      geo=$(xwininfo -id $id 2>/dev/null | grep -o "[0-9]*x[0-9]*+[0-9]*+[0-9]*")
+      if echo "$geo" | grep -q "x3[0-2]+0+0"; then
+        xdotool windowraise $id 2>/dev/null
+      fi
+    done
+  done
+) &
+
 exec dbus-launch --exit-with-session startxfce4

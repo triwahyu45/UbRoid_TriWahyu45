@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Android Storage
-Comment=Internal Tablet Storage
-Exec=thunar /root/Android_Storage
-Icon=folder-download
-Terminal=false
-Categories=System;

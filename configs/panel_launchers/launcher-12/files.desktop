@@ -4,6 +4,6 @@ Type=Application
 Name=Files
 Comment=Access and organize files
 Exec=thunar
-Icon=system-file-manager
+Icon=/usr/share/icons/Yaru/48x48/apps/nautilus.png
 Terminal=false
 Categories=System;FileManager;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Software & Updates
+Comment=Configure Software Sources and Updates
+Exec=software-properties-gtk
+Icon=/usr/share/icons/Yaru/48x48/apps/software-updater.png
+Terminal=false
+Categories=Settings;
