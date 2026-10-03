@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Files
+Comment=Access and organize files
+Exec=thunar
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileManager;

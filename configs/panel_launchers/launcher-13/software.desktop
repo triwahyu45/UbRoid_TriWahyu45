@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=App Center
+Comment=Install and manage applications
+Exec=xfce4-appfinder
+Icon=software-store
+Terminal=false
+Categories=System;Utility;
