@@ -56,13 +56,21 @@ else
     proot-distro install ubuntu
 fi
 
-echo -e "${CYAN}[4/7] Memasang Desktop Environment XFCE & Ubuntu Yaru Theme...${NC}"
+echo -e "${CYAN}[4/7] Memasang Desktop Environment XFCE, Firefox & Ubuntu Yaru Theme...${NC}"
 proot-distro login ubuntu -- bash -c "
     export DEBIAN_FRONTEND=noninteractive
+    cat << 'EOF' > /etc/apt/preferences.d/mozilla-firefox
+Package: *
+Pin: release o=LP-PPA-mozillateam
+Pin-Priority: 1001
+EOF
+    apt update
+    apt install -y software-properties-common
+    add-apt-repository -y -P mozillateam/ppa
     apt update
     apt install -y xfce4 xfce4-terminal xfce4-appfinder dbus-x11 pulseaudio-utils \
                    yaru-theme-gtk yaru-theme-icon fonts-ubuntu synaptic sudo \
-                   whiptail thunar-archive-plugin
+                   whiptail thunar-archive-plugin firefox
 "
 
 echo -e "${CYAN}[5/7] Mengaplikasikan Tweaks, Wallpaper Resmi & Icon Ubuntu...${NC}"
@@ -93,6 +101,7 @@ proot-distro login ubuntu -- bash -c "
     cp '$REPO_DIR/configs/xfwm4.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/
     cp '$REPO_DIR/configs/xsettings.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/
     cp '$REPO_DIR/configs/xfce4-desktop.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/
+    cp '$REPO_DIR/configs/xfce4-settings-manager.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
     cp '$REPO_DIR/configs/thunar.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
     cp '$REPO_DIR/configs/gtk.css' /root/.config/gtk-3.0/
     cp '$REPO_DIR/configs/bookmarks' /root/.config/gtk-3.0/ 2>/dev/null || true

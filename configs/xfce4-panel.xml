@@ -33,6 +33,7 @@
       <property name="size" type="uint" value="56"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
+        <value type="int" value="10"/>
         <value type="int" value="11"/>
         <value type="int" value="12"/>
         <value type="int" value="13"/>
@@ -46,6 +47,9 @@
     </property>
   </property>
   <property name="plugins" type="empty">
+    <property name="plugin-10" type="string" value="separator">
+      <property name="style" type="uint" value="0"/>
+    </property>
     <property name="plugin-21" type="string" value="launcher">
       <property name="items" type="array">
         <value type="string" value="activities.desktop"/>

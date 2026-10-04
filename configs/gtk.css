@@ -27,6 +27,12 @@
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+#panel-2 #separator-10 {
+    min-height: 30px;
+    background: transparent;
+    border: none;
+}
+
 #panel-2 button {
     border-radius: 12px;
     padding: 3px;
