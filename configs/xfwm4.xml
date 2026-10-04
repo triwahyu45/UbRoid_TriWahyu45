@@ -6,7 +6,7 @@
     <property name="use_compositing" type="bool" value="false"/>
     <property name="box_resize" type="bool" value="false"/>
     <property name="box_move" type="bool" value="false"/>
-    <property name="title_font" type="string" value="Ubuntu Bold 11"/>
+    <property name="title_font" type="string" value="Ubuntu Bold 10"/>
     <property name="button_layout" type="string" value="O|HMC"/>
     <property name="activate_action" type="string" value="bring"/>
     <property name="borderless_maximize" type="bool" value="true"/>

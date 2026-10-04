@@ -16,6 +16,19 @@ mkdir -p /run/dbus
 rm -f /run/dbus/pid
 dbus-daemon --system --fork 2>/dev/null
 
+# Prevent gpg-agent / gpgconf hanging in PRoot
+chmod -x /etc/X11/Xsession.d/90gpg-agent 2>/dev/null || true
+pkill -9 -f "gpg-agent" 2>/dev/null || true
+
+# Initialize user D-Bus session bus with full environment
+eval $(dbus-launch --sh-syntax)
+export DBUS_SESSION_BUS_ADDRESS
+export DBUS_SESSION_BUS_PID
+dbus-update-activation-environment --all 2>/dev/null || true
+
+# Start xfconfd daemon early to ensure window manager & settings load immediately
+/usr/lib/aarch64-linux-gnu/xfce4/xfconf/xfconfd 2>/dev/null &
+
 xrdb -merge /root/.Xresources 2>/dev/null
 xsetroot -cursor_name left_ptr 2>/dev/null
 rm -rf /root/.cache/sessions/* 2>/dev/null
@@ -35,4 +48,4 @@ rm -rf /root/.cache/sessions/* 2>/dev/null
   done
 ) &
 
-exec dbus-launch --exit-with-session startxfce4
+exec startxfce4

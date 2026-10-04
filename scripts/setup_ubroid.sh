@@ -103,8 +103,19 @@ proot-distro login ubuntu -- bash -c "
     cp '$REPO_DIR/configs/xfce4-desktop.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/
     cp '$REPO_DIR/configs/xfce4-settings-manager.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
     cp '$REPO_DIR/configs/thunar.xml' /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+
+    mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
+    cp '$REPO_DIR/configs/xfce4-panel.xml' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+    cp '$REPO_DIR/configs/xfwm4.xml' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+    cp '$REPO_DIR/configs/xsettings.xml' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+    cp '$REPO_DIR/configs/xfce4-desktop.xml' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+    cp '$REPO_DIR/configs/xfce4-settings-manager.xml' /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+
+    chmod -x /etc/X11/Xsession.d/90gpg-agent 2>/dev/null || true
+
     cp '$REPO_DIR/configs/gtk.css' /root/.config/gtk-3.0/
     cp '$REPO_DIR/configs/bookmarks' /root/.config/gtk-3.0/ 2>/dev/null || true
+    cp '$REPO_DIR/configs/.Xresources' /root/.Xresources 2>/dev/null || true
     cp -r '$REPO_DIR/configs/panel_launchers/'* /root/.config/xfce4/panel/ 2>/dev/null || true
 
     cp '$REPO_DIR/scripts/start_desktop.sh' /root/start_desktop.sh
