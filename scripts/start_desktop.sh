@@ -39,8 +39,8 @@ xrdb -merge /root/.Xresources 2>/dev/null || true
 xsetroot -cursor_name left_ptr 2>/dev/null || true
 rm -rf /root/.cache/sessions/* 2>/dev/null || true
 
-# Enable compositor with shadows disabled for clean CSD transparency and rounded dock
-xfconf-query -c xfwm4 -p /general/use_compositing -s true 2>/dev/null || true
+# Anti-glitch: Disable heavy software compositing to eliminate window drag ghosting and stutter
+xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_dock_shadow -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_frame_shadow -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_popup_shadow -s false 2>/dev/null || true
