@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=Status Baterai
-Comment=Baterai: 87% (Baterai) | Suhu: 34.9°C | Voltase: 4.13V (Klik untuk info detail)
+Comment=Baterai: 85% (Baterai) | Suhu: 36.6°C | Voltase: 4.10V (Klik untuk info detail)
 Exec=/usr/local/bin/dialog-battery
 Icon=/tmp/battery_live.svg
 Terminal=false
