@@ -244,58 +244,23 @@ void gtk_widget_set_size_request(GtkWidget *widget, int width, int height) {
 
         if (uid == 10) {
             width = dynamic_spacer_width;
-        } else if (GTK_IS_WINDOW(widget) && height > 0 && height <= 6 && width >= 100) {
-            height = 32;
-            gtk_widget_set_opacity(widget, 0.01);
         }
     }
 
     if (real_set_size) real_set_size(widget, width, height);
 }
 
-static GtkWindow *g_autohide_win = NULL;
-
-void gtk_window_resize(GtkWindow *window, gint width, gint height) {
-    static void (*real_resize)(GtkWindow*, gint, gint) = NULL;
-    if (!real_resize) real_resize = dlsym(RTLD_NEXT, "gtk_window_resize");
-
-    if (window && height > 0 && height <= 6 && width >= 100) {
-        g_autohide_win = window;
-        height = 32;
-        gtk_widget_set_opacity(GTK_WIDGET(window), 0.01);
-    } else if (window && window == g_autohide_win && height < 32) {
-        height = 32;
-        gtk_widget_set_opacity(GTK_WIDGET(window), 0.01);
-    }
-
-    if (real_resize) real_resize(window, width, height);
-}
-
 void gtk_window_move(GtkWindow *window, gint x, gint y) {
     static void (*real_move)(GtkWindow*, gint, gint) = NULL;
-    static void (*real_resize)(GtkWindow*, gint, gint) = NULL;
     if (!real_move) real_move = dlsym(RTLD_NEXT, "gtk_window_move");
-    if (!real_resize) real_resize = dlsym(RTLD_NEXT, "gtk_window_resize");
 
     if (window && y > 400) {
         GdkScreen *scr = gtk_window_get_screen(window);
         int screen_h = scr ? gdk_screen_get_height(scr) : 711;
-        int alloc_h = gtk_widget_get_allocated_height(GTK_WIDGET(window));
 
-        if (y > screen_h) {
-            /* Off-screen hidden position (e.g. y = 782): leave untouched */
-        } else if (window == g_autohide_win || (alloc_h > 0 && alloc_h <= 6) || (y >= screen_h - 6 && y <= screen_h)) {
-            g_autohide_win = window;
-            y = screen_h - 32;
-            gtk_widget_set_opacity(GTK_WIDGET(window), 0.01);
-            if (real_resize && alloc_h < 32) {
-                int alloc_w = gtk_widget_get_allocated_width(GTK_WIDGET(window));
-                if (alloc_w >= 100) real_resize(window, alloc_w, 32);
-            }
-        } else if (y >= screen_h - 65 && y <= screen_h - 35) {
+        if (y >= screen_h - 65 && y <= screen_h - 35) {
             /* Lift bottom dock (panel-2) 16px above the bottom edge so it floats
-             * above Android's navigation/gesture bar and overlaps the 32px trigger zone */
-            gtk_widget_set_opacity(GTK_WIDGET(window), 1.0);
+             * above Android's navigation/gesture bar */
             y = screen_h - 47 - 16;
 
             GtkStyleContext *sc = gtk_widget_get_style_context(GTK_WIDGET(window));
