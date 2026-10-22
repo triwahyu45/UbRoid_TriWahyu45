@@ -39,11 +39,16 @@ xrdb -merge /root/.Xresources 2>/dev/null || true
 xsetroot -cursor_name left_ptr 2>/dev/null || true
 rm -rf /root/.cache/sessions/* 2>/dev/null || true
 
-# Anti-glitch: Disable heavy software compositing to eliminate window drag ghosting and stutter
-xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
+# Lightweight Compositing: Enable ARGB transparency for clean rounded dock corners
+# while disabling expensive frame/dock shadows, blur, and move opacity to eliminate drag lag
+xfconf-query -c xfwm4 -p /general/use_compositing -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_dock_shadow -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_frame_shadow -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_popup_shadow -s false 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/move_opacity -s 100 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/resize_opacity -s 100 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/vblank_mode -s off 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/unredirect_overlays -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/snap_resist -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/snap_to_border -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/snap_width -s 48 2>/dev/null || true
