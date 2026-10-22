@@ -123,7 +123,7 @@ class UbuntuControlCenter(Gtk.Window):
         # --- Battery Card ---
         bat_card = self.create_status_card(
             icon="⚡",
-            title="Baterai & Daya",
+            title="Baterai &amp; Daya",
             detail=self.get_battery_info(),
             btn_text="Detail Baterai",
             action=self.show_battery_dialog

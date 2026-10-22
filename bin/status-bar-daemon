@@ -196,6 +196,14 @@ Categories=AudioVideo;
 """
     update_file_if_changed(vol_desktop, vol_content)
 
+    # -------------------------------------------------------------
+    # 5. Guardian: Ensure xfdesktop background is always alive
+    # -------------------------------------------------------------
+    try:
+        subprocess.check_output("pgrep -x xfdesktop", shell=True)
+    except Exception:
+        subprocess.Popen("DISPLAY=:0 nohup xfdesktop >/dev/null 2>&1 &", shell=True)
+
 if __name__ == "__main__":
     while True:
         try:
