@@ -1,0 +1,29 @@
+#!/bin/bash
+unset LD_PRELOAD
+dev="127.0.0.1:5555"
+
+info=$(adb -s "$dev" shell "dumpsys bluetooth_manager 2>/dev/null | grep -E 'enabled:|state:|name:' | head -n 6")
+if [ -z "$info" ]; then
+    echo "<icon>bluetooth-disabled-symbolic</icon><tool>Bluetooth tidak terdeteksi</tool>"
+    exit 0
+fi
+
+is_enabled=$(echo "$info" | awk '/enabled:/ {print $2; exit}')
+name=$(echo "$info" | grep "name:" | head -n 1 | cut -d: -f2 | sed 's/^[ \t]*//')
+
+if [ "$is_enabled" = "true" ]; then
+    icon="bluetooth-active-symbolic"
+    stat="Aktif"
+    echo "<icon>${icon}</icon>"
+    echo "<tool>Bluetooth: ${stat}
+Nama: ${name}
+(Klik untuk pengaturan Bluetooth)</tool>"
+    echo "<click>/usr/local/bin/dialog-bluetooth</click>"
+else
+    icon="bluetooth-disabled-symbolic"
+    stat="Nonaktif"
+    echo "<icon>${icon}</icon>"
+    echo "<tool>Bluetooth: ${stat}
+(Klik untuk nyalakan)</tool>"
+    echo "<click>/usr/local/bin/dialog-bluetooth</click>"
+fi

@@ -1,0 +1,23 @@
+#!/bin/bash
+export DISPLAY=:0
+
+# 1. Capture user dbus session
+PID=$(pgrep -n xfce4-session 2>/dev/null || true)
+if [ -n "$PID" ]; then
+    for v in $(tr '\0' '\n' < /proc/$PID/environ 2>/dev/null | grep -E '^(DBUS_SESSION_BUS_ADDRESS|XAUTHORITY)='); do
+        export "$v"
+    done
+fi
+
+# 2. Restart XFCE Panel cleanly
+killall -9 xfce4-panel 2>/dev/null || true
+sleep 0.4
+nohup xfce4-panel >/dev/null 2>&1 &
+sleep 0.8
+
+# 3. Reload Window Manager and Desktop background/icons
+nohup xfwm4 --replace >/dev/null 2>&1 &
+nohup xfdesktop --reload >/dev/null 2>&1 &
+
+echo "GUI / XFCE Desktop restarted successfully!"
+exit 0

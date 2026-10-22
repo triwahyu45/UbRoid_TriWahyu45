@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Menu Bar / Dock
+Comment=Tampilkan atau Sembunyikan Menu Bar Bawah (Dock)
+Exec=/usr/local/bin/toggle-dock
+Icon=/usr/share/icons/hicolor/scalable/apps/ubuntu-dock-toggle.svg
+Terminal=false
+StartupNotify=false
+Categories=Utility;

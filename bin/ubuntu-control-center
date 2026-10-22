@@ -1,0 +1,403 @@
+#!/usr/bin/env python3
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GLib
+import subprocess
+import os
+import sys
+
+def get_cmd(cmd):
+    try:
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=2).decode().strip()
+    except Exception:
+        return ""
+
+class UbuntuControlCenter(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Ubuntu Quick Settings")
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_keep_above(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_border_width(12)
+
+        # Style context with dark Yaru CSS
+        self.apply_css()
+
+        # Connect key-press for Escape to close
+        self.connect("key-press-event", self.on_key_press)
+        self.connect("focus-out-event", lambda w, e: self.close_window())
+
+        # Main vertical container
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        self.add(main_box)
+
+        # 1. Header: Quick Settings title & Close button
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        lbl_title = Gtk.Label(label="<b>Pengaturan Cepat</b>", use_markup=True, xalign=0)
+        lbl_title.get_style_context().add_class("title-label")
+        
+        # Subtitle with clock
+        time_str = get_cmd("date '+%A, %d %B %Y • %H:%M WIB'")
+        lbl_sub = Gtk.Label(label=f"<small>{time_str}</small>", use_markup=True, xalign=0)
+        lbl_sub.get_style_context().add_class("dim-label")
+        title_box.pack_start(lbl_title, False, False, 0)
+        title_box.pack_start(lbl_sub, False, False, 0)
+
+        header.pack_start(title_box, True, True, 0)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("circle-btn")
+        btn_close.connect("clicked", lambda b: self.close_window())
+        header.pack_end(btn_close, False, False, 0)
+        main_box.pack_start(header, False, False, 0)
+
+        # 2. Sliders Section (Volume & Screen Brightness)
+        sliders_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        sliders_card.get_style_context().add_class("card-box")
+
+        # --- Volume Slider ---
+        vol_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        btn_vol_icon = Gtk.Button(label="🔊")
+        btn_vol_icon.get_style_context().add_class("icon-btn")
+        btn_vol_icon.connect("clicked", self.toggle_mute)
+
+        curr_vol = self.get_volume()
+        self.vol_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 5)
+        self.vol_scale.set_value(curr_vol)
+        self.vol_scale.set_hexpand(True)
+        self.vol_scale.set_value_pos(Gtk.PositionType.RIGHT)
+        self.vol_scale.connect("value-changed", self.on_volume_changed)
+
+        vol_box.pack_start(btn_vol_icon, False, False, 0)
+        vol_box.pack_start(self.vol_scale, True, True, 0)
+        sliders_card.pack_start(vol_box, False, False, 0)
+
+        # --- Brightness Slider ---
+        bright_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        btn_bright_icon = Gtk.Button(label="☀️")
+        btn_bright_icon.get_style_context().add_class("icon-btn")
+
+        curr_bright = self.get_brightness()
+        self.bright_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 5, 255, 10)
+        self.bright_scale.set_value(curr_bright)
+        self.bright_scale.set_hexpand(True)
+        self.bright_scale.set_value_pos(Gtk.PositionType.RIGHT)
+        self.bright_scale.connect("value-changed", self.on_brightness_changed)
+
+        bright_box.pack_start(btn_bright_icon, False, False, 0)
+        bright_box.pack_start(self.bright_scale, True, True, 0)
+        sliders_card.pack_start(bright_box, False, False, 0)
+
+        main_box.pack_start(sliders_card, False, False, 0)
+
+        # 3. Status Cards Grid (Wi-Fi, Bluetooth, Battery)
+        grid = Gtk.Grid()
+        grid.set_column_spacing(10)
+        grid.set_row_spacing(10)
+        grid.set_column_homogeneous(True)
+
+        # --- Wi-Fi Card ---
+        wifi_card = self.create_status_card(
+            icon="📶",
+            title="Wi-Fi",
+            detail=self.get_wifi_info(),
+            btn_text="Pengaturan Wi-Fi",
+            action=lambda: self.launch_android_settings("android.settings.WIFI_SETTINGS")
+        )
+        grid.attach(wifi_card, 0, 0, 1, 1)
+
+        # --- Bluetooth Card ---
+        bt_card = self.create_status_card(
+            icon="ᛒ",
+            title="Bluetooth",
+            detail=self.get_bt_info(),
+            btn_text="Pengaturan BT",
+            action=lambda: self.launch_android_settings("android.settings.BLUETOOTH_SETTINGS")
+        )
+        grid.attach(bt_card, 1, 0, 1, 1)
+
+        # --- Battery Card ---
+        bat_card = self.create_status_card(
+            icon="⚡",
+            title="Baterai & Daya",
+            detail=self.get_battery_info(),
+            btn_text="Detail Baterai",
+            action=self.show_battery_dialog
+        )
+        grid.attach(bat_card, 0, 1, 1, 1)
+
+        # --- Touch Controls Card ---
+        touch_card = self.create_touch_card()
+        grid.attach(touch_card, 1, 1, 1, 1)
+
+        main_box.pack_start(grid, False, False, 0)
+
+        # 4. Footer Actions
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        
+        btn_all_settings = Gtk.Button(label="⚙ Pengaturan Android")
+        btn_all_settings.get_style_context().add_class("footer-btn")
+        btn_all_settings.connect("clicked", lambda b: self.launch_android_settings("android.settings.SETTINGS"))
+        footer.pack_start(btn_all_settings, True, True, 0)
+
+        btn_power = Gtk.Button(label="⏻ Matikan / Keluar")
+        btn_power.get_style_context().add_class("power-btn")
+        btn_power.connect("clicked", lambda b: subprocess.Popen(["xfce4-session-logout"]))
+        footer.pack_start(btn_power, True, True, 0)
+
+        main_box.pack_start(footer, False, False, 0)
+
+    def create_status_card(self, icon, title, detail, btn_text, action):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.get_style_context().add_class("card-box")
+
+        top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        lbl_icon = Gtk.Label(label=f"<big>{icon}</big>", use_markup=True)
+        lbl_title = Gtk.Label(label=f"<b>{title}</b>", use_markup=True, xalign=0)
+        top.pack_start(lbl_icon, False, False, 0)
+        top.pack_start(lbl_title, True, True, 0)
+        box.pack_start(top, False, False, 0)
+
+        lbl_detail = Gtk.Label(label=f"<small>{detail}</small>", use_markup=True, xalign=0)
+        lbl_detail.set_line_wrap(True)
+        lbl_detail.get_style_context().add_class("dim-label")
+        box.pack_start(lbl_detail, True, True, 0)
+
+        btn = Gtk.Button(label=btn_text)
+        btn.get_style_context().add_class("card-btn")
+        btn.connect("clicked", lambda b: (action(), self.close_window()))
+        box.pack_end(btn, False, False, 0)
+
+        return box
+
+    def create_touch_card(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.get_style_context().add_class("card-box")
+
+        top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        lbl_icon = Gtk.Label(label="<big>📱</big>", use_markup=True)
+        lbl_title = Gtk.Label(label="<b>Kontrol Tablet</b>", use_markup=True, xalign=0)
+        top.pack_start(lbl_icon, False, False, 0)
+        top.pack_start(lbl_title, True, True, 0)
+        box.pack_start(top, False, False, 0)
+
+        row1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        btn_kb = Gtk.Button(label="⌨ Keyboard")
+        btn_kb.get_style_context().add_class("card-btn")
+        btn_kb.connect("clicked", lambda b: (subprocess.Popen(["/usr/local/bin/toggle-keyboard"]), self.close_window()))
+        
+        btn_dock = Gtk.Button(label="📑 Dock")
+        btn_dock.get_style_context().add_class("card-btn")
+        btn_dock.connect("clicked", lambda b: (subprocess.Popen(["/usr/local/bin/toggle-dock"]), self.close_window()))
+
+        row1.pack_start(btn_kb, True, True, 0)
+        row1.pack_start(btn_dock, True, True, 0)
+        box.pack_start(row1, False, False, 0)
+
+        btn_term = Gtk.Button(label="💻 Terminal Cepat")
+        btn_term.get_style_context().add_class("card-btn")
+        btn_term.connect("clicked", lambda b: (subprocess.Popen(["terminator"]), self.close_window()))
+        box.pack_end(btn_term, False, False, 0)
+
+        return box
+
+    def get_volume(self):
+        try:
+            out = get_cmd("pactl get-sink-volume @DEFAULT_SINK@")
+            # e.g. front-left: 64661 /  99% / -0.35 dB
+            if "%" in out:
+                part = out.split("%")[0].split("/")[-1].strip()
+                return int(part)
+        except Exception:
+            pass
+        return 80
+
+    def on_volume_changed(self, scale):
+        val = int(scale.get_value())
+        subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{val}%"])
+
+    def toggle_mute(self, btn):
+        subprocess.call(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"])
+        is_muted = "yes" in get_cmd("pactl get-sink-mute @DEFAULT_SINK@")
+        btn.set_label("🔇" if is_muted else "🔊")
+
+    def get_brightness(self):
+        try:
+            out = get_cmd("adb -s 127.0.0.1:5555 shell settings get system screen_brightness")
+            return int(out)
+        except Exception:
+            return 120
+
+    def on_brightness_changed(self, scale):
+        val = int(scale.get_value())
+        subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "settings", "put", "system", "screen_brightness", str(val)])
+
+    def get_wifi_info(self):
+        out = get_cmd('adb -s 127.0.0.1:5555 shell dumpsys wifi | grep -m1 "mWifiInfo"')
+        ssid = "Terhubung"
+        if 'SSID: "' in out:
+            ssid = out.split('SSID: "')[1].split('"')[0]
+        rssi = "-50 dBm"
+        if "RSSI: " in out:
+            rssi = out.split("RSSI: ")[1].split(",")[0] + " dBm"
+        ip = get_cmd("adb -s 127.0.0.1:5555 shell ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'") or "10.54.225.89"
+        return f"SSID: <b>{ssid}</b>\nIP: {ip}\nSinyal: {rssi}"
+
+    def get_bt_info(self):
+        state = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys bluetooth_manager | grep -m1 'state: ON'")
+        is_on = "state: ON" in state
+        status = "Aktif (ON)" if is_on else "Nonaktif"
+        name = get_cmd("adb -s 127.0.0.1:5555 shell settings get secure bluetooth_name") or "Wahyu Pad 2"
+        return f"Status: <b>{status}</b>\nPerangkat: {name}"
+
+    def get_battery_info(self):
+        binfo = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys battery")
+        level = "52%"
+        status = "Baterai"
+        temp = "36°C"
+        for line in binfo.splitlines():
+            line = line.strip()
+            if line.startswith("level:"):
+                level = line.split(":")[1].strip() + "%"
+            elif line.startswith("status:"):
+                st = line.split(":")[1].strip()
+                status = "⚡ Mengisi Daya" if st == "2" else "Pakai Baterai"
+            elif line.startswith("temperature:"):
+                raw = int(line.split(":")[1].strip())
+                temp = f"{raw / 10:.1f}°C"
+        return f"Kapasitas: <b>{level}</b> ({status})\nSuhu: {temp}\nKesehatan: Baik"
+
+    def show_battery_dialog(self):
+        subprocess.Popen(["/usr/local/bin/dialog-battery"])
+
+    def launch_android_settings(self, action):
+        subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "am", "start", "-a", action])
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            self.close_window()
+            return True
+        return False
+
+    def close_window(self):
+        self.destroy()
+        Gtk.main_quit()
+
+    def apply_css(self):
+        css = b'''
+        window {
+            background-color: #1e1e1e;
+            border: 1px solid #383838;
+            border-radius: 14px;
+            color: #ffffff;
+            font-family: 'Ubuntu', sans-serif;
+        }
+        .title-label {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .dim-label {
+            color: #a0a0a0;
+        }
+        .card-box {
+            background-color: #282828;
+            border: 1px solid #363636;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .card-box:hover {
+            border-color: #e95420;
+        }
+        .circle-btn {
+            background-color: #333333;
+            color: #ffffff;
+            border: none;
+            border-radius: 16px;
+            min-width: 28px;
+            min-height: 28px;
+            padding: 0;
+            font-weight: bold;
+        }
+        .circle-btn:hover {
+            background-color: #e95420;
+        }
+        .icon-btn {
+            background-color: transparent;
+            border: none;
+            font-size: 14pt;
+            padding: 2px 6px;
+        }
+        .card-btn {
+            background-color: #383838;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-weight: 600;
+            font-size: 9pt;
+        }
+        .card-btn:hover {
+            background-color: #e95420;
+        }
+        .footer-btn {
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #444444;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 700;
+        }
+        .footer-btn:hover {
+            background-color: #404040;
+            border-color: #e95420;
+        }
+        .power-btn {
+            background-color: rgba(233, 84, 32, 0.25);
+            color: #ff6b3b;
+            border: 1px solid #e95420;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 700;
+        }
+        .power-btn:hover {
+            background-color: #e95420;
+            color: #ffffff;
+        }
+        scale trough {
+            background-color: #3a3a3a;
+            border-radius: 6px;
+            min-height: 10px;
+        }
+        scale highlight {
+            background-color: #e95420;
+            border-radius: 6px;
+        }
+        scale slider {
+            min-width: 20px;
+            min-height: 20px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            border: 2px solid #e95420;
+        }
+        '''
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+if __name__ == "__main__":
+    win = UbuntuControlCenter()
+    # Position window under top right status bar: tablet is 1136 width, 711 height
+    win.set_default_size(360, 420)
+    win.show_all()
+    # Move to top-right corner (+760, +38)
+    win.move(760, 38)
+    Gtk.main()

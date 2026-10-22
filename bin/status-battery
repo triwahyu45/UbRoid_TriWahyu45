@@ -1,0 +1,9 @@
+#!/bin/bash
+level=$(cat /tmp/battery_pct.txt 2>/dev/null | tr -d '%' || echo "94")
+[ -z "$level" ] && level=94
+cat <<EOF
+<img>/tmp/battery_icon.svg</img>
+<txt> ${level}%</txt>
+<tool>Baterai: ${level}%</tool>
+<click>/usr/local/bin/dialog-battery</click>
+EOF

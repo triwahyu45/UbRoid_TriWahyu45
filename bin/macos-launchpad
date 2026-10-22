@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""
+macOS-style Pop-Out Launchpad & App Switcher for Ubuntu XFCE Tablet.
+"""
+import os
+import subprocess
+import sys
+
+os.environ.setdefault("DISPLAY", ":0")
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+
+APPS = [
+    ("Firefox Web", "firefox", "/usr/local/bin/smart-launch Navigator firefox"),
+    ("File Manager", "system-file-manager", "/usr/local/bin/smart-launch Thunar thunar"),
+    ("Terminal", "utilities-terminal", "/usr/local/bin/smart-launch terminator terminator"),
+    ("Text Editor", "accessories-text-editor", "/usr/local/bin/smart-launch mousepad mousepad"),
+    ("Audio & Volume", "multimedia-volume-control", "pavucontrol"),
+    ("Snap Layouts", "view-grid-symbolic", "/usr/local/bin/snap-layout --popup"),
+    ("Touch Keyboard", "input-keyboard", "/usr/local/bin/toggle-keyboard"),
+    ("Settings", "preferences-system", "xfce4-settings-manager"),
+    ("Appearance", "preferences-desktop-theme", "xfce4-appearance-settings"),
+    ("Window Manager", "xfwm4", "xfwm4-settings"),
+    ("Panel & Dock", "xfce4-panel", "xfce4-panel --preferences"),
+    ("Trash", "user-trash", "thunar trash:///"),
+]
+
+
+class MacOSLaunchpad(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("macOS Launchpad")
+        self.set_role("macos-launchpad")
+        self.set_decorated(False)
+        self.set_keep_above(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_default_size(820, 520)
+
+        css = b"""
+        window {
+            background-color: rgba(22, 22, 26, 0.96);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            color: #ffffff;
+        }
+        .launchpad-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .launchpad-sub {
+            font-size: 13px;
+            color: #a8a8b3;
+        }
+        .app-card {
+            background-color: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 18px;
+            padding: 14px 10px;
+            color: #f5f5f7;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .app-card:hover {
+            background-color: rgba(233, 84, 32, 0.32);
+            border: 1px solid #e95420;
+        }
+        .close-pill {
+            background-color: rgba(255, 255, 255, 0.10);
+            border-radius: 14px;
+            padding: 6px 14px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .close-pill:hover {
+            background-color: #e95420;
+        }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        outer.set_margin_top(20)
+        outer.set_margin_bottom(20)
+        outer.set_margin_start(24)
+        outer.set_margin_end(24)
+        self.add(outer)
+
+        # Header
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        tbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        title = Gtk.Label(label="🚀  Launchpad — Semua Aplikasi", xalign=0)
+        title.get_style_context().add_class("launchpad-title")
+        sub = Gtk.Label(label="Sentuh ikon aplikasi untuk membuka atau berpindah ke jendela aktif:", xalign=0)
+        sub.get_style_context().add_class("launchpad-sub")
+        tbox.pack_start(title, False, False, 0)
+        tbox.pack_start(sub, False, False, 0)
+        header.pack_start(tbox, True, True, 0)
+
+        close_btn = Gtk.Button(label="✕ Tutup")
+        close_btn.get_style_context().add_class("close-pill")
+        close_btn.connect("clicked", lambda *_: Gtk.main_quit())
+        header.pack_end(close_btn, False, False, 0)
+        outer.pack_start(header, False, False, 0)
+
+        # App Grid (4 columns x 3 rows)
+        grid = Gtk.Grid()
+        grid.set_column_spacing(14)
+        grid.set_row_spacing(14)
+        grid.set_column_homogeneous(True)
+        grid.set_row_homogeneous(True)
+        outer.pack_start(grid, True, True, 0)
+
+        for idx, (name, icon_name, cmd) in enumerate(APPS):
+            col = idx % 4
+            row = idx // 4
+            btn = Gtk.Button()
+            btn.get_style_context().add_class("app-card")
+            vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            img = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
+            img.set_pixel_size(48)
+            lbl = Gtk.Label(label=name)
+            vbox.pack_start(img, True, True, 0)
+            vbox.pack_start(lbl, False, False, 0)
+            btn.add(vbox)
+            btn.connect("clicked", self.on_launch, cmd)
+            grid.attach(btn, col, row, 1, 1)
+
+        self.connect("key-press-event", self.on_key)
+        self.connect("destroy", Gtk.main_quit)
+
+    def on_key(self, _w, ev):
+        if ev.keyval == Gdk.KEY_Escape:
+            Gtk.main_quit()
+
+    def on_launch(self, _btn, cmd):
+        self.hide()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
+        subprocess.Popen(cmd, shell=True)
+        Gtk.main_quit()
+
+
+def main():
+    win = MacOSLaunchpad()
+    win.show_all()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,38 @@
+#!/bin/bash
+unset LD_PRELOAD
+export PULSE_SERVER="127.0.0.1"
+
+vol_info=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null)
+mute_info=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null)
+
+if [ -z "$vol_info" ]; then
+    echo "<icon>audio-volume-muted-symbolic</icon><tool>Audio tidak terhubung</tool>"
+    exit 0
+fi
+
+vol=$(echo "$vol_info" | grep -o '[0-9]\+%' | head -n 1 | tr -d '%')
+if [ -z "$vol" ]; then vol=80; fi
+
+is_muted=false
+if echo "$mute_info" | grep -qi "yes"; then
+    is_muted=true
+fi
+
+if [ "$is_muted" = true ] || [ "$vol" -eq 0 ]; then
+    icon="audio-volume-muted-symbolic"
+    txt="Mute"
+elif [ "$vol" -lt 35 ]; then
+    icon="audio-volume-low-symbolic"
+    txt="${vol}%"
+elif [ "$vol" -lt 70 ]; then
+    icon="audio-volume-medium-symbolic"
+    txt="${vol}%"
+else
+    icon="audio-volume-high-symbolic"
+    txt="${vol}%"
+fi
+
+echo "<icon>${icon}</icon>"
+echo "<tool>Volume: ${txt}
+(Klik untuk ubah volume)</tool>"
+echo "<click>/usr/local/bin/dialog-volume</click>"

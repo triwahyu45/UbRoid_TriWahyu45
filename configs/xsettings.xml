@@ -7,29 +7,33 @@
     <property name="DoubleClickTime" type="int" value="400"/>
     <property name="DoubleClickDistance" type="int" value="5"/>
     <property name="DndDragThreshold" type="int" value="8"/>
-    <property name="CursorBlink" type="bool" value="true"/>
+    <property name="CursorBlink" type="bool" value="false"/>
     <property name="CursorBlinkTime" type="int" value="1200"/>
     <property name="SoundThemeName" type="string" value="Yaru"/>
     <property name="EnableEventSounds" type="bool" value="false"/>
     <property name="EnableInputFeedbackSounds" type="bool" value="false"/>
   </property>
   <property name="Xft" type="empty">
-    <property name="DPI" type="int" value="-1"/>
+    <property name="DPI" type="int" value="80"/>
     <property name="Antialias" type="int" value="1"/>
     <property name="Hinting" type="int" value="1"/>
-    <property name="HintStyle" type="string" value="hintslight"/>
+    <property name="HintStyle" type="string" value="hintmedium"/>
     <property name="RGBA" type="string" value="rgb"/>
   </property>
   <property name="Gtk" type="empty">
-    <property name="FontName" type="string" value="Ubuntu 10"/>
-    <property name="MonospaceFontName" type="string" value="Ubuntu Mono 11"/>
+    <property name="FontName" type="string" value="Ubuntu Bold 8.5"/>
+    <property name="MonospaceFontName" type="string" value="Ubuntu Mono Bold 9"/>
     <property name="CursorThemeName" type="string" value="Yaru"/>
-    <property name="CursorThemeSize" type="int" value="24"/>
+    <property name="CursorThemeSize" type="int" value="28"/>
     <property name="ButtonImages" type="bool" value="true"/>
     <property name="MenuImages" type="bool" value="true"/>
     <property name="ToolbarStyle" type="string" value="icons"/>
     <property name="ToolbarIconSize" type="int" value="3"/>
     <property name="IconSizes" type="string" value="gtk-menu=24,24:gtk-button=24,24:gtk-small-toolbar=24,24:gtk-large-toolbar=32,32:gtk-dnd=32,32:gtk-dialog=48,48"/>
     <property name="DecorationLayout" type="string" value="menu:minimize,maximize,close"/>
+    <property name="EnableAnimations" type="bool" value="false"/>
+  </property>
+  <property name="Xfce" type="empty">
+    <property name="LastCustomDPI" type="int" value="80"/>
   </property>
 </channel>

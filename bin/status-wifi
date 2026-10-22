@@ -1,0 +1,47 @@
+#!/bin/bash
+unset LD_PRELOAD
+dev="127.0.0.1:5555"
+
+info=$(adb -s "$dev" shell "cmd wifi status" 2>/dev/null)
+if [ -z "$info" ]; then
+    echo "<icon>network-wireless-offline-symbolic</icon><tool>Wi-Fi tidak terdeteksi</tool>"
+    exit 0
+fi
+
+if ! echo "$info" | grep -q "Wifi is enabled"; then
+    echo "<icon>network-wireless-disabled-symbolic</icon><tool>Wi-Fi: Nonaktif\n(Klik untuk buka setelan)</tool><click>/usr/local/bin/dialog-wifi</click>"
+    exit 0
+fi
+
+if echo "$info" | grep -q "Wifi is connected to"; then
+    ssid=$(echo "$info" | grep "Wifi is connected to" | head -n 1 | sed -E 's/.*Wifi is connected to "([^"]+)".*/\1/')
+    rssi=$(echo "$info" | grep -o 'RSSI: -[0-9]\+' | head -n 1 | cut -d: -f2 | tr -d ' ')
+    ip=$(echo "$info" | grep -o 'IP: /[0-9\.]\+' | head -n 1 | cut -d/ -f2)
+    speed=$(echo "$info" | grep -o 'Tx Link speed: [0-9]\+Mbps' | head -n 1 | cut -d: -f2 | tr -d ' ')
+
+    if [ -z "$rssi" ]; then rssi="-60"; fi
+
+    # Icon based on signal strength (RSSI dBm)
+    if [ "$rssi" -ge -55 ]; then
+        icon="network-wireless-signal-excellent-symbolic"
+    elif [ "$rssi" -ge -67 ]; then
+        icon="network-wireless-signal-good-symbolic"
+    elif [ "$rssi" -ge -78 ]; then
+        icon="network-wireless-signal-ok-symbolic"
+    else
+        icon="network-wireless-signal-weak-symbolic"
+    fi
+
+    echo "<icon>${icon}</icon>"
+    echo "<tool>Wi-Fi: Terhubung
+SSID: ${ssid}
+IP: ${ip}
+Sinyal: ${rssi} dBm
+Kecepatan: ${speed}
+(Klik untuk opsi Wi-Fi)</tool>"
+    echo "<click>/usr/local/bin/dialog-wifi</click>"
+else
+    echo "<icon>network-wireless-offline-symbolic</icon>"
+    echo "<tool>Wi-Fi: Tidak Terhubung\n(Klik untuk sambungkan)</tool>"
+    echo "<click>/usr/local/bin/dialog-wifi</click>"
+fi

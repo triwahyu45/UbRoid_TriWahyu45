@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Status Bar Daemon
+Comment=Live Status Bar and Indicator Updater for Ubuntu on Android
+Exec=/usr/local/bin/status-bar-daemon
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
+Terminal=false

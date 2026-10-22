@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""
+Zero-Subprocess X11 Window Edge-Drag Watcher using pure in-memory GdkX11.
+Eliminates subprocess spawning in PRoot (preventing Android 32 phantom process limit).
+"""
+import os
+import subprocess
+import time
+
+os.environ.setdefault("DISPLAY", ":0")
+
+import gi
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gdk, GLib
+
+
+class EdgeWatcher:
+    def __init__(self):
+        self.display = Gdk.Display.get_default()
+        self.screen = Gdk.Screen.get_default()
+        self.last_xid = None
+        self.last_geo = None
+        self.dragging = False
+        self.last_move_time = 0.0
+        self.cooldown_until = 0.0
+
+    def get_pointer_xy(self):
+        try:
+            seat = self.display.get_default_seat()
+            ptr = seat.get_pointer()
+            _, x, y = ptr.get_position()
+            return int(x), int(y)
+        except Exception:
+            return -1, -1
+
+    def tick(self):
+        now = time.time()
+        if now < self.cooldown_until:
+            return True
+
+        try:
+            self.display.sync()
+            win = self.screen.get_active_window()
+            if not win:
+                self.dragging = False
+                self.last_xid = None
+                self.last_geo = None
+                return True
+
+            hint = win.get_type_hint()
+            if hint in (
+                Gdk.WindowTypeHint.DOCK,
+                Gdk.WindowTypeHint.DESKTOP,
+                Gdk.WindowTypeHint.POPUP_MENU,
+                Gdk.WindowTypeHint.UTILITY,
+            ):
+                return True
+
+            xid = win.get_xid()
+            _, wx, wy = win.get_origin()
+            ww = win.get_width()
+            wh = win.get_height()
+            geo = (wx, wy, ww, wh)
+
+            if xid == self.last_xid and self.last_geo is not None:
+                dx = abs(geo[0] - self.last_geo[0])
+                dy = abs(geo[1] - self.last_geo[1])
+                dw = abs(geo[2] - self.last_geo[2])
+                dh = abs(geo[3] - self.last_geo[3])
+
+                if (dx > 3 or dy > 3) and dw < 5 and dh < 5:
+                    self.dragging = True
+                    self.last_move_time = now
+                elif self.dragging and (now - self.last_move_time) >= 0.25:
+                    self.dragging = False
+                    px, py = self.get_pointer_xy()
+                    if (py <= 48 or wy <= 42) and 300 <= px <= 1150 and ww < 1300:
+                        subprocess.Popen(["/usr/local/bin/snap-layout", "--popup"])
+                        self.cooldown_until = now + 2.0
+                    elif px >= 1432 and 100 <= py <= 820 and ww < 1300:
+                        subprocess.Popen(["/usr/local/bin/snap-layout", "right-half"])
+                        self.cooldown_until = now + 1.5
+                    elif px <= 24 and 100 <= py <= 820 and ww < 1300:
+                        subprocess.Popen(["/usr/local/bin/snap-layout", "left-half"])
+                        self.cooldown_until = now + 1.5
+
+            self.last_xid = xid
+            self.last_geo = geo
+        except Exception:
+            pass
+        return True
+
+
+def main():
+    watcher = EdgeWatcher()
+    GLib.timeout_add(220, watcher.tick)
+    loop = GLib.MainLoop()
+    loop.run()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,354 @@
+#!/bin/bash
+# ==============================================================================
+# Dedicated Linux OS Mode Controller for Ubuntu 24.04 on Redmi Pad 2 (HyperOS)
+# Usage:
+#   /usr/local/bin/linux-os-mode enter   (Called when starting Ubuntu)
+#   /usr/local/bin/linux-os-mode exit    (Called when shutting down Ubuntu)
+# ==============================================================================
+unset LD_PRELOAD
+
+MODE="${1:-enter}"
+TERMUX_PREFIX="/data/data/com.termux/files/usr"
+TERMUX_LIB="$TERMUX_PREFIX/lib"
+TERMUX_BIN="$TERMUX_PREFIX/bin"
+WHITELIST_CONF="/root/.config/ubuntu-ram-whitelist.conf"
+CACHE_SUSPENDED="/root/.cache/suspended_android_pkgs.txt"
+
+ensure_adb_device() {
+    command -v adb >/dev/null 2>&1 || return 1
+
+    # 1. Check if a device is already connected and online
+    local dev
+    dev=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1; exit}')
+    if [ -n "$dev" ]; then
+        echo "$dev"
+        return 0
+    fi
+
+    # 2. Try fast local loopback TCP port 5555 first
+    adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+    dev=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1; exit}')
+    if [ -n "$dev" ]; then
+        echo "$dev"
+        return 0
+    fi
+
+    # 3. Single-packet UDP mDNS lookup (0 threads, <0.3s, PRoot-safe) for Wireless Debugging port
+    local mdns_ep
+    mdns_ep=$(python3 - << 'EOF' 2>/dev/null
+import socket, struct
+
+def build_mdns_query(qname):
+    pkt = struct.pack("!HHHHHH", 0, 0, 1, 0, 0, 0)
+    for part in qname.split("."):
+        pkt += bytes([len(part)]) + part.encode("ascii")
+    pkt += b"\x00" + struct.pack("!HH", 12, 0x8001)
+    return pkt
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+sock.settimeout(0.4)
+try:
+    sock.sendto(build_mdns_query("_adb-tls-connect._tcp.local"), ("224.0.0.251", 5353))
+    while True:
+        data, addr = sock.recvfrom(4096)
+        for i in range(len(data) - 16):
+            if data[i:i+2] == b"\x00\x21" and data[i+2:i+4] in (b"\x80\x01", b"\x00\x01"):
+                rdlen = struct.unpack("!H", data[i+8:i+10])[0]
+                if 6 <= rdlen <= 256 and i + 16 <= len(data):
+                    _, _, port = struct.unpack("!HHH", data[i+10:i+16])
+                    if 30000 <= port <= 65535:
+                        print(f"{addr[0]}:{port}")
+                        raise SystemExit(0)
+except Exception:
+    pass
+finally:
+    sock.close()
+EOF
+)
+    if [ -n "$mdns_ep" ]; then
+        adb connect "$mdns_ep" >/dev/null 2>&1 || true
+        adb -s "$mdns_ep" tcpip 5555 >/dev/null 2>&1 || true
+        sleep 0.5
+        adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+        dev=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1; exit}')
+        if [ -n "$dev" ]; then
+            echo "$dev"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+run_android_sys() {
+    local cmd_str="$1"
+    local dev
+    dev=$(ensure_adb_device)
+    if [ -n "$dev" ]; then
+        adb -s "$dev" shell "$cmd_str" >/dev/null 2>&1 || true
+        return 0
+    fi
+    return 0
+}
+
+start_termux_pulseaudio() {
+    if [ -x "$TERMUX_BIN/pulseaudio" ]; then
+        if ! pgrep -x "pulseaudio" >/dev/null 2>&1; then
+            env -i \
+                HOME="/data/data/com.termux/files/home" \
+                PREFIX="$TERMUX_PREFIX" \
+                PATH="$TERMUX_BIN:/system/bin" \
+                TMPDIR="$TERMUX_PREFIX/tmp" \
+                "$TERMUX_BIN/pulseaudio" --start \
+                --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
+                --exit-idle-time=-1 >/dev/null 2>&1 || true
+        fi
+    fi
+}
+
+SYSTEM_BLOAT="
+    com.google.android.gm
+    com.google.android.apps.photos
+    com.google.android.videos
+    com.google.android.youtube
+    com.android.chrome
+    com.google.android.apps.docs
+    com.google.android.googlequicksearchbox
+    com.google.android.apps.maps
+    com.google.android.apps.tachyon
+    com.google.android.calendar
+    com.google.android.contacts
+    com.google.android.as
+    com.android.vending
+    com.miui.player
+    com.miui.videoplayer
+    com.miui.gallery
+    com.xiaomi.mipicks
+    com.miui.cleanmaster
+    com.miui.bugreport
+    com.miui.msa.global
+    com.miui.analytics
+    com.miui.daemon
+    com.xiaomi.xmsf
+    com.xiaomi.mi_connect_service
+    com.milink.service
+    com.milink.crossdeviceservice
+    com.miui.securitycenter.remote
+    com.miui.miwallpaper
+    com.google.android.adservices.api
+    com.mediatek.voicecommand
+    com.miui.misightservice
+    com.xiaomi.aicr
+"
+
+if [ "$MODE" = "enter" ]; then
+    echo "⚡ Mengaktifkan Dedicated Linux Mode & Membebaskan RAM Android..."
+
+    # 1. Acquire Android CPU & Wi-Fi WakeLock for Linux priority
+    /system/bin/am startservice --user 0 \
+        -a com.termux.service_wake_lock \
+        com.termux/com.termux.app.TermuxService >/dev/null 2>&1 || true
+
+    # 2. Configure Termux-X11 for Dedicated Fullscreen OS Mode + Native Direct Touch
+    /system/bin/am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
+        --es fullscreen true \
+        --es hideCutout true \
+        --es screenIdleTimeout "Never (keep screen on)" \
+        --es PIP false \
+        --es dexMetaKeyCapture true \
+        --es enableAccessibilityServiceAutomatically true \
+        --es filterOutWinkey true \
+        --es preferScancodes true \
+        --es showAdditionalKbd false \
+        --es displayResolutionMode scaled \
+        --es displayScale 225 \
+        --es displayFilteringMode bilinear \
+        --es forceOrientation landscape \
+        --es touchMode "Direct touch" \
+        --es swipeUpAction "toggle soft keyboard" \
+        --es backButtonAction "toggle soft keyboard" \
+        --es swipeDownAction "toggle additional key bar" \
+        --es notificationButton0Action "toggle soft keyboard" \
+        --es volumeUpAction "no action" \
+        --es volumeDownAction "no action" \
+        --es mediaKeysAction "send media action" >/dev/null 2>&1 || true
+
+    # 3. Kumpulkan daftar aplikasi yang akan di-suspend berdasarkan whitelist
+    dev=$(ensure_adb_device)
+    if [ -n "$dev" ]; then
+        # Baca whitelist
+        WHITELIST_REGEX="^(com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor)$"
+        if [ -f "$WHITELIST_CONF" ]; then
+            CUSTOM_WL=$(grep -v '^[[:space:]]*#' "$WHITELIST_CONF" | grep -v '^[[:space:]]*$' | tr '\n' '|' | sed 's/|$//')
+            if [ -n "$CUSTOM_WL" ]; then
+                WHITELIST_REGEX="^(${CUSTOM_WL}|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor)$"
+            fi
+        fi
+
+        # Dapatkan semua 3rd party apps dari Android
+        ALL_3RD=$(adb -s "$dev" shell "pm list packages -3 2>/dev/null | sed 's/package://'")
+        TO_SUSPEND=""
+        for pkg in $ALL_3RD; do
+            if ! echo "$pkg" | grep -Eq "$WHITELIST_REGEX"; then
+                TO_SUSPEND="$TO_SUSPEND $pkg"
+            fi
+        done
+
+        # Simpan snapshot ke cache
+        mkdir -p /root/.cache
+        echo "$TO_SUSPEND" > "$CACHE_SUSPENDED"
+
+        # Freeze semua 3rd-party apps terpilih
+        if [ -n "$TO_SUSPEND" ]; then
+            adb -s "$dev" shell "
+                pm suspend --user 0 $TO_SUSPEND >/dev/null 2>&1 || true
+                for p in $TO_SUSPEND; do
+                    am set-standby-bucket \"\$p\" restricted 2>/dev/null || true
+                    am force-stop \"\$p\" 2>/dev/null || true
+                done
+            " >/dev/null 2>&1 || true
+        fi
+
+        # 4. Strict Android UI, Anti-Phantom-Killer & Bloatware Restriction
+        adb -s "$dev" shell "
+            dumpsys deviceidle whitelist +com.termux >/dev/null 2>&1 || true;
+            dumpsys deviceidle whitelist +com.termux.x11 >/dev/null 2>&1 || true;
+            cmd appops set com.termux RUN_IN_BACKGROUND allow 2>/dev/null || true;
+            cmd appops set com.termux RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true;
+            cmd appops set com.termux.x11 RUN_IN_BACKGROUND allow 2>/dev/null || true;
+            cmd appops set com.termux.x11 RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true;
+            settings put global settings_enable_monitor_phantom_procs false 2>/dev/null || true;
+            device_config set_sync_disabled_for_tests persistent 2>/dev/null || true;
+            device_config put activity_manager max_phantom_processes 2147483647 2>/dev/null || true;
+            device_config put activity_manager max_cached_processes 1 2>/dev/null || true;
+
+            # Hardware Performance & 90Hz Refresh Rate Lock
+            cmd power set-fixed-performance-mode-enabled true 2>/dev/null || true;
+            cmd power set-adaptive-power-saver-enabled false 2>/dev/null || true;
+            cmd power set-mode 0 2>/dev/null || true;
+            cmd thermalservice override-status 0 2>/dev/null || true;
+            settings put system min_refresh_rate 90.0 2>/dev/null || true;
+            settings put system peak_refresh_rate 90.0 2>/dev/null || true;
+            settings put secure user_refresh_rate 90 2>/dev/null || true;
+            setprop debug.sf.set_idle_timer_ms 0 2>/dev/null || true;
+            setprop debug.sf.high_fps.early.app.duration 8000000 2>/dev/null || true;
+            setprop debug.sf.high_fps.early.sf.duration 16000000 2>/dev/null || true;
+            settings put global cached_apps_freezer disabled 2>/dev/null || true;
+            settings put secure speed_mode 1 2>/dev/null || true;
+            settings put system speed_mode 1 2>/dev/null || true;
+            settings put global speed_mode 1 2>/dev/null || true;
+            settings put global window_animation_scale 0 2>/dev/null || true;
+            settings put global transition_animation_scale 0 2>/dev/null || true;
+            settings put global animator_duration_scale 0 2>/dev/null || true;
+            settings put global disable_window_blurs 1 2>/dev/null || true;
+            settings put global wifi_scan_always_enabled 0 2>/dev/null || true;
+            settings put global ble_scan_always_enabled 0 2>/dev/null || true;
+            settings put global network_recommendations_enabled 0 2>/dev/null || true;
+            settings put global hide_gesture_line 1 2>/dev/null || true;
+            settings put global force_fsg_nav_bar 1 2>/dev/null || true;
+            settings put global policy_control immersive.full=com.termux.x11 2>/dev/null || true;
+            settings put global heads_up_notifications_enabled 0 2>/dev/null || true;
+            cmd notification set_dnd priority 2>/dev/null || true;
+            settings put secure voice_interaction_service '' 2>/dev/null || true;
+
+            # Kirim sinyal trim ke service sistem
+            cmd activity send-trim-memory com.google.android.inputmethod.latin RUNNING_CRITICAL 2>/dev/null || true;
+            cmd activity send-trim-memory com.android.systemui RUNNING_CRITICAL 2>/dev/null || true;
+            cmd activity send-trim-memory com.google.android.gms RUNNING_CRITICAL 2>/dev/null || true;
+            cmd activity send-trim-memory com.miui.miwallpaper RUNNING_CRITICAL 2>/dev/null || true;
+
+            # Restrict & mute system bloatware
+            for pkg in $SYSTEM_BLOAT; do
+                cmd appops set \"\$pkg\" 10008 ignore 2>/dev/null || true;
+                cmd appops set \"\$pkg\" 10019 ignore 2>/dev/null || true;
+                cmd appops set \"\$pkg\" WAKE_LOCK ignore 2>/dev/null || true;
+                cmd appops set \"\$pkg\" RUN_IN_BACKGROUND ignore 2>/dev/null || true;
+                cmd appops set \"\$pkg\" RUN_ANY_IN_BACKGROUND ignore 2>/dev/null || true;
+                am set-standby-bucket \"\$pkg\" restricted 2>/dev/null || true;
+                am force-stop \"\$pkg\" 2>/dev/null || true;
+            done;
+
+            # Potong cache sistem & lakukan pembersihan idle database
+            pm trim-caches 8000M 2>/dev/null || true;
+            cmd activity idle-maintenance 2>/dev/null || true;
+            cmd activity kill-all 2>/dev/null || true;
+            am kill-all 2>/dev/null || true;
+        " >/dev/null 2>&1 || true
+    fi
+
+    # 5. Start Termux PulseAudio Server
+    start_termux_pulseaudio
+
+elif [ "$MODE" = "exit" ]; then
+    echo "🔄 Memulihkan Aplikasi Android & Pengaturan Sistem..."
+
+    dev=$(ensure_adb_device)
+    if [ -n "$dev" ]; then
+        # 1. Unsuspend semua aplikasi Android
+        TO_UNSUSPEND=""
+        if [ -f "$CACHE_SUSPENDED" ]; then
+            TO_UNSUSPEND=$(cat "$CACHE_SUSPENDED" 2>/dev/null)
+            rm -f "$CACHE_SUSPENDED"
+        fi
+
+        # Fallback: jika file cache tidak ada, ambil seluruh 3rd party apps
+        if [ -z "$TO_UNSUSPEND" ]; then
+            TO_UNSUSPEND=$(adb -s "$dev" shell "pm list packages -3 2>/dev/null | sed 's/package://'")
+        fi
+
+        if [ -n "$TO_UNSUSPEND" ]; then
+            adb -s "$dev" shell "
+                pm unsuspend --user 0 $TO_UNSUSPEND >/dev/null 2>&1 || true
+                for p in $TO_UNSUSPEND; do
+                    am set-standby-bucket \"\$p\" active 2>/dev/null || true
+                done
+            " >/dev/null 2>&1 || true
+        fi
+
+        # 2. Pulihkan pengaturan sistem Android, animasi, notifikasi, dan refresh rate
+        adb -s "$dev" shell "
+            settings put global hide_gesture_line 0 2>/dev/null || true;
+            settings put global force_fsg_nav_bar 1 2>/dev/null || true;
+            settings put global policy_control null 2>/dev/null || true;
+            settings put global heads_up_notifications_enabled 1 2>/dev/null || true;
+            settings put global window_animation_scale 1 2>/dev/null || true;
+            settings put global transition_animation_scale 1 2>/dev/null || true;
+            settings put global animator_duration_scale 1 2>/dev/null || true;
+            settings put global disable_window_blurs 0 2>/dev/null || true;
+            settings put global wifi_scan_always_enabled 1 2>/dev/null || true;
+            settings put global ble_scan_always_enabled 1 2>/dev/null || true;
+            settings put global network_recommendations_enabled 1 2>/dev/null || true;
+            cmd notification set_dnd off 2>/dev/null || true;
+            cmd power set-fixed-performance-mode-enabled false 2>/dev/null || true;
+            cmd power set-adaptive-power-saver-enabled true 2>/dev/null || true;
+            cmd thermalservice reset 2>/dev/null || true;
+            settings put system min_refresh_rate 60.0 2>/dev/null || true;
+            settings put secure speed_mode 0 2>/dev/null || true;
+            settings put system speed_mode 0 2>/dev/null || true;
+            settings put global speed_mode 0 2>/dev/null || true;
+            device_config put activity_manager max_cached_processes 32 2>/dev/null || true;
+            settings put secure voice_interaction_service com.google.android.googlequicksearchbox/com.google.android.voiceinteraction.GsaVoiceInteractionService 2>/dev/null || true;
+
+            # Pulihkan izin appops & standby bucket untuk sistem bloat
+            for pkg in $SYSTEM_BLOAT; do
+                cmd appops set \"\$pkg\" 10008 allow 2>/dev/null || true;
+                cmd appops set \"\$pkg\" 10019 allow 2>/dev/null || true;
+                cmd appops set \"\$pkg\" WAKE_LOCK default 2>/dev/null || true;
+                cmd appops set \"\$pkg\" RUN_IN_BACKGROUND default 2>/dev/null || true;
+                cmd appops set \"\$pkg\" RUN_ANY_IN_BACKGROUND default 2>/dev/null || true;
+                am set-standby-bucket \"\$pkg\" active 2>/dev/null || true;
+            done;
+
+            # Kembali ke layar Home Android
+            am start -a android.intent.action.MAIN -c android.intent.category.HOME 2>/dev/null || true;
+        " >/dev/null 2>&1 || true
+    fi
+
+    # 3. Stop PulseAudio daemon cleanly
+    pkill -9 -x "pulseaudio" 2>/dev/null || true
+
+    # 4. Release Termux WakeLock so Android returns to normal power management
+    /system/bin/am startservice --user 0 \
+        -a com.termux.service_wake_unlock \
+        com.termux/com.termux.app.TermuxService >/dev/null 2>&1 || true
+fi

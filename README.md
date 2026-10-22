@@ -21,12 +21,21 @@
 
 ## 🌟 Fitur Utama (Key Highlights)
 
-- 🎨 **Tampilan Otentik Ubuntu GNOME**: Menggunakan wallpaper resmi **Ubuntu Noble Numbat** ungu mascot (`warty-final-ubuntu.png`), dock vertikal hitam di sisi kiri, dan panel atas dengan jam 1 baris yang rapi.
-- ⚡ **Bebas Glitch & Kedipan Hitam (0% Flickering)**: Window compositing dioptimalkan secara khusus (`use_compositing = false`) sehingga jendela **Settings**, terminal, browser, dan dialog tidak mengalami kedipan hitam atau stutter.
-- 🔍 **Scaling Proporsional 1.75x**: Dikonfigurasi langsung pada level display Termux-X11 (`displayScale: 175`, `DPI: 168`), membuat seluruh font, ikon, dan tombol nyaman disentuh tanpa font raksasa yang merusak layout.
+- 🎨 **Tampilan Otentik Ubuntu Desktop**: Wallpaper resmi **Ubuntu Noble Numbat** ungu mascot (`warty-final-ubuntu.png`), tema Yaru-dark, dan font Ubuntu yang tajam.
+- 🚀 **Dock Bawah Melayang & Live Tasklist**: Dock autohide melayang (mengambang di atas navigation gesture bar Android) dengan pemisah vertikal elegan, pinned apps, dan **indikator tab jendela aktif live** (seperti Terminator, Browser, File Manager) lengkap dengan highlight garis oranye Ubuntu.
+- ⚡ **Status Bar Atas Lengkap & Jam Presisi di Tengah**: Panel atas 36px dengan jam otomatis presisi di tengah layar (dynamic spacer) serta 8 icon utilitas lengkap di sebelah kanan:
+  1. 🪟 **Snap Layout Helper**: Pilihan tata letak split-screen & kuadran cepat.
+  2. 🖥️ **Dock Toggle**: Tampilkan / sembunyikan dock dengan 1 klik.
+  3. ⌨️ **On-screen Keyboard**: Toggle cepat keyboard virtual Onboard.
+  4. 📶 **Wi-Fi Manager**: Status sinyal live & dialog koneksi Wi-Fi GTK3.
+  5. ᛒ **Bluetooth Manager**: Status & dialog pengaturan Bluetooth.
+  6. 🔊 **Volume Control**: Slider volume audio cepat via dialog GTK3.
+  7. 🔋 **Live Battery Status**: Indikator baterai real-time menampilkan persentase teks, status charging (⚡), warna dinamis, dan dialog info baterai (suhu, voltase).
+  8. ⏻ **Power Menu**: Dialog logout, restart, dan shutdown bersih.
+- 🛠️ **Native Interceptor (`libnogap.c`)**: Interceptor C level GTK untuk meniadakan window resize gaps pada terminal, mengunci posisi floating dock di atas Android navigation bar, dan merapikan layout panel.
+- 🛡️ **Anti-Freeze & Anti-LMK Protection**: Dilengkapi `ram-guardian` dan `perf-governor` otomatis untuk menjaga multitasking tetap lancar tanpa terhenti oleh sistem Android.
 - 📱 **Launcher Native 1-Tap (`Ubuntu_Launcher.apk`)**: Cukup tap icon Ubuntu di homescreen Android Anda, sesi Ubuntu akan otomatis berjalan di background dan langsung membuka desktop tanpa perlu membuka terminal Termux manual.
 - 📁 **Integrasi Penyimpanan Internal Android**: Akses langsung folder `/sdcard`, Download, dan foto tablet melalui shortcut **Android Storage** di file manager Thunar.
-- 🛍️ **App Center / Manajemen Aplikasi Grafis**: Pasang dan hapus aplikasi Linux langsung melalui GUI tanpa perlu mengetik perintah terminal yang rumit.
 
 ---
 
@@ -34,26 +43,40 @@
 
 ```
 UbRoid_TriWahyu45/
+├── install.sh                     # Installer otomatis 1-klik (dijalankan di dalam PRoot Ubuntu)
+├── bin/                           # Daemon & helper scripts (/usr/local/bin)
+│   ├── status-bar-daemon          # Daemon live baterai & icon status
+│   ├── dialog-battery             # Dialog pop-up status baterai GTK3
+│   ├── dialog-wifi                # Dialog Wi-Fi GTK3
+│   ├── dialog-bluetooth           # Dialog Bluetooth GTK3
+│   ├── dialog-volume              # Dialog Volume slider GTK3
+│   ├── snap-layout                # Menu snap layout jendela
+│   ├── ram-guardian               # Anti-LMK memory guardian
+│   └── perf-governor              # Pengatur performa & multi-core affinity
+├── src/                           # Native C hooks
+│   ├── libnogap.c                 # Hook geometry window, floating dock, & arrow suppression
+│   └── Makefile                   # Build script libnogap.so
+├── configs/                       # Konfigurasi desktop siap pakai
+│   ├── xfce4-panel.xml            # Top Bar & Floating Dock
+│   ├── xfwm4.xml                  # Window Manager anti-glitch
+│   ├── xsettings.xml              # Scaling DPI & Tema Yaru-dark
+│   ├── xfce4-desktop.xml          # Background wallpaper Ubuntu ungu
+│   ├── gtk.css                    # Styling dock & active window tabs
+│   ├── autostart/                 # Autostart status-bar-daemon
+│   └── panel_launchers/           # Shortcut launchers & icon dock
+├── scripts/
+│   ├── setup_ubroid.sh            # Script instalasi lengkap dari Termux
+│   ├── launch_ubuntu.sh           # Peluncur sesi Termux -> Termux-X11
+│   ├── start_desktop.sh           # Inisialisasi sesi desktop di PRoot
+│   └── shutdown_ubuntu.sh         # Skrip mematikan sesi dengan bersih
 ├── apks/                          # APK pendukung siap install
 │   ├── Ubuntu_Launcher.apk        # Peluncur 1-Tap native Android
 │   ├── termux-app.apk             # Termux base build teruji
 │   └── termux-x11.apk             # Display server X11 untuk Android
-├── configs/                       # Konfigurasi siap pakai
-│   ├── xfce4-panel.xml            # Konfigurasi Dock Kiri & Top Bar
-│   ├── xfwm4.xml                  # Window Manager anti-glitch
-│   ├── xsettings.xml              # Scaling DPI 168 & Tema Yaru-dark
-│   ├── xfce4-desktop.xml          # Background wallpaper Ubuntu ungu
-│   ├── gtk.css                    # Styling semi-transparan dock & bar
-│   └── panel_launchers/           # Shortcut aplikasi di dock
-├── scripts/
-│   ├── setup_ubroid.sh            # Script instalasi otomatis 1 baris
-│   ├── launch_ubuntu.sh           # Peluncur sesi Termux -> Termux-X11
-│   ├── start_desktop.sh           # Inisialisasi sesi desktop di PRoot
-│   └── shutdown_ubuntu.sh         # Skrip mematikan sesi dengan bersih
 └── assets/
     ├── wallpapers/                # Wallpaper resmi Ubuntu Noble Numbat
     ├── icons/                     # Vector icons resmi Firefox & Chrome
-    └── screenshots/               # Tangkapan layar desktop
+    └── screenshots/               # Screenshot preview desktop, top bar, & dock
 ```
 
 ---

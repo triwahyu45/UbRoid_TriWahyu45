@@ -1,0 +1,331 @@
+#!/usr/bin/env python3
+import os
+import re
+import subprocess
+import sys
+import time
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+
+def run_cmd(cmd):
+    try:
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode("utf-8", errors="ignore")
+    except Exception:
+        return ""
+
+
+def get_workarea():
+    out = run_cmd("xprop -root _NET_WORKAREA")
+    m = re.search(r"=\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)", out)
+    if m:
+        return int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+    return 0, 36, 1456, 878
+
+
+def get_frame_extents(wid_hex):
+    """Returns (is_csd, left, right, top, bottom).
+    If window uses GTK CSD (_GTK_FRAME_EXTENTS > 0), is_csd is True.
+    Otherwise, returns X11 window manager frame extents (_NET_FRAME_EXTENTS).
+    """
+    gtk_out = run_cmd(f"xprop -id {wid_hex} _GTK_FRAME_EXTENTS")
+    m = re.search(r"=\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)", gtk_out)
+    if m:
+        gl, gr, gt, gb = int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+        if gl > 0 or gr > 0 or gt > 0 or gb > 0:
+            return True, gl, gr, gt, gb
+
+    net_out = run_cmd(f"xprop -id {wid_hex} _NET_FRAME_EXTENTS")
+    m = re.search(r"=\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)", net_out)
+    if m:
+        return False, int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+
+    return False, 0, 0, 0, 0
+
+
+def get_normal_windows_stacking():
+    """Returns list of normal window hex IDs ordered from most-recently-active (topmost) to bottom."""
+    stack_out = run_cmd("xprop -root _NET_CLIENT_LIST_STACKING")
+    raw_ids = re.findall(r"0x[0-9a-fA-F]+", stack_out)
+    if not raw_ids:
+        wm_out = run_cmd("wmctrl -l")
+        raw_ids = [line.split()[0] for line in wm_out.splitlines() if line.strip()]
+
+    # Reverse so topmost window is first
+    raw_ids = list(reversed(raw_ids))
+    valid_windows = []
+    for wid in raw_ids:
+        if int(wid, 16) == 0:
+            continue
+        props = run_cmd(f"xprop -id {wid} _NET_WM_WINDOW_TYPE WM_CLASS _NET_WM_NAME WM_NAME")
+        if "_NET_WM_WINDOW_TYPE_DOCK" in props or "_NET_WM_WINDOW_TYPE_DESKTOP" in props:
+            continue
+        if "xfce4-panel" in props.lower() or "xfdesktop" in props.lower() or "snap-layout" in props.lower() or "macos-launchpad" in props.lower():
+            continue
+        valid_windows.append(wid)
+    return valid_windows
+
+
+def place_window(wid, x, y, w, h, gap=0):
+    """Unmaximizes and places window `wid` inside bounding box (x, y, w, h) accounting for SSD / CSD frame extents."""
+    bx = int(x + gap)
+    by = int(y + gap)
+    bw = max(200, int(w - gap * 2))
+    bh = max(150, int(h - gap * 2))
+
+    # Remove maximized / fullscreen / shaded states first
+    subprocess.call(
+        f"wmctrl -i -r {wid} -b remove,maximized_vert,maximized_horz,fullscreen,shaded",
+        shell=True,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.call(f"xdotool windowmap {wid}", shell=True, stderr=subprocess.DEVNULL)
+    time.sleep(0.04)
+
+    is_csd, left, right, top, bottom = get_frame_extents(wid)
+
+    if is_csd:
+        # For CSD windows (e.g. Firefox), the application reserves invisible shadow margin inside its surface.
+        # To place visible content exactly at (bx, by, bw, bh), expand window surface and offset:
+        target_x = bx - left
+        target_y = by - top
+        target_w = bw + left + right
+        target_h = bh + top + bottom
+    else:
+        # For standard SSD windows (e.g. xfce4-terminal), wmctrl sets client area size:
+        target_x = bx
+        target_y = by
+        target_w = max(150, bw - left - right)
+        target_h = max(120, bh - top - bottom)
+
+    subprocess.call(
+        f"wmctrl -i -r {wid} -e 0,{target_x},{target_y},{target_w},{target_h}",
+        shell=True,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.call(f"wmctrl -i -a {wid}", shell=True, stderr=subprocess.DEVNULL)
+
+
+def apply_layout(mode, target_windows=None):
+    wx, wy, ww, wh = get_workarea()
+    wins = target_windows if target_windows is not None else get_normal_windows_stacking()
+    if not wins:
+        return
+
+    w0 = wins[0]
+    w1 = wins[1] if len(wins) > 1 else None
+    w2 = wins[2] if len(wins) > 2 else None
+    w3 = wins[3] if len(wins) > 3 else None
+
+    half_w = ww // 2
+    half_h = wh // 2
+
+    if mode == "split-lr-50":
+        if w1:
+            place_window(w1, wx + half_w, wy, ww - half_w, wh)
+        place_window(w0, wx, wy, half_w, wh)
+    elif mode == "split-lr-65":
+        left_w = int(ww * 0.62)
+        if w1:
+            place_window(w1, wx + left_w, wy, ww - left_w, wh)
+        place_window(w0, wx, wy, left_w, wh)
+    elif mode == "split-tb-50":
+        if w1:
+            place_window(w1, wx, wy + half_h, ww, wh - half_h)
+        place_window(w0, wx, wy, ww, half_h)
+    elif mode == "split-3":
+        if w2:
+            place_window(w2, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
+        if w1:
+            place_window(w1, wx + half_w, wy, ww - half_w, half_h)
+        place_window(w0, wx, wy, half_w, wh)
+    elif mode == "split-4":
+        if w3:
+            place_window(w3, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
+        if w2:
+            place_window(w2, wx, wy + half_h, half_w, wh - half_h)
+        if w1:
+            place_window(w1, wx + half_w, wy, ww - half_w, half_h)
+        place_window(w0, wx, wy, half_w, half_h)
+    elif mode == "left-half":
+        place_window(w0, wx, wy, half_w, wh)
+    elif mode == "right-half":
+        place_window(w0, wx + half_w, wy, ww - half_w, wh)
+    elif mode == "top-left":
+        place_window(w0, wx, wy, half_w, half_h)
+    elif mode == "top-right":
+        place_window(w0, wx + half_w, wy, ww - half_w, half_h)
+    elif mode == "bottom-left":
+        place_window(w0, wx, wy + half_h, half_w, wh - half_h)
+    elif mode == "bottom-right":
+        place_window(w0, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
+    elif mode == "maximize":
+        subprocess.call(
+            f"wmctrl -i -r {w0} -b add,maximized_vert,maximized_horz && wmctrl -i -a {w0}",
+            shell=True,
+            stderr=subprocess.DEVNULL,
+        )
+    elif mode == "center":
+        cw = int(ww * 0.78)
+        ch = int(wh * 0.80)
+        cx = wx + (ww - cw) // 2
+        cy = wy + (wh - ch) // 2
+        place_window(w0, cx, cy, cw, ch)
+
+
+class SnapLayoutPopup(Gtk.Window):
+    def __init__(self, captured_windows):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.captured_windows = captured_windows
+        self.set_title("Snap Layouts")
+        self.set_role("snap-layout")
+        self.set_decorated(False)
+        self.set_keep_above(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_Resizable(False) if hasattr(self, "set_Resizable") else self.set_resizable(False)
+
+        # Position right below top bar in the upper center of the screen
+        wx, wy, ww, wh = get_workarea()
+        win_w = 640
+        self.move(wx + (ww - win_w) // 2, wy + 8)
+
+        css = b"""
+        window {
+            background-color: #1e1e1e;
+            border: 2px solid #e95420;
+            border-radius: 14px;
+            color: #ffffff;
+        }
+        .header-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .header-sub {
+            font-size: 12px;
+            color: #b8b5ae;
+        }
+        .layout-btn {
+            background-color: #2b2b2b;
+            border: 1px solid #454545;
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #f2f2f2;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .layout-btn:hover {
+            background-color: rgba(233, 84, 32, 0.28);
+            border: 1px solid #e95420;
+        }
+        .close-btn {
+            background-color: #383838;
+            border-radius: 8px;
+            padding: 4px 10px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .close-btn:hover {
+            background-color: #c7162b;
+        }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        outer.set_margin_top(14)
+        outer.set_margin_bottom(14)
+        outer.set_margin_start(16)
+        outer.set_margin_end(16)
+        self.add(outer)
+
+        # Header row
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        lbl_title = Gtk.Label(label="⊞  Snap Layouts — Pilih Tata Letak Jendela", xalign=0)
+        lbl_title.get_style_context().add_class("header-title")
+        lbl_sub = Gtk.Label(
+            label="Sentuh salah satu layout untuk merapikan jendela yang sedang terbuka secara otomatis:",
+            xalign=0,
+        )
+        lbl_sub.get_style_context().add_class("header-sub")
+        title_box.pack_start(lbl_title, False, False, 0)
+        title_box.pack_start(lbl_sub, False, False, 0)
+        header.pack_start(title_box, True, True, 0)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("close-btn")
+        btn_close.connect("clicked", lambda *_: Gtk.main_quit())
+        header.pack_end(btn_close, False, False, 0)
+        outer.pack_start(header, False, False, 0)
+
+        # Grid of Multi-Window Layouts (Row 1)
+        grid = Gtk.Grid()
+        grid.set_column_spacing(10)
+        grid.set_row_spacing(10)
+        grid.set_column_homogeneous(True)
+        outer.pack_start(grid, True, True, 0)
+
+        layouts = [
+            ("split-lr-50", "◧  Split 2 Kiri-Kanan\n     (50% : 50%)", 0, 0),
+            ("split-lr-65", "◨  Split 2 Fokus\n     (62% : 38%)", 1, 0),
+            ("split-tb-50", "⬒  Split 2 Atas-Bawah\n     (50% : 50%)", 2, 0),
+            ("split-3", "◫  Split 3 Jendela\n  (1 Kiri + 2 Kanan)", 0, 1),
+            ("split-4", "⊞  Split 4 Grid\n   (2x2 Empat Sudut)", 1, 1),
+            ("maximize", "⬜  Maximize Penuh\n    (Layar Penuh)", 2, 1),
+            ("left-half", "◀  Jendela Aktif\n    ke Setengah Kiri", 0, 2),
+            ("right-half", "▶  Jendela Aktif\n   ke Setengah Kanan", 1, 2),
+            ("center", "▣  Jendela Aktif\n    Rapi di Tengah", 2, 2),
+        ]
+
+        for mode, text, col, row in layouts:
+            btn = Gtk.Button(label=text)
+            btn.get_style_context().add_class("layout-btn")
+            btn.connect("clicked", self.on_select_layout, mode)
+            grid.attach(btn, col, row, 1, 1)
+
+        self.connect("key-press-event", self.on_key_press)
+        self.connect("destroy", Gtk.main_quit)
+
+    def on_key_press(self, _widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            Gtk.main_quit()
+
+    def on_select_layout(self, _btn, mode):
+        self.hide()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
+        apply_layout(mode, self.captured_windows)
+        Gtk.main_quit()
+
+
+def main():
+    # Prevent duplicate popups
+    if len(sys.argv) > 1 and sys.argv[1] not in ("--popup", "--popup-top"):
+        apply_layout(sys.argv[1])
+        return
+
+    # If popup is already open, close it (toggle behavior)
+    existing = run_cmd("pgrep -f '/usr/local/bin/snap-layout --popup'").splitlines()
+    my_pid = str(os.getpid())
+    other_pids = [p.strip() for p in existing if p.strip() and p.strip() != my_pid]
+    if other_pids:
+        for p in other_pids:
+            subprocess.call(f"kill -9 {p}", shell=True, stderr=subprocess.DEVNULL)
+        return
+
+    captured = get_normal_windows_stacking()
+    win = SnapLayoutPopup(captured)
+    win.show_all()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

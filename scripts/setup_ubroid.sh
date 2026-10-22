@@ -70,7 +70,8 @@ EOF
     apt update
     apt install -y xfce4 xfce4-terminal xfce4-appfinder dbus-x11 pulseaudio-utils \
                    yaru-theme-gtk yaru-theme-icon fonts-ubuntu synaptic sudo \
-                   whiptail thunar-archive-plugin firefox
+                   whiptail thunar-archive-plugin firefox gcc pkg-config libgtk-3-dev \
+                   xdotool scrot python3-gi gir1.2-gtk-3.0 bc
 "
 
 echo -e "${CYAN}[5/7] Mengaplikasikan Tweaks, Wallpaper Resmi & Icon Ubuntu...${NC}"
@@ -117,6 +118,34 @@ proot-distro login ubuntu -- bash -c "
     cp '$REPO_DIR/configs/bookmarks' /root/.config/gtk-3.0/ 2>/dev/null || true
     cp '$REPO_DIR/configs/.Xresources' /root/.Xresources 2>/dev/null || true
     cp -r '$REPO_DIR/configs/panel_launchers/'* /root/.config/xfce4/panel/ 2>/dev/null || true
+
+    # Pasang autostart status bar daemon
+    mkdir -p /root/.config/autostart /etc/xdg/autostart
+    cp '$REPO_DIR/configs/autostart/'* /root/.config/autostart/ 2>/dev/null || true
+    cp '$REPO_DIR/configs/autostart/'* /etc/xdg/autostart/ 2>/dev/null || true
+
+    # Pasang utilitas, daemon baterai, dan helper scripts ke /usr/local/bin
+    mkdir -p /usr/local/bin
+    cp '$REPO_DIR/bin/'* /usr/local/bin/ 2>/dev/null || true
+    chmod +x /usr/local/bin/* 2>/dev/null || true
+
+    # Kompilasi native interceptor libnogap (dock floating, gapless window, centered clock)
+    mkdir -p /usr/local/src /usr/local/lib
+    cp '$REPO_DIR/src/libnogap.c' /usr/local/src/libnogap.c
+    gcc -O2 -shared -fPIC /usr/local/src/libnogap.c -o /usr/local/lib/libnogap.so \$(pkg-config --cflags --libs gtk+-3.0) 2>/dev/null || true
+
+    # Pasang wrapper xfce4-panel agar selalu memuat libnogap
+    if [ -f /usr/bin/xfce4-panel.bin ]; then
+        :
+    elif [ -f /usr/bin/xfce4-panel ]; then
+        mv /usr/bin/xfce4-panel /usr/bin/xfce4-panel.bin
+        cat << 'WRAPPER_EOF' > /usr/bin/xfce4-panel
+#!/bin/bash
+export LD_PRELOAD=/usr/local/lib/libnogap.so\${LD_PRELOAD:+:\$LD_PRELOAD}
+exec /usr/bin/xfce4-panel.bin "\$@"
+WRAPPER_EOF
+        chmod +x /usr/bin/xfce4-panel
+    fi
 
     cp '$REPO_DIR/scripts/start_desktop.sh' /root/start_desktop.sh
     chmod +x /root/start_desktop.sh

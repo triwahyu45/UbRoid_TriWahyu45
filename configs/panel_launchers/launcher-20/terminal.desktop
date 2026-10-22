@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Terminator
+Comment=Terminator Touch-Scroll Terminal
+Exec=/usr/bin/terminator
+Icon=/usr/share/icons/hicolor/scalable/apps/terminator.svg
+Terminal=false
+Categories=System;TerminalEmulator;

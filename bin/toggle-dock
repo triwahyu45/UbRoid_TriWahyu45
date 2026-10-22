@@ -1,0 +1,17 @@
+#!/bin/bash
+# Toggle bottom dock (panel-2) autohide behavior
+MODE="$1"
+CURRENT=$(xfconf-query -c xfce4-panel -p /panels/panel-2/autohide-behavior 2>/dev/null || echo "0")
+
+if [ "$MODE" = "show" ]; then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/autohide-behavior -s 0
+elif [ "$MODE" = "hide" ]; then
+    xfconf-query -c xfce4-panel -p /panels/panel-2/autohide-behavior -s 2
+else
+    if [ "$CURRENT" = "0" ]; then
+        xfconf-query -c xfce4-panel -p /panels/panel-2/autohide-behavior -s 2
+    else
+        xfconf-query -c xfce4-panel -p /panels/panel-2/autohide-behavior -s 0
+    fi
+fi
+exit 0

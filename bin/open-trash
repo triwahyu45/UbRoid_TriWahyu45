@@ -1,0 +1,4 @@
+#!/bin/bash
+mkdir -p "$HOME/.local/share/Trash/files" "$HOME/.local/share/Trash/info"
+thunar --quit 2>/dev/null
+exec /usr/bin/thunar "$HOME/.local/share/Trash/files"

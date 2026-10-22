@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk
+import subprocess
+import os
+
+def get_cmd(cmd):
+    try:
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=2).decode().strip()
+    except Exception:
+        return ""
+
+class BatteryDialog(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Status Baterai")
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_border_width(12)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_keep_above(True)
+
+        self.connect("key-press-event", lambda w, e: self.close_win() if e.keyval == Gdk.KEY_Escape else False)
+        self.connect("focus-out-event", lambda w, e: self.close_win())
+
+        css = b'''
+        window {
+            background-color: #222222;
+            border: 1px solid #444444;
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: 'Ubuntu', sans-serif;
+        }
+        .title {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .card {
+            background-color: #2c2c2c;
+            border: 1px solid #3c3c3c;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .btn {
+            background-color: #e95420;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-weight: 700;
+        }
+        .btn:hover {
+            background-color: #ff6b3b;
+        }
+        '''
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.add(main_box)
+
+        lbl_title = Gtk.Label(label="<b>🔋 Status Baterai &amp; Daya</b>", use_markup=True, xalign=0)
+        lbl_title.get_style_context().add_class("title")
+        main_box.pack_start(lbl_title, False, False, 0)
+
+        info = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys battery")
+        level = "50%"
+        status = "Menggunakan Baterai"
+        temp = "36.0°C"
+        volt = "4.00V"
+        health = "Baik (Good)"
+
+        for line in info.splitlines():
+            line = line.strip()
+            if line.startswith("level:"):
+                level = line.split(":")[1].strip() + "%"
+            elif line.startswith("status:"):
+                st = line.split(":")[1].strip()
+                status = "⚡ Sedang Mengisi Daya (Charging)" if st == "2" else "Menggunakan Baterai (Discharging)"
+            elif line.startswith("temperature:"):
+                try:
+                    temp = f"{int(line.split(':')[1].strip()) / 10:.1f}°C"
+                except Exception:
+                    pass
+            elif line.startswith("voltage:"):
+                try:
+                    volt = f"{int(line.split(':')[1].strip()) / 1000:.2f}V"
+                except Exception:
+                    pass
+
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        card.get_style_context().add_class("card")
+        
+        txt = (
+            f"<b>Kapasitas Baterai:</b> <big><b>{level}</b></big>\n"
+            f"<b>Status Pengisian:</b> {status}\n"
+            f"<b>Kesehatan Baterai:</b> {health}\n"
+            f"<b>Suhu Baterai:</b> {temp}\n"
+            f"<b>Tegangan (Voltase):</b> {volt}"
+        )
+        lbl_detail = Gtk.Label(label=txt, use_markup=True, xalign=0)
+        card.pack_start(lbl_detail, True, True, 0)
+        main_box.pack_start(card, True, True, 0)
+
+        btn_close = Gtk.Button(label="Tutup")
+        btn_close.get_style_context().add_class("btn")
+        btn_close.connect("clicked", lambda b: self.close_win())
+        main_box.pack_end(btn_close, False, False, 0)
+
+    def close_win(self):
+        self.destroy()
+        Gtk.main_quit()
+
+if __name__ == "__main__":
+    win = BatteryDialog()
+    win.set_default_size(320, 220)
+    win.show_all()
+    Gtk.main()

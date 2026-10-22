@@ -1,0 +1,30 @@
+#!/bin/bash
+unset LD_PRELOAD
+# ==============================================================================
+# Ultra RAM Purge & Memory Optimizer for Ubuntu on Redmi Pad (HyperOS)
+# Usage: clean-ram
+# ==============================================================================
+
+echo "=================================================="
+echo " ⚡ Membersihkan RAM Android & Mengalihkan ke Ubuntu"
+echo "=================================================="
+
+# 1. Jalankan Linux OS Mode enter untuk membekukan background Android apps
+/usr/local/bin/linux-os-mode enter
+
+# 2. Bersihkan proses gnome-keyring bila ada
+pkill -9 gnome-keyring-d 2>/dev/null || true
+
+# 3. Sync buffer Linux
+sync 2>/dev/null || true
+
+echo ""
+echo "Status Memori Saat Ini:"
+free -h
+echo "=================================================="
+
+AVAIL=$(free -h | awk '/Mem:/ {print $7}')
+SWAP_FREE=$(free -h | awk '/Swap:/ {print $4}')
+if [ -n "$DISPLAY" ]; then
+    notify-send -i utilities-system-monitor "⚡ RAM Berhasil Dikosongkan" "RAM Tersedia: ${AVAIL} | Swap Bebas: ${SWAP_FREE}" 2>/dev/null || true
+fi
