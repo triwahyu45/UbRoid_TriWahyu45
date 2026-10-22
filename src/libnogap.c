@@ -297,6 +297,16 @@ void gtk_window_move(GtkWindow *window, gint x, gint y) {
              * above Android's navigation/gesture bar and overlaps the 32px trigger zone */
             gtk_widget_set_opacity(GTK_WIDGET(window), 1.0);
             y = screen_h - 47 - 16;
+
+            GtkStyleContext *sc = gtk_widget_get_style_context(GTK_WIDGET(window));
+            if (sc) gtk_style_context_add_class(sc, "ubroid-dock");
+            if (GTK_IS_BIN(window)) {
+                GtkWidget *child = gtk_bin_get_child(GTK_BIN(window));
+                if (child) {
+                    GtkStyleContext *csc = gtk_widget_get_style_context(child);
+                    if (csc) gtk_style_context_add_class(csc, "ubroid-dock");
+                }
+            }
         }
     }
 
