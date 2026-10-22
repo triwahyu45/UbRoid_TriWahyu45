@@ -39,9 +39,6 @@ done
 
 # 6. Pastikan DNS resolver disiapkan
 cat << "RESOLV" > $TMPDIR/resolv.conf
-nameserver 100.100.100.100
-nameserver 10.11.12.57
-nameserver 10.100.1.3
 nameserver 8.8.8.8
 RESOLV
 

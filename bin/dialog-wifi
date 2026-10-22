@@ -87,7 +87,7 @@ class WifiDialog(Gtk.Window):
                 rssi = wifi_raw.split("RSSI: ")[1].split(",")[0].strip() + " dBm"
             except Exception:
                 pass
-        ip = get_cmd("adb -s 127.0.0.1:5555 shell ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'") or "10.54.225.89"
+        ip = get_cmd("adb -s 127.0.0.1:5555 shell ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'") or "192.168.1.100"
 
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.get_style_context().add_class("card")

@@ -119,7 +119,7 @@ Categories=Utility;
     else:
         wifi_icon = "network-wireless-signal-weak-symbolic"
 
-    ip_addr = "10.54.225.89"
+    ip_addr = "192.168.1.100"
 
     wifi_desktop = f"{home}/.config/xfce4/panel/launcher-41/wifi.desktop"
     wifi_content = f"""[Desktop Entry]
@@ -140,7 +140,7 @@ Categories=Network;
     # -------------------------------------------------------------
     bt_raw = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys bluetooth_manager | grep -m1 'state: ON'")
     bt_is_on = ("state: ON" in bt_raw)
-    bt_name = "Wahyu Pad 2"
+    bt_name = "Android Device"
     bt_status = "Aktif (ON)" if bt_is_on else "Nonaktif"
     bt_icon = "bluetooth-active-symbolic" if bt_is_on else "bluetooth-disabled-symbolic"
 

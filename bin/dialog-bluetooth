@@ -80,7 +80,7 @@ class BluetoothDialog(Gtk.Window):
         bt_raw = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys bluetooth_manager | grep -m1 'state: ON'")
         is_on = ("state: ON" in bt_raw)
         status = "Aktif (ON)" if is_on else "Nonaktif"
-        name = get_cmd("adb -s 127.0.0.1:5555 shell settings get secure bluetooth_name") or "Wahyu Pad 2"
+        name = get_cmd("adb -s 127.0.0.1:5555 shell settings get secure bluetooth_name") or "Android Device"
 
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.get_style_context().add_class("card")

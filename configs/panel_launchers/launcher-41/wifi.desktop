@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=Status Wi-Fi
-Comment=Wi-Fi: Terhubung ke Terhubung (-50 dBm) | IP: 10.54.225.89 (Klik untuk opsi Wi-Fi)
+Comment=Wi-Fi: Terhubung (-50 dBm) | IP: - (Klik untuk opsi Wi-Fi)
 Exec=/usr/local/bin/dialog-wifi
 Icon=network-wireless-signal-excellent-symbolic
 Terminal=false

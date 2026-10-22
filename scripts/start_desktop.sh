@@ -16,7 +16,6 @@ export MALLOC_MMAP_THRESHOLD_=131072
 cat << "RESOLV" > /etc/resolv.conf
 nameserver 1.1.1.1
 nameserver 8.8.8.8
-nameserver 10.11.12.57
 options timeout:1 attempts:2 single-request-reopen
 RESOLV
 

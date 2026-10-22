@@ -244,14 +244,14 @@ class UbuntuControlCenter(Gtk.Window):
         rssi = "-50 dBm"
         if "RSSI: " in out:
             rssi = out.split("RSSI: ")[1].split(",")[0] + " dBm"
-        ip = get_cmd("adb -s 127.0.0.1:5555 shell ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'") or "10.54.225.89"
+        ip = get_cmd("adb -s 127.0.0.1:5555 shell ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'") or "192.168.1.100"
         return f"SSID: <b>{ssid}</b>\nIP: {ip}\nSinyal: {rssi}"
 
     def get_bt_info(self):
         state = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys bluetooth_manager | grep -m1 'state: ON'")
         is_on = "state: ON" in state
         status = "Aktif (ON)" if is_on else "Nonaktif"
-        name = get_cmd("adb -s 127.0.0.1:5555 shell settings get secure bluetooth_name") or "Wahyu Pad 2"
+        name = get_cmd("adb -s 127.0.0.1:5555 shell settings get secure bluetooth_name") or "Android Device"
         return f"Status: <b>{status}</b>\nPerangkat: {name}"
 
     def get_battery_info(self):
