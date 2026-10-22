@@ -206,6 +206,8 @@ if [ "$MODE" = "enter" ]; then
                     am set-standby-bucket \"\$p\" restricted 2>/dev/null || true
                     am force-stop \"\$p\" 2>/dev/null || true
                 done
+                pm disable-user --user 0 app.revanced.android.gms >/dev/null 2>&1 || true
+                am force-stop app.revanced.android.gms >/dev/null 2>&1 || true
             " >/dev/null 2>&1 || true
         fi
 
@@ -302,6 +304,7 @@ elif [ "$MODE" = "exit" ]; then
                 for p in $TO_UNSUSPEND; do
                     am set-standby-bucket \"\$p\" active 2>/dev/null || true
                 done
+                pm enable app.revanced.android.gms >/dev/null 2>&1 || true
             " >/dev/null 2>&1 || true
         fi
 
