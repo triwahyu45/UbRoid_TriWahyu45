@@ -1,0 +1,52 @@
+# ~/.bashrc for Ubuntu 24.04 PRoot
+DEV_NAME=$(getprop ro.product.marketname 2>/dev/null)
+[ -z "$DEV_NAME" ] && DEV_NAME=$(getprop ro.product.model 2>/dev/null)
+[ -z "$DEV_NAME" ] && DEV_NAME="Android Device"
+
+export PS1='\[\033[1;38;2;0;255;136m\]root@ubuntu\[\033[0m\]:\[\033[1;38;2;0;210;255m\]\w\[\033[0m\]# '
+export TERM=xterm-256color
+export LANG=C.UTF-8
+
+alias ll='ls -alF --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls -CF --color=auto'
+alias sudo='sudo '
+
+# Detronics ID Terminal Welcome Banner
+if [[ $- == *i* ]]; then
+    clear
+    echo -e "\033[1;38;2;255;110;0m  ____       _                   _           ___ ____  \033[0m"
+    echo -e "\033[1;38;2;255;125;0m |  _ \  ___| |_ _ __ ___  _ __ (_) ___ ___ |_ _|  _ \ \033[0m"
+    echo -e "\033[1;38;2;255;140;0m | | | |/ _ \ __| '__/ _ \| '_ \| |/ __/ __| | || | | |\033[0m"
+    echo -e "\033[1;38;2;255;155;0m | |_| |  __/ |_| | | (_) | | | | | (__\__ \ | || |_| |\033[0m"
+    echo -e "\033[1;38;2;255;170;0m |____/ \___|\__|_|  \___/|_| |_|_|\___|___/|___|____/ \033[0m"
+    echo -e "\033[1;38;2;255;120;0m ──────────────────────────────────────────────────────\033[0m"
+    echo -e "\033[1;37mWelcome to Ubuntu 24.04 LTS (Noble Numbat aarch64) - $DEV_NAME\033[0m"
+    echo ""
+    echo -e " \033[1;38;2;0;255;200m*\033[0m DetronicsID:        \033[1;38;2;0;255;136mEmbedded & Robotics Linux Environment\033[0m"
+    echo -e " \033[1;38;2;0;255;200m*\033[0m Shortcut Keluar:    \033[1;38;2;255;200;0mshutdown-ubuntu\033[0m (atau tutup session)"
+    echo -e " \033[1;38;2;0;255;200m*\033[0m Perintah Jaringan:  \033[1;38;2;0;229;255mwifi-scan\033[0m | \033[1;38;2;0;229;255mwifi-status\033[0m | \033[1;38;2;0;229;255mifconfig\033[0m"
+    echo ""
+fi
+
+# Added by Antigravity CLI installer
+export PATH="/root/.local/bin:$PATH"
+alias agy='command agy --mode auto --dangerously-skip-permissions' 2>/dev/null || true
+
+# Safe exit confirmation for interactive shells (Keep Ubuntu Running)
+if [[ $- == *i* ]]; then
+    safe_exit() {
+        if pgrep -x "xfce4-session" >/dev/null 2>&1; then
+            echo -e "\033[1;33m[!] PERINGATAN: Sesi Desktop XFCE sedang berjalan di latar belakang.\033[0m"
+            read -p "Apakah Anda yakin ingin keluar dari terminal ini? (y/N): " -r answer
+            if [[ "$answer" =~ ^[Yy]$ ]]; then
+                builtin exit
+            else
+                echo -e "\033[1;32m[*] Keluar dibatalkan. Ubuntu tetap aktif berjalan.\033[0m"
+            fi
+        else
+            builtin exit
+        fi
+    }
+    alias exit='safe_exit'
+fi

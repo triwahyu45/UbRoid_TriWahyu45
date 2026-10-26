@@ -395,9 +395,11 @@ class UbuntuControlCenter(Gtk.Window):
 
 if __name__ == "__main__":
     win = UbuntuControlCenter()
-    # Position window under top right status bar: tablet is 1136 width, 711 height
     win.set_default_size(360, 420)
     win.show_all()
-    # Move to top-right corner (+760, +38)
-    win.move(760, 38)
+    # Dynamically calculate position under top-right status bar for ANY device resolution:
+    scr = Gdk.Screen.get_default()
+    screen_w = scr.get_width() if scr else 1136
+    win_w = 360
+    win.move(max(10, screen_w - win_w - 16), 38)
     Gtk.main()

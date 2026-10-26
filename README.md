@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Ubuntu-24.04%20LTS%20Noble%20Numbat-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu Version">
   <img src="https://img.shields.io/badge/Architecture-ARM64%20%2F%20aarch64-0078D4?style=for-the-badge&logo=arm&logoColor=white" alt="Arch">
   <img src="https://img.shields.io/badge/Desktop-XFCE4%20Ubuntu%20Style-2C001E?style=for-the-badge&logo=xfce&logoColor=white" alt="Desktop">
-  <img src="https://img.shields.io/badge/Tested%20Device-Redmi%20Pad%202-00F5D4?style=for-the-badge&logo=android&logoColor=black" alt="Device">
+  <img src="https://img.shields.io/badge/Tested%20Devices-Redmi%20Pad%202%20%7C%20Poco%20F6-00F5D4?style=for-the-badge&logo=android&logoColor=black" alt="Device">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
 </p>
 
@@ -89,19 +89,27 @@ Download dan pasang ketiga APK dari folder [`apks/`](apks/):
 2. [`termux-x11.apk`](apks/termux-x11.apk)
 3. [`Ubuntu_Launcher.apk`](apks/Ubuntu_Launcher.apk)
 
-### Langkah 2: Jalankan Script Instalasi di Termux
+### Langkah 2: Jalankan Script Master Installer di Termux
 Buka aplikasi **Termux**, salin dan tempel perintah berikut:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/scripts/setup_ubroid.sh | bash
+curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/ubroid.sh | bash
+```
+
+*Atau jika ingin meng-clone repositori terlebih dahulu:*
+```bash
+git clone https://github.com/triwahyu45/UbRoid_TriWahyu45.git
+cd UbRoid_TriWahyu45
+bash ubroid.sh
 ```
 
 Script akan otomatis:
-- Memperbarui paket Termux & memasang `proot-distro`, `x11-repo`, `pulseaudio`.
-- Mengunduh dan memasang container **Ubuntu 24.04 LTS (Noble Numbat)**.
-- Memasang XFCE4, tema Yaru-dark, font Ubuntu, dan dependensi desktop.
-- Mengaplikasikan wallpaper ungu resmi, icon vektor resolusi tinggi, konfigurasi dock kiri, dan pengaturan anti-flickering.
-- Menyiapkan izin aplikasi eksternal agar launcher APK berfungsi secara instan.
+1. Memperbarui paket Termux & memasang dependensi (`proot-distro`, `x11-repo`, `pulseaudio`, `bc`, dll.).
+2. Mengunduh dan memasang container resmi **Ubuntu 24.04 LTS (Noble Numbat)** dengan tag terkunci.
+3. Memasang XFCE4, Firefox PPA asli (bukan snap), tema Yaru-dark, font Ubuntu, dan dependensi desktop.
+4. Mengaplikasikan wallpaper ungu resmi Noble Numbat, icon vektor Yaru, floating dock anti-glitch, dan optimasi performa RAM.
+5. Mendeteksi resolusi dan DPI layar Android secara dinamis (otomatis menyesuaikan skala tampilan baik di Ponsel maupun Tablet).
+6. Mengonfigurasi terminal Termux dan Ubuntu dengan **DetronicsID Terminal Welcome Banner** interaktif.
 
 ### Langkah 3: Menjalankan Ubuntu Desktop
 Anda dapat menjalankan Ubuntu dengan salah satu cara berikut:

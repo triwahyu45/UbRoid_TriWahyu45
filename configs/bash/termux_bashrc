@@ -1,0 +1,33 @@
+# ~/.bashrc for Termux
+DEV_NAME=$(getprop ro.product.marketname 2>/dev/null)
+[ -z "$DEV_NAME" ] && DEV_NAME=$(getprop ro.product.model 2>/dev/null)
+[ -z "$DEV_NAME" ] && DEV_NAME="Android Device"
+
+export PS1='\[\033[1;32m\]termux@android\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '
+alias ubuntu="bash ~/launch_ubuntu.sh"
+alias u="bash ~/launch_ubuntu.sh"
+alias ubuntu-cli="proot-distro login ubuntu"
+alias uc="proot-distro login ubuntu"
+alias wifi-scan="termux-wifi-scaninfo"
+alias wifi-info="termux-wifi-connectioninfo"
+alias agy="proot-distro login ubuntu -- agy"
+
+clear
+# --- DETRONICS ID TERMINAL WELCOME BANNER (Ubuntu Style) ---
+echo -e "\033[1;38;5;208m"
+cat << 'EOF'
+  ____       _                   _           ___ ____  
+ |  _ \  ___| |_ _ __ ___  _ __ (_) ___ ___ |_ _|  _ \ 
+ | | | |/ _ \ __| '__/ _ \| '_ \| |/ __/ __| | || | | |
+ | |_| |  __/ |_| | | (_) | | | | | (__\__ \ | || |_| |
+ |____/ \___|\__|_|  \___/|_| |_|_|\___|___/|___|____/ 
+EOF
+echo -e "\033[0m"
+echo -e "\033[1;37mWelcome to Ubuntu 24.04 LTS (GNU/Linux aarch64) - $DEV_NAME\033[0m"
+echo ""
+echo -e " * DetronicsID:    \033[1;32mEmbedded & Robotics Linux Environment\033[0m"
+echo -e " * Masuk Desktop:  Ketik \033[1;32mubuntu\033[0m atau \033[1;32mu\033[0m lalu tekan Enter"
+echo -e " * Terminal PRoot: Ketik \033[1;32muc\033[0m atau \033[1;32mubuntu-cli\033[0m"
+echo -e " * Antigravity:    Ketik \033[1;32magy\033[0m untuk jalankan AI Assistant"
+echo -e " * Fitur Jaringan: \033[1;33mwifi-scan\033[0m | \033[1;33mwifi-info\033[0m"
+echo ""
