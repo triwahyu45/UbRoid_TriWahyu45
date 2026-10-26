@@ -197,6 +197,9 @@ cp "$SCRIPT_DIR/configs/terminator/config" /root/.config/terminator/config 2>/de
 # Pasang shortcut desktop resmi
 cp "$SCRIPT_DIR/configs/desktop/"*.desktop /root/Desktop/ 2>/dev/null || true
 chmod +x /root/Desktop/*.desktop 2>/dev/null || true
+for f in /root/Desktop/*.desktop; do
+    [ -f "$f" ] && gio set "$f" metadata::trusted true 2>/dev/null || true
+done
 
 # Bersihkan dan pasang panel launchers terbaru
 rm -rf /root/.config/xfce4/panel/launcher-*

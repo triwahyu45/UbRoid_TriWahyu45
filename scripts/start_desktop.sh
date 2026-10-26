@@ -78,6 +78,11 @@ cleanup_on_exit() {
 }
 trap cleanup_on_exit EXIT INT TERM HUP
 
+# Ensure all desktop launchers are marked trusted in GIO/XFCE
+for f in /root/Desktop/*.desktop; do
+    [ -f "$f" ] && gio set "$f" metadata::trusted true 2>/dev/null || true
+done
+
 export LD_PRELOAD=/usr/local/lib/libnogap.so
 startxfce4
 unset LD_PRELOAD
