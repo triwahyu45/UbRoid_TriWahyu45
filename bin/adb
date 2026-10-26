@@ -1,0 +1,21 @@
+#!/bin/bash
+# Smart ADB Auto-Targeting Wrapper for UbRoid
+# Prevents 'more than one device/emulator' when localhost:5555 is aliased as emulator-5554
+
+for arg in "$@"; do
+    if [ "$arg" = "-s" ] || [ "$arg" = "devices" ] || [ "$arg" = "connect" ] || [ "$arg" = "disconnect" ] || [ "$arg" = "kill-server" ] || [ "$arg" = "start-server" ]; then
+        exec /usr/bin/adb "$@"
+    fi
+done
+
+if [ -n "$ANDROID_SERIAL" ]; then
+    exec /usr/bin/adb "$@"
+fi
+
+# Auto-pick the active device
+DEV=$(/usr/bin/adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1; exit}')
+if [ -n "$DEV" ]; then
+    exec /usr/bin/adb -s "$DEV" "$@"
+fi
+
+exec /usr/bin/adb "$@"

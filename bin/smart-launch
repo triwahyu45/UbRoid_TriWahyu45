@@ -1,0 +1,47 @@
+#!/bin/bash
+# Smart Dock Launcher for XFCE Panel
+# Switches to / restores existing window if running, or launches a new instance.
+
+PATTERN="$1"
+shift
+
+if [ -z "$PATTERN" ] || [ $# -eq 0 ]; then
+    exit 1
+fi
+
+if command -v wmctrl >/dev/null 2>&1; then
+    # Get all managed window IDs matching WM_CLASS pattern
+    mapfile -t WIDS < <(wmctrl -lx 2>/dev/null | awk -v pat="$PATTERN" 'tolower($3) ~ tolower(pat) {print $1}')
+    if [ "${#WIDS[@]}" -gt 0 ]; then
+        ACTIVE_HEX=$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | awk '{print $NF}')
+        ACTIVE_DEC=$((ACTIVE_HEX)) 2>/dev/null || ACTIVE_DEC=0
+
+        # Check if one of the matching windows is currently active
+        ACTIVE_INDEX=-1
+        for i in "${!WIDS[@]}"; do
+            WDEC=$((WIDS[$i])) 2>/dev/null || WDEC=-1
+            if [ "$WDEC" -eq "$ACTIVE_DEC" ] && [ "$ACTIVE_DEC" -ne 0 ]; then
+                ACTIVE_INDEX=$i
+                break
+            fi
+        done
+
+        if [ "$ACTIVE_INDEX" -ge 0 ]; then
+            if [ "${#WIDS[@]}" -eq 1 ]; then
+                # Single window already focused -> minimize it, or ensure it's raised
+                xdotool windowminimize "$ACTIVE_DEC" 2>/dev/null || wmctrl -ia "${WIDS[0]}" 2>/dev/null
+            else
+                # Multiple windows -> cycle to the next window
+                NEXT_INDEX=$(( (ACTIVE_INDEX + 1) % ${#WIDS[@]} ))
+                wmctrl -ia "${WIDS[$NEXT_INDEX]}" 2>/dev/null
+            fi
+        else
+            # Activate and raise the first matching window
+            wmctrl -ia "${WIDS[0]}" 2>/dev/null
+        fi
+        exit 0
+    fi
+fi
+
+# No existing window found -> launch application
+exec "$@" &

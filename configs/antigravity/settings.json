@@ -1,0 +1,11 @@
+{
+  "agentMode": "auto",
+  "allowNonWorkspaceAccess": true,
+  "artifactReviewPolicy": "always-proceed",
+  "model": "Gemini 3.8 Flash (Medium)",
+  "runningLightSpeed": "fast",
+  "toolPermission": "always-proceed",
+  "trustedWorkspaces": [
+    "/root"
+  ]
+}

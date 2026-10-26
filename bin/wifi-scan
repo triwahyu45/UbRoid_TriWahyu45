@@ -1,0 +1,9 @@
+#!/bin/bash
+unset LD_PRELOAD
+echo -e "\033[1;32m[+] Memindai SSID Wi-Fi di sekitar perangkat...\033[0m"
+RAW=$(/data/data/com.termux/files/usr/bin/termux-wifi-scaninfo 2>/dev/null)
+if [ -z "$RAW" ] || [ "$RAW" = "[]" ] || echo "$RAW" | grep -q "API_ERROR"; then
+    echo "Tidak ada Wi-Fi terdeteksi atau izin lokasi belum aktif."
+    exit 1
+fi
+echo "$RAW" | jq -r '.[] | "\u001b[1;33mSSID: \(.ssid | if . == "" then "(Hidden SSID)" else . end)\u001b[0m | Sinyal: \(.rssi) dBm | Frekuensi: \(.frequency_mhz) MHz | BSSID: \(.bssid)"'

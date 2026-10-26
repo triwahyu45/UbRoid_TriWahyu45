@@ -1,0 +1,48 @@
+#!/bin/bash
+# ==============================================================================
+# Antigravity CLI (AGY) Turbo Mode Wrapper for UbRoid
+# Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+# Author: Tri Wahyu Handoyo (triwahyu45 / DetronicsID)
+# ==============================================================================
+
+export PATH="/root/.local/bin:$PATH"
+
+# 1. Cek apakah binary Antigravity CLI sudah terpasang
+if [ ! -f /root/.local/bin/agy.real ] && [ ! -f /root/.local/bin/agy ]; then
+    echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis...\033[0m"
+    curl -fsSL https://raw.githubusercontent.com/wallentx/antigravity-cli-termux/dev/install.sh | bash
+fi
+
+# 2. Pastikan file konfigurasi Turbo Mode siap
+SETTINGS_FILE="/root/.gemini/antigravity-cli/settings.json"
+if [ ! -f "$SETTINGS_FILE" ]; then
+    mkdir -p "/root/.gemini/antigravity-cli"
+    cat << 'EOF' > "$SETTINGS_FILE"
+{
+  "agentMode": "auto",
+  "allowNonWorkspaceAccess": true,
+  "artifactReviewPolicy": "always-proceed",
+  "model": "Gemini 3.8 Flash (Medium)",
+  "runningLightSpeed": "fast",
+  "toolPermission": "always-proceed",
+  "trustedWorkspaces": [
+    "/root"
+  ]
+}
+EOF
+fi
+
+# 3. Jalankan Antigravity CLI dengan Turbo Mode & Non-blocking Permissions
+AGY_BIN="/root/.local/bin/agy.real"
+if [ ! -f "$AGY_BIN" ]; then
+    AGY_BIN="/root/.local/bin/agy"
+fi
+
+if [ -x "$AGY_BIN" ]; then
+    exec "$AGY_BIN" --mode auto --dangerously-skip-permissions "$@"
+elif command -v agy >/dev/null 2>&1; then
+    exec command agy --mode auto --dangerously-skip-permissions "$@"
+else
+    echo -e "\033[1;31m[!] Gagal menjalankan Antigravity CLI. Pastikan instalasi berhasil.\033[0m"
+    exit 1
+fi

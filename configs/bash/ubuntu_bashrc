@@ -6,12 +6,15 @@ DEV_NAME=$(getprop ro.product.marketname 2>/dev/null)
 export PS1='\[\033[1;38;2;0;255;136m\]root@ubuntu\[\033[0m\]:\[\033[1;38;2;0;210;255m\]\w\[\033[0m\]# '
 export TERM=xterm-256color
 export LANG=C.UTF-8
+export PATH="/usr/local/bin:/root/.local/bin:$PATH"
 
 alias ll='ls -alF --color=auto'
 alias la='ls -A --color=auto'
 alias l='ls -CF --color=auto'
 alias sudo='sudo '
 alias about='dialog-about'
+alias agy='/usr/local/bin/agy'
+alias agy-turbo='/usr/local/bin/agy'
 
 # Detronics ID Terminal Welcome Banner
 if [[ $- == *i* ]]; then
@@ -26,15 +29,12 @@ if [[ $- == *i* ]]; then
     echo ""
     echo -e " \033[1;38;2;0;255;200m*\033[0m UbRoid:             \033[1;38;2;233;84;32mAuthentic Ubuntu Desktop Environment for Android\033[0m"
     echo -e " \033[1;38;2;0;255;200m*\033[0m DetronicsID:        \033[1;38;2;0;255;136mEmbedded & Robotics Linux Environment\033[0m"
+    echo -e " \033[1;38;2;0;255;200m*\033[0m Antigravity AI:     Ketik \033[1;38;2;0;255;136magy\033[0m untuk menjalankan AI Coding Assistant (Turbo Mode)"
     echo -e " \033[1;38;2;0;255;200m*\033[0m Tentang Sistem:     Ketik \033[1;38;2;255;200;0mdialog-about\033[0m atau \033[1;38;2;255;200;0mabout\033[0m untuk info lengkap"
     echo -e " \033[1;38;2;0;255;200m*\033[0m Shortcut Keluar:    \033[1;38;2;255;200;0mshutdown-ubuntu\033[0m (atau tutup session)"
     echo -e " \033[1;38;2;0;255;200m*\033[0m Perintah Jaringan:  \033[1;38;2;0;229;255mwifi-scan\033[0m | \033[1;38;2;0;229;255mwifi-status\033[0m | \033[1;38;2;0;229;255mifconfig\033[0m"
     echo ""
 fi
-
-# Added by Antigravity CLI installer
-export PATH="/root/.local/bin:$PATH"
-alias agy='command agy --mode auto --dangerously-skip-permissions' 2>/dev/null || true
 
 # Safe exit confirmation for interactive shells (Keep Ubuntu Running)
 if [[ $- == *i* ]]; then

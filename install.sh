@@ -14,7 +14,7 @@ echo "=== MEMASANG / MEMPERBARUI UBROID DESKTOP ENVIRONMENT ==="
 export DEBIAN_FRONTEND=noninteractive
 
 # 1. Pastikan PPA Firefox resmi disiapkan (bukan dummy snap)
-echo "[1/9] Mengonfigurasi repository & Firefox PPA..."
+echo "[1/10] Mengonfigurasi repository & Firefox PPA..."
 cat << 'EOF' > /etc/apt/preferences.d/mozilla-firefox
 Package: *
 Pin: release o=LP-PPA-mozillateam
@@ -26,14 +26,15 @@ apt-get install -y software-properties-common
 add-apt-repository -y -P mozillateam/ppa 2>/dev/null || true
 apt-get update -y
 
-# 2. Pastikan dependencies desktop terpasang
-echo "[2/9] Memasang paket desktop XFCE, Firefox & library sistem..."
+# 2. Pastikan seluruh dependencies desktop dan utilitas terpasang
+echo "[2/10] Memasang paket desktop XFCE, Firefox & library sistem..."
 apt-get install -y \
     xfce4 xfce4-panel xfwm4 xfce4-settings xfce4-terminal \
     yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
     libgtk-3-dev gcc pkg-config xdotool scrot python3-gi \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
-    firefox thunar-archive-plugin file-roller
+    firefox thunar-archive-plugin file-roller \
+    adb wmctrl jq terminator mousepad pavucontrol onboard
 
 # Bersihkan browser berat seperti Chromium jika ada
 apt-get purge -y chromium chromium-common 2>/dev/null || true
@@ -44,7 +45,7 @@ update-alternatives --set x-www-browser /usr/bin/firefox 2>/dev/null || true
 update-alternatives --set gnome-www-browser /usr/bin/firefox 2>/dev/null || true
 
 # 3. Pasang wallpaper & icon resmi
-echo "[3/9] Memasang wallpaper dan tema icon Ubuntu..."
+echo "[3/10] Memasang wallpaper dan tema icon Ubuntu..."
 mkdir -p /usr/share/backgrounds
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
@@ -57,7 +58,7 @@ gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
 gtk-update-icon-cache -f /usr/share/icons/Yaru 2>/dev/null || true
 
 # 4. Pasang konfigurasi XFCE, GTK, Panel, dan Launchers
-echo "[4/9] Mengonfigurasi panel dock, window manager & GTK..."
+echo "[4/10] Mengonfigurasi panel dock, window manager & GTK..."
 mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /root/.config/xfce4/panel
 mkdir -p /root/.config/gtk-3.0
@@ -66,7 +67,6 @@ mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /etc/xdg/autostart
 
 cp "$SCRIPT_DIR/configs/ubroid-about.desktop" /usr/share/applications/ 2>/dev/null || true
-
 cp "$SCRIPT_DIR/configs/xfce4-panel.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
 cp "$SCRIPT_DIR/configs/xfwm4.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
 cp "$SCRIPT_DIR/configs/xsettings.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
@@ -89,18 +89,25 @@ rm -rf /root/.config/xfce4/panel/launcher-*
 cp -r "$SCRIPT_DIR/configs/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
 
 # 5. Pasang autostart daemons
-echo "[5/9] Memasang layanan autostart..."
+echo "[5/10] Memasang layanan autostart..."
 cp "$SCRIPT_DIR/configs/autostart/"* /root/.config/autostart/ 2>/dev/null || true
 cp "$SCRIPT_DIR/configs/autostart/"* /etc/xdg/autostart/ 2>/dev/null || true
 
 # 6. Pasang script executables ke /usr/local/bin
-echo "[6/9] Memasang daemons status bar & utilitas UbRoid..."
+echo "[6/10] Memasang daemons status bar, tools dock, & utilitas UbRoid..."
 mkdir -p /usr/local/bin
 cp "$SCRIPT_DIR/bin/"* /usr/local/bin/ 2>/dev/null || true
 chmod +x /usr/local/bin/* 2>/dev/null || true
 
-# 7. Kompilasi libnogap.so (Native C Interceptor)
-echo "[7/9] Mengompilasi libnogap.so (Native C Interceptor)..."
+# 7. Konfigurasi Antigravity CLI (AGY) Turbo Mode
+echo "[7/10] Menyiapkan Antigravity CLI (agy) Turbo Mode..."
+mkdir -p /root/.gemini/antigravity-cli /root/.local/bin
+if [ -f "$SCRIPT_DIR/configs/antigravity/settings.json" ]; then
+    cp "$SCRIPT_DIR/configs/antigravity/settings.json" /root/.gemini/antigravity-cli/settings.json
+fi
+
+# 8. Kompilasi libnogap.so (Native C Interceptor)
+echo "[8/10] Mengompilasi libnogap.so (Native C Interceptor)..."
 mkdir -p /usr/local/src /usr/local/lib
 cp "$SCRIPT_DIR/src/libnogap.c" /usr/local/src/libnogap.c
 gcc -O2 -shared -fPIC /usr/local/src/libnogap.c -o /usr/local/lib/libnogap.so $(pkg-config --cflags --libs gtk+-3.0) 2>/dev/null || true
@@ -118,15 +125,15 @@ WRAPPER_EOF
     chmod +x /usr/bin/xfce4-panel
 fi
 
-# 8. Pasang start desktop script & shutdown script
-echo "[8/9] Menyiapkan start_desktop.sh & shutdown-ubuntu..."
+# 9. Pasang start desktop script & shutdown script
+echo "[9/10] Menyiapkan start_desktop.sh & shutdown-ubuntu..."
 cp "$SCRIPT_DIR/scripts/start_desktop.sh" /root/start_desktop.sh
 chmod +x /root/start_desktop.sh
 cp "$SCRIPT_DIR/scripts/shutdown_ubuntu.sh" /usr/local/bin/shutdown-ubuntu 2>/dev/null || true
 chmod +x /usr/local/bin/shutdown-ubuntu 2>/dev/null || true
 
-# 9. Pasang DetronicsID Welcome Banner & bashrc
-echo "[9/9] Mengonfigurasi terminal & DetronicsID Welcome Banner..."
+# 10. Pasang DetronicsID Welcome Banner & bashrc
+echo "[10/10] Mengonfigurasi terminal & DetronicsID Welcome Banner..."
 if [ -f "$SCRIPT_DIR/configs/bash/ubuntu_bashrc" ]; then
     cp "$SCRIPT_DIR/configs/bash/ubuntu_bashrc" /root/.bashrc
 fi

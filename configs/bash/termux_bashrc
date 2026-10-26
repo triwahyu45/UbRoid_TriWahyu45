@@ -1,16 +1,43 @@
-# ~/.bashrc for Termux
+# ~/.bashrc for Termux on Android
 DEV_NAME=$(getprop ro.product.marketname 2>/dev/null)
 [ -z "$DEV_NAME" ] && DEV_NAME=$(getprop ro.product.model 2>/dev/null)
 [ -z "$DEV_NAME" ] && DEV_NAME="Android Device"
 
 export PS1='\[\033[1;32m\]termux@android\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '
-alias ubuntu="bash ~/launch_ubuntu.sh"
-alias u="bash ~/launch_ubuntu.sh"
-alias ubuntu-cli="proot-distro login ubuntu"
-alias uc="proot-distro login ubuntu"
+
+# Smart container resolver (ubuntu or ubuntu:24.04)
+_get_ubroid_container() {
+    if proot-distro list 2>/dev/null | grep -q "^ubuntu\b.*installed"; then
+        echo "ubuntu"
+    elif proot-distro list 2>/dev/null | grep -q "ubuntu:24.04.*installed"; then
+        echo "ubuntu:24.04"
+    else
+        echo "ubuntu"
+    fi
+}
+
+# 1-Tap Launcher Functions
+ubuntu() {
+    bash ~/launch_ubuntu.sh "$@"
+}
+alias u="ubuntu"
+
+ubuntu-cli() {
+    local c
+    c=$(_get_ubroid_container)
+    proot-distro login "$c" "$@"
+}
+alias uc="ubuntu-cli"
+
+# Antigravity CLI (AGY) Turbo Mode from Termux
+agy() {
+    local c
+    c=$(_get_ubroid_container)
+    proot-distro login "$c" -- agy "$@"
+}
+
 alias wifi-scan="termux-wifi-scaninfo"
 alias wifi-info="termux-wifi-connectioninfo"
-alias agy="proot-distro login ubuntu -- agy"
 
 clear
 # --- DETRONICS ID TERMINAL WELCOME BANNER (Ubuntu Style) ---
@@ -29,7 +56,7 @@ echo -e " * UbRoid:         \033[1;38;2;233;84;32mAuthentic Ubuntu Desktop Envir
 echo -e " * DetronicsID:    \033[1;32mEmbedded & Robotics Linux Environment\033[0m"
 echo -e " * Masuk Desktop:  Ketik \033[1;32mubuntu\033[0m atau \033[1;32mu\033[0m lalu tekan Enter"
 echo -e " * Terminal PRoot: Ketik \033[1;32muc\033[0m atau \033[1;32mubuntu-cli\033[0m"
-echo -e " * Antigravity:    Ketik \033[1;32magy\033[0m untuk jalankan AI Assistant"
+echo -e " * Antigravity:    Ketik \033[1;32magy\033[0m untuk jalankan AI Assistant (Turbo Mode)"
 echo -e " * Fitur Jaringan: \033[1;33mwifi-scan\033[0m | \033[1;33mwifi-info\033[0m"
 echo -e " * Info & About:   \033[1;34mhttps://github.com/triwahyu45/UbRoid_TriWahyu45\033[0m"
 echo ""
