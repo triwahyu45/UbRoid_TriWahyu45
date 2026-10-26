@@ -229,6 +229,29 @@ Selain membekukan aplikasi, eksperimen ADB pada UbRoid juga melakukan:
 
 ---
 
+## 🗑️ Cara Rollback & Uninstall Bersih (1-Command Uninstaller)
+
+Jika suatu saat Anda ingin menghapus UbRoid sepenuhnya dari perangkat Android Anda dan mengembalikan semua setelan ke kondisi awal:
+
+Cukup jalankan **satu perintah** ini di aplikasi **Termux**:
+
+```bash
+curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/uninstall.sh | bash
+```
+
+*Atau jika repository masih ada di Termux:*
+```bash
+bash ~/UbRoid_TriWahyu45/uninstall.sh
+```
+
+### Yang dilakukan oleh skrip rollback ini secara otomatis:
+1. **Mematikan Seluruh Sesi**: Menghentikan proses `termux-x11`, `pulseaudio`, `proot`, daemon, dan socket X11.
+2. **Pemulihan Android Penuh (ADB Rollback)**: Meng-unsuspend semua aplikasi Android yang dibekukan (`pm unsuspend --user 0`), mengembalikan warna icon normal di homescreen, mematikan DND, serta memunculkan kembali garis navigasi Android.
+3. **Menghapus Container PRoot**: Menghapus container Ubuntu dari `proot-distro` hingga bersih dan membebaskan penyimpanan internal (~3 s/d 5 GB).
+4. **Membersihkan File Termux**: Menghapus script peluncur `~/launch_ubuntu.sh`, folder repository `~/UbRoid_TriWahyu45`, serta mengembalikan file `~/.bashrc` Termux ke setelan bawaan.
+
+---
+
 ## 👨‍💻 Author & Pengembang
 
 Dikembangkan dan dirawat dengan teliti oleh:
