@@ -84,8 +84,10 @@ UbRoid_TriWahyu45/
 
 ## 🚀 Cara Instalasi Cepat (Otomatis 1 Baris)
 
-### Langkah 1: Jalankan Script Master Installer di Termux
-Cukup buka aplikasi **Termux**, salin dan tempel **satu perintah** berikut:
+> [!TIP]
+> **Cara Cepat Menyalin:** Di GitHub, arahkan kursor atau tap pada kotak hitam di bawah, lalu klik icon **📋 (Copy)** di pojok kanan atas kotak perintah untuk menyalin secara instan.
+
+Buka aplikasi **Termux**, lalu tempel (*paste*) perintah berikut:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/ubroid.sh | bash
@@ -93,9 +95,7 @@ curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/ubr
 
 *Atau jika ingin meng-clone repositori terlebih dahulu:*
 ```bash
-git clone https://github.com/triwahyu45/UbRoid_TriWahyu45.git
-cd UbRoid_TriWahyu45
-bash ubroid.sh
+git clone https://github.com/triwahyu45/UbRoid_TriWahyu45.git && cd UbRoid_TriWahyu45 && bash ubroid.sh
 ```
 
 Script akan otomatis:
@@ -240,7 +240,8 @@ Selain membekukan aplikasi, eksperimen ADB pada UbRoid juga melakukan:
 
 ## 🗑️ Cara Rollback & Uninstall Bersih (1-Command Uninstaller)
 
-Jika suatu saat Anda ingin menghapus UbRoid sepenuhnya dari perangkat Android Anda dan mengembalikan semua setelan ke kondisi awal:
+> [!TIP]
+> **Salin Instan:** Klik icon **📋 (Copy)** di pojok kanan atas kotak kode di bawah ini:
 
 Cukup jalankan **satu perintah** ini di aplikasi **Termux**:
 
