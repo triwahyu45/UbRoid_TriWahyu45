@@ -203,9 +203,13 @@ echo -e "${CYAN}[6/7] Menjalankan instalasi Desktop Environment di dalam Ubuntu 
 TMPDIR=/data/data/com.termux/files/usr/tmp
 mkdir -p "$TMPDIR/.X11-unix"
 cat << "RESOLV" > "$TMPDIR/resolv.conf"
-nameserver 1.1.1.1
 nameserver 8.8.8.8
+nameserver 1.1.1.1
+nameserver 8.8.4.4
+nameserver 9.9.9.9
 RESOLV
+ANDROID_DNS="$(getprop net.dns1 2>/dev/null)"
+[ -n "$ANDROID_DNS" ] && sed -i "1s/^/nameserver $ANDROID_DNS\n/" "$TMPDIR/resolv.conf"
 
 PROOT_BINDS=()
 [ -d "$TMPDIR/.X11-unix" ] && PROOT_BINDS+=(--bind "$TMPDIR/.X11-unix:/tmp/.X11-unix")

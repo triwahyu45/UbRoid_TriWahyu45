@@ -9,32 +9,107 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ==============================================================================
+# Auto Bug / Crash Reporter Trap
+# ==============================================================================
+report_install_error() {
+    local exit_code=$?
+    local failed_line=$1
+    local failed_cmd=$2
+
+    echo -e "\n\033[0;31m[!] TERJADI KESALAHAN PADA INSTALASI UBROID!\033[0m"
+    echo -e "\033[0;33m[*] Baris: $failed_line | Perintah: $failed_cmd | Exit Code: $exit_code\033[0m"
+
+    # Jalankan report-bug jika tersedia
+    if command -v report-bug >/dev/null 2>&1; then
+        report-bug "Install failed on line $failed_line: $failed_cmd (exit code: $exit_code)" 2>/dev/null || true
+    fi
+}
+trap 'report_install_error $LINENO "$BASH_COMMAND"' ERR
+
 echo "=== MEMASANG / MEMPERBARUI UBROID DESKTOP ENVIRONMENT ==="
 
 export DEBIAN_FRONTEND=noninteractive
 
-# 1. Pastikan PPA Firefox resmi disiapkan (bukan dummy snap)
-echo "[1/10] Mengonfigurasi repository & Firefox PPA..."
+# 1. Pastikan DNS resolver aktif di PRoot (Anti-Fail DNS)
+echo "[1/10] Memeriksa & memperbaiki konfigurasi DNS dan repository..."
+if [ ! -f /etc/resolv.conf ] || grep -q "127.0.0.53" /etc/resolv.conf 2>/dev/null || [ ! -s /etc/resolv.conf ]; then
+    rm -f /etc/resolv.conf
+    cat << 'EOF' > /etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+nameserver 8.8.4.4
+nameserver 9.9.9.9
+EOF
+fi
+
+# 2. Deteksi Arsitektur & Codename Ubuntu (Noble/Jammy, Ports vs Archive)
+ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
+case "$ARCH" in
+    aarch64|arm64) UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/" ;;
+    armhf|armv7l)  UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/" ;;
+    riscv64)       UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/" ;;
+    *)             UBUNTU_MIRROR="http://archive.ubuntu.com/ubuntu/" ;;
+esac
+
+CODENAME="$(grep VERSION_CODENAME /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')"
+[ -z "$CODENAME" ] && CODENAME="noble"
+
+# Aktifkan seluruh komponen resmi: main, universe, restricted, multiverse
+if [ -d /etc/apt/sources.list.d ]; then
+    cat << EOF > /etc/apt/sources.list.d/ubuntu.sources
+Types: deb
+URIs: ${UBUNTU_MIRROR}
+Suites: ${CODENAME} ${CODENAME}-updates ${CODENAME}-backports
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: ${UBUNTU_MIRROR}
+Suites: ${CODENAME}-security
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+fi
+
+cat << EOF > /etc/apt/sources.list
+deb ${UBUNTU_MIRROR} ${CODENAME} main restricted universe multiverse
+deb ${UBUNTU_MIRROR} ${CODENAME}-updates main restricted universe multiverse
+deb ${UBUNTU_MIRROR} ${CODENAME}-backports main restricted universe multiverse
+deb ${UBUNTU_MIRROR} ${CODENAME}-security main restricted universe multiverse
+EOF
+
+# Bersihkan sisa lock jika ada proses instalasi sebelumnya yang terinterupsi
+rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* 2>/dev/null || true
+
+# Update repository
+apt-get update -y || apt-get update --fix-missing -y || true
+
+# Pasang dependensi esensial (ca-certificates, gnupg, curl, software-properties-common)
+apt-get install -y --no-install-recommends ca-certificates gnupg curl || true
+apt-get install -y software-properties-common || apt-get install -y --fix-missing software-properties-common || true
+
+# Konfigurasi PPA Firefox resmi
 cat << 'EOF' > /etc/apt/preferences.d/mozilla-firefox
 Package: *
 Pin: release o=LP-PPA-mozillateam
 Pin-Priority: 1001
 EOF
 
-apt-get update -y
-apt-get install -y software-properties-common
-add-apt-repository -y -P mozillateam/ppa 2>/dev/null || true
-apt-get update -y
+if command -v add-apt-repository >/dev/null 2>&1; then
+    add-apt-repository -y -P mozillateam/ppa 2>/dev/null || add-apt-repository -y ppa:mozillateam/ppa 2>/dev/null || true
+fi
+apt-get update -y || true
 
 # 2. Pastikan seluruh dependencies desktop dan utilitas terpasang
 echo "[2/10] Memasang paket desktop XFCE, Firefox & library sistem..."
-apt-get install -y \
+apt-get install -y --fix-missing \
     xfce4 xfce4-panel xfwm4 xfce4-settings xfce4-terminal \
     yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
     libgtk-3-dev gcc pkg-config xdotool scrot python3-gi \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
     firefox thunar-archive-plugin file-roller ristretto \
-    adb wmctrl jq terminator mousepad pavucontrol onboard
+    adb wmctrl jq terminator mousepad pavucontrol onboard || apt-get install -f -y
 
 # Bersihkan browser berat seperti Chromium jika ada
 apt-get purge -y chromium chromium-common 2>/dev/null || true

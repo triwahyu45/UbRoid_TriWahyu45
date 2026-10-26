@@ -124,11 +124,15 @@ done
 # 8. Munculkan Termux-X11 ke layar
 /system/bin/am broadcast --user 0 -a com.termux.x11.CmdEntryPoint.ACTION_START -p com.termux.x11 2>/dev/null
 
-# 9. Pastikan DNS resolver disiapkan
+# 9. Pastikan DNS resolver disiapkan (Multi-resolver + Android DNS)
 cat << "RESOLV" > $TMPDIR/resolv.conf
-nameserver 1.1.1.1
 nameserver 8.8.8.8
+nameserver 1.1.1.1
+nameserver 8.8.4.4
+nameserver 9.9.9.9
 RESOLV
+ANDROID_DNS="$(getprop net.dns1 2>/dev/null)"
+[ -n "$ANDROID_DNS" ] && sed -i "1s/^/nameserver $ANDROID_DNS\n/" "$TMPDIR/resolv.conf"
 
 # 10. Siapkan Binding Direktori yang Aman & Fleksibel (Anti-Crash jika /sdcard tidak ada)
 PROOT_BINDS=()
