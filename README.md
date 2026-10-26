@@ -156,10 +156,10 @@ bash ~/UbRoid_TriWahyu45/scripts/setup_ubroid.sh
 
 ## ⚙️ Tweak & Tips Penggunaan
 
-### 1. Mengubah Skala Layar (Display Scale)
-Secara default, skala disetel ke **1.75x (`displayScale 175`)** yang sangat pas untuk layar tablet resolusi 2K (seperti Redmi Pad 2, Mi Pad, Samsung Tab). Jika Anda ingin mengubahnya:
+### 1. Skala Layar Otomatis & Manual (Display Scale)
+Secara default, UbRoid mendeteksi nilai densitas layar Android secara otomatis melalui rumus `SCALE = (DENSITY * 100) / 160`. Nilai ini menghasilkan tampilan proporsional (misal 225% pada Redmi Pad 2, 275% pada Poco F6). Jika Anda ingin mengubah skala secara manual:
 - Buka file `~/launch_ubuntu.sh` di Termux.
-- Ubah baris `--es displayScale 175` menjadi nilai yang diinginkan (misal `150` untuk 1.5x atau `200` untuk 2.0x).
+- Ubah baris `--es displayScale $SCALE` menjadi angka manual (misal `175` untuk 1.75x atau `200` untuk 2.0x).
 - Di dalam Ubuntu, Anda juga dapat menyetel DPI di file `/root/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml` pada properti `DPI`.
 
 ### 2. Mematikan Sesi Secara Bersih
@@ -184,6 +184,31 @@ Untuk melihat spesifikasi sistem, model perangkat yang terdeteksi, memori, dan r
 - Klik tombol **ℹ** di sudut kanan atas panel **Pengaturan Cepat** (`ubuntu-control-center`), atau
 - Buka aplikasi **Tentang UbRoid** dari Launchpad aplikasi, atau
 - Ketik perintah `about` atau `dialog-about` di terminal Ubuntu.
+
+### 6. 🔬 Hasil Eksperimen ADB & Dedicated Linux OS Mode (Kenapa Aplikasi Android Jadi Abu-abu / Greyscale?)
+
+Salah satu fitur paling mutakhir pada UbRoid adalah script **`linux-os-mode`** yang memanfaatkan koneksi **ADB Local Loopback (127.0.0.1:5555 / Wireless Debugging)** untuk mengubah perangkat Android menjadi host workstation Linux murni.
+
+#### A. Mekanisme "Freeze / Greyscale" Aplikasi Android (`pm suspend`):
+Saat sesi desktop Ubuntu dimulai (`linux-os-mode enter`):
+1. **Pembekuan Aplikasi Pihak Ketiga (3rd Party Apps):**
+   * Script menjalankan perintah `pm suspend --user 0 <nama_paket>` pada seluruh aplikasi non-sistem Android.
+   * **Mengapa icon aplikasi Android di homescreen berubah menjadi abu-abu (greyscale)?**
+     Ini adalah perilaku resmi sistem Android (HyperOS, MIUI, AOSP) untuk menandai bahwa aplikasi sedang dalam status **`SUSPENDED` (Dibekukan)**.
+   * **Manfaat Luar Biasa Saat Suspended:**
+     * Aplikasi pihak ketiga sama sekali **tidak dapat berjalan di latar belakang** (background service & wake lock dinonaktifkan).
+     * RAM sebesar **1.5 GB s/d 2.5 GB berhasil dibebaskan** secara instan untuk kebutuhan Ubuntu Desktop & multitasking browser.
+     * Konsumsi baterai dan suhu prosesor (CPU/SoC) jauh lebih dingin karena tidak ada aplikasi Android yang mencuri resource di latar belakang.
+2. **Pemulihan Otomatis Saat Selesai (`linux-os-mode exit`):**
+   * Begitu sesi Ubuntu dimatikan (melalui menu shutdown panel atau perintah `shutdown-ubuntu`), script secara otomatis menjalankan `pm unsuspend --user 0` pada semua aplikasi.
+   * Icon aplikasi di homescreen Android akan **kembali berwarna normal**, notifikasi berjalan kembali, dan aplikasi dapat dibuka seperti sedia kala tanpa kehilangan data apa pun.
+
+#### B. Optimalisasi Sistem Lainnya via ADB:
+Selain membekukan aplikasi, eksperimen ADB pada UbRoid juga melakukan:
+- **`settings put global hide_gesture_line 1`**: Menghilangkan garis putih navigasi bawah Android agar tidak menumpuk dengan dock Ubuntu.
+- **`cmd notification set_dnd on` & `heads_up_notifications_enabled 0`**: Memblokir pop-up notifikasi melayang yang sering menutupi panel status bar atas Ubuntu saat mengetik atau browsing.
+- **`device_config put activity_manager max_cached_processes 8`**: Mengurangi alokasi proses cache Android agar prioritas RAM 100% diberikan ke proses Linux PRoot (XFCE, Firefox, GCC).
+- **`cmd power set-fixed-performance-mode-enabled true`**: Mengunci CPU governor agar tidak terjadi throttling saat compile kode atau browsing berat.
 
 ---
 

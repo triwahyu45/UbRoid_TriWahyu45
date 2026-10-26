@@ -77,7 +77,7 @@ class UbRoidAboutDialog(Gtk.Window):
             ("📊 Resolusi Layar", f"<b>{res_w} x {res_h} px</b> (DPI {density})"),
             ("🧠 Alokasi Memori", f"<b>{ram_info}</b>"),
             ("🛡️ Integrasi", "<b>PRoot Linux + Termux-X11</b>"),
-            ("🚀 Optimasi", "<b>Anti-LMK Guardian & Dynamic Scale</b>"),
+            ("⚡ Dedicated Mode", "<b>ADB App Suspend (Anti-Lag)</b>"),
             ("👨‍💻 Pengembang", "<b>Tri Wahyu Handoyo (DetronicsID)</b>"),
         ]
 
