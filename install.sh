@@ -109,7 +109,8 @@ apt-get install -y --fix-missing \
     libgtk-3-dev gcc pkg-config xdotool scrot python3-gi \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
     firefox thunar-archive-plugin file-roller ristretto \
-    adb wmctrl jq terminator mousepad pavucontrol onboard || apt-get install -f -y
+    adb wmctrl jq terminator mousepad pavucontrol onboard \
+    xclip xsel wl-clipboard || apt-get install -f -y
 
 # Bersihkan browser berat seperti Chromium jika ada
 apt-get purge -y chromium chromium-common 2>/dev/null || true
