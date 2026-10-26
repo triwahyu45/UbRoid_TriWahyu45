@@ -42,13 +42,17 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
 
-# Konfigurasi retry dan timeout APT agar tahan gangguan jaringan / VPN
+# Konfigurasi retry, timeout & non-interactive dpkg options
 mkdir -p /etc/apt/apt.conf.d
 cat << 'EOF' > /etc/apt/apt.conf.d/99ubroid-network
 Acquire::Retries "5";
 Acquire::http::Timeout "30";
 Acquire::https::Timeout "30";
 Acquire::Queue-Mode "host";
+Dpkg::Options {
+   "--force-confdef";
+   "--force-confold";
+};
 EOF
 
 # 2. Deteksi Arsitektur & Mirror Tercepat (Anti-Lag Mirror Auto-Select)

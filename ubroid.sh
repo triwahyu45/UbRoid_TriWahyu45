@@ -127,7 +127,7 @@ touch "$HOME/.hushlogin"
 
 echo -e "${CYAN}[1/7] Menyiapkan environment Termux & dependensi dasar...${NC}"
 pkg update -y
-pkg install -y proot-distro x11-repo pulseaudio wget git tar bc python
+pkg install -y proot-distro x11-repo termux-x11-nightly pulseaudio wget git tar bc python
 
 # Pastikan permission external app diizinkan untuk launcher APK
 mkdir -p "$HOME/.termux"

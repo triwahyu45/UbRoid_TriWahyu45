@@ -7,6 +7,7 @@
 
 export PATH=/data/data/com.termux/files/usr/bin:$PATH
 export TMPDIR=/data/data/com.termux/files/usr/tmp
+mkdir -p "$TMPDIR"
 
 # 1. Deteksi container Ubuntu (ubuntu atau ubuntu:24.04)
 UBUNTU_CONTAINER="ubuntu"
