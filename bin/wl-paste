@@ -1,0 +1,16 @@
+#!/bin/bash
+# Smart Clipboard Bridge for UbRoid (X11 / Wayland / Termux-API)
+
+if [ -n "$WAYLAND_DISPLAY" ] && [ -x /usr/bin/wl-paste ]; then
+    exec /usr/bin/wl-paste "$@"
+fi
+
+if [ -x /data/data/com.termux/files/usr/bin/termux-clipboard-get ]; then
+    exec /data/data/com.termux/files/usr/bin/termux-clipboard-get
+elif command -v termux-clipboard-get >/dev/null 2>&1; then
+    exec termux-clipboard-get
+fi
+
+if [ -x /usr/bin/wl-paste ]; then
+    exec /usr/bin/wl-paste "$@"
+fi

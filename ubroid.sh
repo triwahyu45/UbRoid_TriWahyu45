@@ -160,10 +160,11 @@ echo -e "${CYAN}[3/7] Menyiapkan rootfs resmi Ubuntu 24.04 LTS (Noble Numbat)...
 UBUNTU_CONTAINER="ubuntu"
 
 # Periksa apakah sudah ada container ubuntu atau ubuntu:24.04 terpasang
-if proot-distro list 2>/dev/null | grep -q "^ubuntu\b.*installed"; then
+PROOT_ROOTFS_DIR="/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs"
+if [ -d "$PROOT_ROOTFS_DIR/ubuntu" ] || proot-distro list 2>/dev/null | grep -A2 "ubuntu" | grep -qi "installed"; then
     UBUNTU_CONTAINER="ubuntu"
     echo -e "${GREEN}✓ Container 'ubuntu' sudah terpasang.${NC}"
-elif proot-distro list 2>/dev/null | grep -q "ubuntu:24.04.*installed"; then
+elif [ -d "$PROOT_ROOTFS_DIR/ubuntu:24.04" ] || proot-distro list 2>/dev/null | grep -A2 "ubuntu:24.04" | grep -qi "installed"; then
     UBUNTU_CONTAINER="ubuntu:24.04"
     echo -e "${GREEN}✓ Container 'ubuntu:24.04' sudah terpasang.${NC}"
 else

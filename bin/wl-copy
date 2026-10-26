@@ -1,0 +1,16 @@
+#!/bin/bash
+# Smart Clipboard Bridge for UbRoid (wl-copy)
+
+if [ -n "$WAYLAND_DISPLAY" ] && [ -x /usr/bin/wl-copy ]; then
+    exec /usr/bin/wl-copy "$@"
+fi
+
+if [ -x /data/data/com.termux/files/usr/bin/termux-clipboard-set ]; then
+    exec /data/data/com.termux/files/usr/bin/termux-clipboard-set "$@"
+elif command -v termux-clipboard-set >/dev/null 2>&1; then
+    exec termux-clipboard-set "$@"
+fi
+
+if [ -x /usr/bin/wl-copy ]; then
+    exec /usr/bin/wl-copy "$@"
+fi

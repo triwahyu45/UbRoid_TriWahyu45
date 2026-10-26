@@ -1,0 +1,27 @@
+#!/bin/bash
+# Smart Clipboard Bridge for UbRoid (xclip)
+
+is_paste=0
+for arg in "$@"; do
+    case "$arg" in
+        -o|-out) is_paste=1 ;;
+    esac
+done
+
+if [ -n "$DISPLAY" ] && [ -x /usr/bin/xclip ]; then
+    /usr/bin/xclip "$@" 2>/dev/null && exit 0
+fi
+
+if [ "$is_paste" -eq 1 ]; then
+    if [ -x /data/data/com.termux/files/usr/bin/termux-clipboard-get ]; then
+        exec /data/data/com.termux/files/usr/bin/termux-clipboard-get
+    elif command -v termux-clipboard-get >/dev/null 2>&1; then
+        exec termux-clipboard-get
+    fi
+else
+    if [ -x /data/data/com.termux/files/usr/bin/termux-clipboard-set ]; then
+        exec /data/data/com.termux/files/usr/bin/termux-clipboard-set
+    elif command -v termux-clipboard-set >/dev/null 2>&1; then
+        exec termux-clipboard-set
+    fi
+fi
