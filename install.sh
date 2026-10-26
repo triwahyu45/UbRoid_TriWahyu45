@@ -33,16 +33,14 @@ export DEBIAN_FRONTEND=noninteractive
 
 # 1. Pastikan DNS resolver aktif di PRoot (Anti-Fail DNS)
 echo "[1/10] Memeriksa & memperbaiki konfigurasi DNS dan repository..."
-if [ ! -f /etc/resolv.conf ] || grep -q "127.0.0.53" /etc/resolv.conf 2>/dev/null || [ ! -s /etc/resolv.conf ]; then
-    rm -f /etc/resolv.conf
-    cat << 'EOF' > /etc/resolv.conf
+rm -f /etc/resolv.conf 2>/dev/null || true
+cat << 'EOF' > /etc/resolv.conf
 nameserver 100.100.100.100
 nameserver 10.11.12.57
 nameserver 10.100.1.3
 nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
-fi
 
 # Konfigurasi retry dan timeout APT agar tahan gangguan jaringan / VPN
 mkdir -p /etc/apt/apt.conf.d
