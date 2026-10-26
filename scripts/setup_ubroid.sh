@@ -202,14 +202,23 @@ echo -e "${GREEN}✓ Script ~/launch_ubuntu.sh siap dengan kalkulasi DPI dinamis
 echo -e "${CYAN}[6/7] Menjalankan instalasi Desktop Environment di dalam Ubuntu PRoot...${NC}"
 TMPDIR=/data/data/com.termux/files/usr/tmp
 mkdir -p "$TMPDIR/.X11-unix"
-cat << "RESOLV" > "$TMPDIR/resolv.conf"
-nameserver 8.8.8.8
-nameserver 1.1.1.1
-nameserver 8.8.4.4
-nameserver 9.9.9.9
-RESOLV
-ANDROID_DNS="$(getprop net.dns1 2>/dev/null)"
-[ -n "$ANDROID_DNS" ] && sed -i "1s/^/nameserver $ANDROID_DNS\n/" "$TMPDIR/resolv.conf"
+
+# Siapkan DNS multi-tier (Android Network DNS + Gateway + Fallback Public DNS)
+DNS_LIST=()
+for prop in net.dns1 net.dns2 net.dns3 net.dns4 net.wlan0.dns1 net.wlan0.dns2 net.rmnet_data0.dns1; do
+    d=$(getprop "$prop" 2>/dev/null)
+    [ -n "$d" ] && DNS_LIST+=("$d")
+done
+GW=$(ip route show 2>/dev/null | awk '/default/ {print $3}' | head -n1)
+[ -n "$GW" ] && DNS_LIST+=("$GW")
+DNS_LIST+=("8.8.8.8" "1.1.1.1" "8.8.4.4" "9.9.9.9")
+
+> "$TMPDIR/resolv.conf"
+for d in "${DNS_LIST[@]}"; do
+    if ! grep -q "nameserver $d" "$TMPDIR/resolv.conf" 2>/dev/null; then
+        echo "nameserver $d" >> "$TMPDIR/resolv.conf"
+    fi
+done
 
 PROOT_BINDS=()
 [ -d "$TMPDIR/.X11-unix" ] && PROOT_BINDS+=(--bind "$TMPDIR/.X11-unix:/tmp/.X11-unix")
@@ -228,11 +237,7 @@ elif [ -d "$HOME/storage/shared" ] && [ -r "$HOME/storage/shared" ]; then
 fi
 
 if [ -n "$STORAGE_TARGET" ]; then
-    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/sdcard")
     PROOT_BINDS+=(--bind "$STORAGE_TARGET:/root/Android_Storage")
-fi
-if [ -d "/storage/emulated/0" ] && [ -r "/storage/emulated/0" ]; then
-    PROOT_BINDS+=(--bind "/storage/emulated/0:/storage/emulated/0")
 fi
 
 proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- bash /root/UbRoid_TriWahyu45/install.sh
