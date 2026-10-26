@@ -132,6 +132,11 @@ for prop in net.dns1 net.dns2 net.dns3 net.dns4 net.wlan0.dns1 net.wlan0.dns2 ne
 done
 GW=$(ip route show 2>/dev/null | awk '/default/ {print $3}' | head -n1)
 [ -n "$GW" ] && DNS_LIST+=("$GW")
+# Prioritaskan Tailscale MagicDNS dan DNS internal eduroam/Android
+DNS_LIST+=("100.100.100.100")
+for d in $(/system/bin/dumpsys connectivity 2>/dev/null | grep -o 'DnsAddresses: \[ [^]]* \]' | tr -d '[]/' | tr ',' ' '); do
+    [ "$d" != "DnsAddresses:" ] && DNS_LIST+=("$d")
+done
 DNS_LIST+=("8.8.8.8" "1.1.1.1" "8.8.4.4" "9.9.9.9")
 
 > "$TMPDIR/resolv.conf"
