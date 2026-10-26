@@ -159,26 +159,27 @@ fi
 echo -e "${CYAN}[3/7] Menyiapkan rootfs resmi Ubuntu 24.04 LTS (Noble Numbat)...${NC}"
 UBUNTU_CONTAINER="ubuntu"
 
-# Periksa apakah sudah ada container ubuntu atau ubuntu:24.04 terpasang
-PROOT_ROOTFS_DIR="/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs"
-if [ -d "$PROOT_ROOTFS_DIR/ubuntu" ] || proot-distro list 2>/dev/null | grep -A2 "ubuntu" | grep -qi "installed"; then
+# Periksa apakah container ubuntu sudah ada (kompatibel proot-distro v4 & v5)
+is_ubuntu_present() {
+    [ -d "/data/data/com.termux/files/usr/var/lib/proot-distro/containers/ubuntu" ] && return 0
+    [ -d "$HOME/.local/share/proot-distro/containers/ubuntu" ] && return 0
+    [ -d "/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu" ] && return 0
+    proot-distro login ubuntu -- /bin/true >/dev/null 2>&1 && return 0
+    return 1
+}
+
+if is_ubuntu_present; then
     UBUNTU_CONTAINER="ubuntu"
     echo -e "${GREEN}✓ Container 'ubuntu' sudah terpasang.${NC}"
-elif [ -d "$PROOT_ROOTFS_DIR/ubuntu:24.04" ] || proot-distro list 2>/dev/null | grep -A2 "ubuntu:24.04" | grep -qi "installed"; then
-    UBUNTU_CONTAINER="ubuntu:24.04"
-    echo -e "${GREEN}✓ Container 'ubuntu:24.04' sudah terpasang.${NC}"
 else
     echo "Mengunduh & memasang Ubuntu 24.04 LTS (Noble Numbat) via proot-distro..."
-    # Kunci secara spesifik ke Ubuntu 24.04 LTS Noble Numbat
-    if proot-distro install ubuntu:24.04 --name ubuntu 2>/dev/null; then
-        UBUNTU_CONTAINER="ubuntu"
-    elif proot-distro install ubuntu:24.04 2>/dev/null; then
-        UBUNTU_CONTAINER="ubuntu"
-    elif proot-distro install ubuntu 2>/dev/null; then
-        UBUNTU_CONTAINER="ubuntu"
-    else
-        echo -e "${RED}[!] Gagal memasang rootfs Ubuntu via proot-distro.${NC}"
-        exit 1
+    # Jangan sembunyikan output agar user dapat melihat progress bar resmi
+    if ! proot-distro install ubuntu:24.04 --name ubuntu; then
+        echo -e "${YELLOW}[*] Mencoba instalasi dengan nama 'ubuntu'...${NC}"
+        if ! proot-distro install ubuntu; then
+            echo -e "${RED}[!] Gagal memasang rootfs Ubuntu via proot-distro.${NC}"
+            exit 1
+        fi
     fi
     echo -e "${GREEN}✓ Rootfs Ubuntu 24.04 LTS berhasil dipasang.${NC}"
 fi
