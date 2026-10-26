@@ -161,6 +161,7 @@ UBUNTU_CONTAINER="ubuntu"
 
 # Periksa apakah container ubuntu sudah ada (kompatibel proot-distro v4 & v5)
 is_ubuntu_present() {
+    proot-distro list --quiet 2>/dev/null | grep -qx "ubuntu" && return 0
     [ -d "/data/data/com.termux/files/usr/var/lib/proot-distro/containers/ubuntu" ] && return 0
     [ -d "$HOME/.local/share/proot-distro/containers/ubuntu" ] && return 0
     [ -d "/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu" ] && return 0
@@ -175,10 +176,13 @@ else
     echo "Mengunduh & memasang Ubuntu 24.04 LTS (Noble Numbat) via proot-distro..."
     # Jangan sembunyikan output agar user dapat melihat progress bar resmi
     if ! proot-distro install ubuntu:24.04 --name ubuntu; then
-        echo -e "${YELLOW}[*] Mencoba instalasi dengan nama 'ubuntu'...${NC}"
-        if ! proot-distro install ubuntu; then
-            echo -e "${RED}[!] Gagal memasang rootfs Ubuntu via proot-distro.${NC}"
-            exit 1
+        echo -e "${YELLOW}[*] Mencoba instalasi dengan 'ubuntu:24.04'...${NC}"
+        if ! proot-distro install ubuntu:24.04; then
+            echo -e "${YELLOW}[*] Mencoba instalasi dengan 'ubuntu'...${NC}"
+            if ! proot-distro install ubuntu; then
+                echo -e "${RED}[!] Gagal memasang rootfs Ubuntu via proot-distro.${NC}"
+                exit 1
+            fi
         fi
     fi
     echo -e "${GREEN}✓ Rootfs Ubuntu 24.04 LTS berhasil dipasang.${NC}"
