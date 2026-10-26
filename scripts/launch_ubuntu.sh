@@ -130,12 +130,29 @@ nameserver 1.1.1.1
 nameserver 8.8.8.8
 RESOLV
 
-# 10. Jalankan Desktop XFCE Ubuntu dengan Full Akses Android Storage & RAM Priority
-proot-distro login "$UBUNTU_CONTAINER" \
-  --bind $TMPDIR/.X11-unix:/tmp/.X11-unix \
-  --bind /data/data/com.termux/files/home:/root/termux_home \
-  --bind /sdcard:/sdcard \
-  --bind /sdcard:/root/Android_Storage \
-  --bind /storage/emulated/0:/storage/emulated/0 \
-  --bind $TMPDIR/resolv.conf:/etc/resolv.conf \
-  -- bash /root/start_desktop.sh
+# 10. Siapkan Binding Direktori yang Aman & Fleksibel (Anti-Crash jika /sdcard tidak ada)
+PROOT_BINDS=()
+[ -d "$TMPDIR/.X11-unix" ] && PROOT_BINDS+=(--bind "$TMPDIR/.X11-unix:/tmp/.X11-unix")
+[ -d "/data/data/com.termux/files/home" ] && PROOT_BINDS+=(--bind "/data/data/com.termux/files/home:/root/termux_home")
+[ -f "$TMPDIR/resolv.conf" ] && PROOT_BINDS+=(--bind "$TMPDIR/resolv.conf:/etc/resolv.conf")
+
+# Deteksi Penyimpanan Android yang Benar-Benar Ada di HP
+STORAGE_TARGET=""
+if [ -d "/sdcard" ] && [ -r "/sdcard" ]; then
+    STORAGE_TARGET="/sdcard"
+elif [ -d "/storage/emulated/0" ] && [ -r "/storage/emulated/0" ]; then
+    STORAGE_TARGET="/storage/emulated/0"
+elif [ -d "$HOME/storage/shared" ] && [ -r "$HOME/storage/shared" ]; then
+    STORAGE_TARGET="$HOME/storage/shared"
+fi
+
+if [ -n "$STORAGE_TARGET" ]; then
+    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/sdcard")
+    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/root/Android_Storage")
+fi
+if [ -d "/storage/emulated/0" ] && [ -r "/storage/emulated/0" ]; then
+    PROOT_BINDS+=(--bind "/storage/emulated/0:/storage/emulated/0")
+fi
+
+# 11. Jalankan Desktop XFCE Ubuntu dengan Dynamic Storage Binding
+proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- bash /root/start_desktop.sh

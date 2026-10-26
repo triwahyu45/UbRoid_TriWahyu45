@@ -20,6 +20,62 @@ DEV_NAME=$(getprop ro.product.marketname 2>/dev/null)
 [ -z "$DEV_NAME" ] && DEV_NAME=$(getprop ro.product.model 2>/dev/null)
 [ -z "$DEV_NAME" ] && DEV_NAME="Android Device"
 
+# Handler Laporan Error Otomatis ke GitHub Issues
+report_install_error() {
+    local exit_code=$?
+    local line_num=$1
+    local cmd="$2"
+
+    echo -e "\n${RED}==============================================================================${NC}"
+    echo -e "${RED}❌ TERJADI KESALAHAN PADA INSTALASI UBROID! (Exit Code: $exit_code)${NC}"
+    echo -e "${RED}   Gagal di baris: $line_num | Perintah: $cmd${NC}"
+    echo -e "${RED}==============================================================================${NC}"
+
+    local dev_name
+    dev_name=$(getprop ro.product.marketname 2>/dev/null || getprop ro.product.model 2>/dev/null || echo "Unknown Device")
+    local android_ver
+    android_ver=$(getprop ro.build.version.release 2>/dev/null || echo "Unknown")
+    local arch
+    arch=$(uname -m 2>/dev/null || echo "aarch64")
+
+    local issue_title="[Bug Report] Instalasi Gagal di $dev_name ($arch)"
+    local issue_body="### 📱 Informasi Perangkat & Sistem
+* **Perangkat:** $dev_name
+* **Versi Android:** $android_ver
+* **Arsitektur CPU:** $arch
+* **Gagal di Baris:** $line_num
+* **Perintah Gagal:** \`$cmd\`
+* **Kode Keluar (Exit Code):** $exit_code
+
+### 📝 Catatan / Gejala Tambahan
+Jelaskan gejala yang dialami:
+"
+
+    local log_path="$HOME/ubroid_error.log"
+    echo -e "Device: $dev_name\nAndroid: $android_ver\nArch: $arch\nLine: $line_num\nCmd: $cmd\nCode: $exit_code" > "$log_path"
+    [ -d "/sdcard/Download" ] && cp "$log_path" "/sdcard/Download/ubroid_error.log" 2>/dev/null || true
+
+    echo -e "\n${YELLOW}Laporan error telah disimpan ke: $log_path${NC}"
+    echo -e "Membuka formulir pelaporan bug otomatis ke GitHub Issues Tri Wahyu Handoyo..."
+
+    local encoded_url
+    encoded_url=$(python3 -c "
+import urllib.parse, sys
+title = sys.argv[1]
+body = sys.argv[2]
+url = 'https://github.com/triwahyu45/UbRoid_TriWahyu45/issues/new?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body)
+print(url)
+" "$issue_title" "$issue_body" 2>/dev/null || echo "https://github.com/triwahyu45/UbRoid_TriWahyu45/issues/new")
+
+    echo -e "\n${CYAN}🔗 Tautan Pelaporan Error GitHub (Tinggal Tap 'Submit New Issue'):${NC}"
+    echo -e "${YELLOW}$encoded_url${NC}\n"
+
+    /system/bin/am start -a android.intent.action.VIEW -d "$encoded_url" 2>/dev/null || true
+    exit $exit_code
+}
+
+trap 'report_install_error $LINENO "$BASH_COMMAND"' ERR
+
 # Deteksi Lingkungan: Apakah dijalankan di Termux atau di dalam PRoot Ubuntu?
 IS_TERMUX=false
 if [ -d "/data/data/com.termux" ] && [ -x "/data/data/com.termux/files/usr/bin/pkg" ]; then
@@ -71,7 +127,7 @@ touch "$HOME/.hushlogin"
 
 echo -e "${CYAN}[1/7] Menyiapkan environment Termux & dependensi dasar...${NC}"
 pkg update -y
-pkg install -y proot-distro x11-repo pulseaudio wget git tar bc
+pkg install -y proot-distro x11-repo pulseaudio wget git tar bc python
 
 # Pastikan permission external app diizinkan untuk launcher APK
 mkdir -p "$HOME/.termux"
@@ -142,7 +198,7 @@ if [ "$UBUNTU_CONTAINER" != "ubuntu" ]; then
 fi
 echo -e "${GREEN}✓ Script ~/launch_ubuntu.sh siap dengan kalkulasi DPI dinamis.${NC}"
 
-# 6. Jalankan instalasi GUI di dalam Ubuntu PRoot
+# 6. Jalankan instalasi GUI di dalam Ubuntu PRoot (Dynamic Storage Binds)
 echo -e "${CYAN}[6/7] Menjalankan instalasi Desktop Environment di dalam Ubuntu PRoot...${NC}"
 TMPDIR=/data/data/com.termux/files/usr/tmp
 mkdir -p "$TMPDIR/.X11-unix"
@@ -151,23 +207,53 @@ nameserver 1.1.1.1
 nameserver 8.8.8.8
 RESOLV
 
-proot-distro login "$UBUNTU_CONTAINER" \
-  --bind "$TMPDIR/.X11-unix:/tmp/.X11-unix" \
-  --bind "$REPO_DIR:/root/UbRoid_TriWahyu45" \
-  --bind "$HOME:/root/termux_home" \
-  --bind /sdcard:/sdcard \
-  --bind /sdcard:/root/Android_Storage \
-  --bind "$TMPDIR/resolv.conf:/etc/resolv.conf" \
-  -- bash /root/UbRoid_TriWahyu45/install.sh
+PROOT_BINDS=()
+[ -d "$TMPDIR/.X11-unix" ] && PROOT_BINDS+=(--bind "$TMPDIR/.X11-unix:/tmp/.X11-unix")
+[ -d "$REPO_DIR" ] && PROOT_BINDS+=(--bind "$REPO_DIR:/root/UbRoid_TriWahyu45")
+[ -d "$HOME" ] && PROOT_BINDS+=(--bind "$HOME:/root/termux_home")
+[ -f "$TMPDIR/resolv.conf" ] && PROOT_BINDS+=(--bind "$TMPDIR/resolv.conf:/etc/resolv.conf")
+
+# Deteksi Penyimpanan Android yang Benar-Benar Ada di HP
+STORAGE_TARGET=""
+if [ -d "/sdcard" ] && [ -r "/sdcard" ]; then
+    STORAGE_TARGET="/sdcard"
+elif [ -d "/storage/emulated/0" ] && [ -r "/storage/emulated/0" ]; then
+    STORAGE_TARGET="/storage/emulated/0"
+elif [ -d "$HOME/storage/shared" ] && [ -r "$HOME/storage/shared" ]; then
+    STORAGE_TARGET="$HOME/storage/shared"
+fi
+
+if [ -n "$STORAGE_TARGET" ]; then
+    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/sdcard")
+    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/root/Android_Storage")
+fi
+if [ -d "/storage/emulated/0" ] && [ -r "/storage/emulated/0" ]; then
+    PROOT_BINDS+=(--bind "/storage/emulated/0:/storage/emulated/0")
+fi
+
+proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- bash /root/UbRoid_TriWahyu45/install.sh
 
 # 7. Salin APK ke folder Download Android agar mudah dipasang pengguna
 echo -e "${CYAN}[7/7] Menyalin APK pendukung ke folder Download Android...${NC}"
-APK_DEST="/sdcard/Download/UbRoid_APKs"
+APK_DEST=""
+if [ -d "/sdcard/Download" ]; then
+    APK_DEST="/sdcard/Download/UbRoid_APKs"
+elif [ -d "/storage/emulated/0/Download" ]; then
+    APK_DEST="/storage/emulated/0/Download/UbRoid_APKs"
+elif [ -d "$HOME/storage/downloads" ]; then
+    APK_DEST="$HOME/storage/downloads/UbRoid_APKs"
+else
+    APK_DEST="$HOME/UbRoid_APKs"
+fi
+
 mkdir -p "$APK_DEST" 2>/dev/null || true
 cp "$REPO_DIR"/apks/*.apk "$APK_DEST/" 2>/dev/null || true
 
 # Buka dialog izin Overlay Android untuk Termux-X11
 /system/bin/am start -a android.settings.action.MANAGE_OVERLAY_PERMISSION -d "package:com.termux.x11" 2>/dev/null || true
+
+# Matikan trap error karena instalasi sukses
+trap - ERR
 
 # 8. Selesai
 echo -e "\n${GREEN}==============================================================================${NC}"
@@ -175,7 +261,7 @@ echo -e "${GREEN}🎉 INSTALASI UBROID BERHASIL DISELESAIKAN UNTUK ${DEV_NAME}!$
 echo -e "${GREEN}==============================================================================${NC}"
 echo -e "Langkah Terakhir (Sangat Mudah):"
 echo -e "1. File APK pendukung otomatis disalin ke folder internal:"
-echo -e "   📂 ${YELLOW}/sdcard/Download/UbRoid_APKs/${NC}"
+echo -e "   📂 ${YELLOW}$APK_DEST${NC}"
 echo -e "   Buka File Manager Android -> Download -> UbRoid_APKs, lalu pasang:"
 echo -e "   - ${CYAN}termux-x11.apk${NC} (Display Server X11)"
 echo -e "   - ${CYAN}Ubuntu_Launcher.apk${NC} (Peluncur 1-Tap Homescreen)"

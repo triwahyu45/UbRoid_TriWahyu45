@@ -1,0 +1,80 @@
+#!/bin/bash
+# ==============================================================================
+# report-bug: 1-Click Automated GitHub Bug Reporter for UbRoid
+# Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+# Author: Tri Wahyu Handoyo (triwahyu45 / DetronicsID)
+# ==============================================================================
+
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${CYAN}==============================================================================${NC}"
+echo -e "${GREEN}🐞 UbRoid 1-Click GitHub Bug Reporter${NC}"
+echo -e "${CYAN}==============================================================================${NC}"
+
+DEV_NAME=$(getprop ro.product.marketname 2>/dev/null)
+[ -z "$DEV_NAME" ] && DEV_NAME=$(getprop ro.product.model 2>/dev/null)
+[ -z "$DEV_NAME" ] && DEV_NAME="Android Device"
+
+ANDROID_VER=$(getprop ro.build.version.release 2>/dev/null || echo "Unknown")
+ARCH=$(uname -m 2>/dev/null || echo "aarch64")
+RAM_INFO=$(free -h 2>/dev/null | awk '/Mem:/ {print $3 "/" $2}' || echo "N/A")
+DENSITY=$(/system/bin/dumpsys display 2>/dev/null | grep -o 'density [0-9]*' | head -n1 | awk '{print $2}' || echo "Auto")
+
+echo -e "Perangkat: ${YELLOW}$DEV_NAME${NC} | Android: ${YELLOW}$ANDROID_VER${NC} | Arch: ${YELLOW}$ARCH${NC}"
+echo ""
+read -p "Jelaskan singkat masalah yang dialami: " USER_DESC
+
+ISSUE_TITLE="[Bug Report] Masalah pada $DEV_NAME ($ARCH)"
+ISSUE_BODY="### 📱 Informasi Sistem & Perangkat
+* **Perangkat:** $DEV_NAME
+* **Versi Android:** $ANDROID_VER
+* **Arsitektur CPU:** $ARCH
+* **Densitas Layar (DPI):** $DENSITY
+* **Penggunaan Memori (RAM):** $RAM_INFO
+* **Distribusi:** Ubuntu 24.04 LTS (Noble Numbat)
+
+### 📝 Deskripsi Masalah
+${USER_DESC:-Belum ada deskripsi tambahan.}
+
+### 📋 Log Terakhir
+\`\`\`
+$(dmesg 2>/dev/null | tail -n 15 || echo "Log sistem aman.")
+\`\`\`
+"
+
+# Simpan salinan lokal
+REPORT_FILE="/root/ubroid_bug_report.txt"
+echo -e "$ISSUE_BODY" > "$REPORT_FILE" 2>/dev/null || true
+if [ -d "/sdcard/Download" ]; then
+    cp "$REPORT_FILE" "/sdcard/Download/ubroid_bug_report.txt" 2>/dev/null || true
+elif [ -d "/storage/emulated/0/Download" ]; then
+    cp "$REPORT_FILE" "/storage/emulated/0/Download/ubroid_bug_report.txt" 2>/dev/null || true
+fi
+
+# Buat URL pre-filled GitHub Issue
+ENCODED_URL=$(python3 -c "
+import urllib.parse, sys
+title = sys.argv[1]
+body = sys.argv[2]
+url = 'https://github.com/triwahyu45/UbRoid_TriWahyu45/issues/new?title=' + urllib.parse.quote(title) + '&body=' + urllib.parse.quote(body)
+print(url)
+" "$ISSUE_TITLE" "$ISSUE_BODY" 2>/dev/null || echo "https://github.com/triwahyu45/UbRoid_TriWahyu45/issues/new")
+
+echo -e "\n${GREEN}✓ Laporan berhasil disiapkan!${NC}"
+echo -e "Membuka browser ke GitHub Issues Tri Wahyu Handoyo..."
+
+# Coba buka lewat browser lokal (Firefox) atau intent Android
+if [ -n "$DISPLAY" ] && command -v firefox >/dev/null 2>&1; then
+    nohup firefox "$ENCODED_URL" >/dev/null 2>&1 &
+else
+    /system/bin/am start -a android.intent.action.VIEW -d "$ENCODED_URL" 2>/dev/null || true
+fi
+
+echo -e "\n${CYAN}Tautan Langsung GitHub Issue:${NC}"
+echo -e "${YELLOW}$ENCODED_URL${NC}\n"
+echo -e "Silakan tap tombol ${GREEN}'Submit new issue'${NC} di halaman GitHub yang terbuka."
+echo -e "${CYAN}==============================================================================${NC}\n"
