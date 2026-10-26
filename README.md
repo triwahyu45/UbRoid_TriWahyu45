@@ -21,6 +21,16 @@
 
 ## 🌟 Fitur Utama (Key Highlights)
 
+- 📱 **Dual UI Mode (Ubuntu Desktop vs Ubuntu Touch Mobile)**:
+  - 🖥️ **Ubuntu Desktop Edition (Default)**: Dock horizontal melayang di bawah, ideal untuk tablet besar, monitor eksternal, dan penggunaan keyboard fisik.
+  - 📱 **Ubuntu Touch Mobile Edition**: Terinspirasi dari antarmuka mobile **Ubuntu Touch (Lomiri)** dengan **launcher vertikal di sisi kiri**, ikon besar (48px) ramah sentuhan, navigasi single-tap, dan jendela aplikasi otomatis terfokus. Sangat ideal untuk layar smartphone seperti **POCO F6**!
+- ⏳ **Pemilihan Mode Otomatis 5 Detik**: Saat instalasi, pengguna diberikan pilihan interaktif antara Desktop atau Ubuntu Touch. Jika tidak ada input selama 5 detik, sistem otomatis memilih **Ubuntu Desktop**.
+- 🔄 **1-Tap Mode Switcher (`ubroid-switch-mode`)**: Bebas berganti antara mode Desktop dan Ubuntu Touch kapan saja langsung dari icon desktop, panel launcher, atau perintah terminal `switch-mode` tanpa perlu instal ulang.
+- ⌨️ **Pengalaman Mengetik Fleksibel (Gboard & Onboard Auto-Popup)**:
+  - **Android Gboard**: Cukup usap ke atas (*swipe up*) dari sisi bawah layar HP atau tekan tombol Back untuk langsung memunculkan keyboard bawaan Android (Gboard).
+  - **Ubuntu Touch Onboard**: Keyboard virtual sentuh otomatis muncul (*auto-popup*) saat kolom teks/terminal disentuh, dan otomatis melipat saat selesai.
+  - Tombol pintas keyboard virtual 1-tap di panel launcher dan status bar atas.
+- 🐍 **Python Mobile Studio & Mini PC Mode**: Dilengkapi folder kerja `/root/Python_Workspace`, script pembuka interaktif, dan shortcut desktop `python-mobile` yang langsung membuka REPL Python 3.12 untuk mengubah HP Anda menjadi mini PC coding yang portabel!
 - 🎨 **Tampilan Otentik Ubuntu Desktop**: Wallpaper resmi **Ubuntu Noble Numbat** ungu mascot (`warty-final-ubuntu.png`), tema Yaru-dark, dan font Ubuntu yang tajam.
 - 🚀 **Dock Bawah Melayang & Live Tasklist**: Dock autohide melayang (mengambang di atas navigation gesture bar Android) dengan pemisah vertikal elegan, pinned apps, dan **indikator tab jendela aktif live** (seperti Terminator, Browser, File Manager) lengkap dengan highlight garis oranye Ubuntu.
 - ⚡ **Status Bar Atas Lengkap & Jam Presisi di Tengah**: Panel atas 36px dengan jam otomatis presisi di tengah layar (dynamic spacer) serta 8 icon utilitas lengkap di sebelah kanan:

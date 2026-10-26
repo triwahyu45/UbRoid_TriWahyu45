@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Keyboard Virtual
+Comment=Munculkan / Sembunyikan Keyboard Android (Touch Mode)
+Exec=/usr/local/bin/toggle-keyboard
+Icon=/usr/share/icons/hicolor/scalable/apps/ubuntu-keyboard-top.svg
+Terminal=false
+StartupNotify=false
+Categories=Utility;

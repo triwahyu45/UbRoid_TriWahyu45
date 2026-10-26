@@ -1,0 +1,26 @@
+#!/bin/bash
+# UbRoid - Keyboard Preference Selector
+PREF_FILE="/etc/ubroid/keyboard_pref"
+mkdir -p /etc/ubroid
+
+if [ "$1" = "gboard" ] || [ "$1" = "onboard" ] || [ "$1" = "smart" ]; then
+    echo "$1" > "$PREF_FILE"
+    notify-send -i /usr/share/icons/hicolor/scalable/apps/ubuntu-keyboard-top.svg \
+        "⌨️ Preferensi Keyboard Disimpan" "Keyboard aktif disetel ke: $1" 2>/dev/null || true
+    echo "✓ Preferensi keyboard disetel ke: $1"
+    exit 0
+fi
+
+echo "=========================================="
+echo "⌨️  PILIH KEYBOARD VIRTUAL DEFAULT UBROID"
+echo "=========================================="
+echo "  [1] Onboard (Ubuntu Touch Native - Auto-Popup di kolom teks)"
+echo "  [2] Gboard  (Android Native Soft Keyboard)"
+echo "  [3] Smart   (Coba Onboard, Fallback Gboard)"
+echo "=========================================="
+read -p "Pilihan [1/2/3]: " opt
+case "$opt" in
+    1) echo "onboard" > "$PREF_FILE"; echo "✓ Disetel ke Onboard";;
+    2) echo "gboard" > "$PREF_FILE"; echo "✓ Disetel ke Gboard";;
+    *) echo "smart" > "$PREF_FILE"; echo "✓ Disetel ke Smart";;
+esac

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Snap Layouts
+Comment=Atur Tata Letak Jendela (Split Kiri-Kanan, Split 3, Split 4)
+Exec=/usr/local/bin/snap-layout --popup
+Icon=/usr/share/icons/hicolor/scalable/apps/ubuntu-snap-layout.svg
+Terminal=false
+StartupNotify=false
+Categories=Utility;

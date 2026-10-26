@@ -1,0 +1,14 @@
+#!/bin/bash
+# UbRoid - Force Toggle Linux Onboard Keyboard
+unset LD_PRELOAD
+export DISPLAY=:0
+if command -v onboard >/dev/null 2>&1; then
+    if pgrep -x onboard >/dev/null; then
+        dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible 2>/dev/null || {
+            killall onboard 2>/dev/null
+        }
+    else
+        nohup onboard >/dev/null 2>&1 &
+    fi
+fi
+exit 0

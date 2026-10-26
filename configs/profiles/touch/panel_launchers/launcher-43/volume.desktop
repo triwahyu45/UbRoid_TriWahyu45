@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kontrol Volume
+Comment=Volume: 100%  (Klik untuk ubah volume)
+Exec=/usr/local/bin/dialog-volume
+Icon=audio-volume-high-symbolic
+Terminal=false
+StartupNotify=false
+Categories=AudioVideo;

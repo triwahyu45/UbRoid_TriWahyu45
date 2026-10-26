@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Status Bluetooth
+Comment=Bluetooth: Aktif (ON) | Perangkat: Wahyu Pad 2 (Klik untuk pengaturan Bluetooth)
+Exec=/usr/local/bin/dialog-bluetooth
+Icon=bluetooth-active-symbolic
+Terminal=false
+StartupNotify=false
+Categories=HardwareSettings;

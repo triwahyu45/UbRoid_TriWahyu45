@@ -29,6 +29,70 @@ trap 'report_install_error $LINENO "$BASH_COMMAND"' ERR
 
 echo "=== MEMASANG / MEMPERBARUI UBROID DESKTOP ENVIRONMENT ==="
 
+# ==============================================================================
+# Mode Selection: Desktop (Default) vs Ubuntu Touch Mobile (Poco F6)
+# ==============================================================================
+INSTALL_MODE=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --mode)
+            INSTALL_MODE="$2"
+            shift 2
+            ;;
+        --mode=*)
+            INSTALL_MODE="${1#*=}"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$INSTALL_MODE" ]; then
+    echo -e "\n\033[1;35m==============================================================================\033[0m"
+    echo -e "\033[1;36m📱 PILIH MODE TAMPILAN UBROID (UBUNTU 24.04 LTS)\033[0m"
+    echo -e "\033[1;35m==============================================================================\033[0m"
+    echo -e "  \033[1;33m[1]\033[0m 🖥️  \033[1mUbuntu Desktop Edition\033[0m (Default)"
+    echo -e "       - Mode Desktop klasik XFCE dengan dock horizontal di bawah."
+    echo -e "       - Ideal untuk Tablet, Monitor Eksternal, Keyboard & Mouse fisik.\n"
+    echo -e "  \033[1;33m[2]\033[0m 📱 \033[1mUbuntu Touch Mobile Edition\033[0m (Rekomendasi Poco F6 / Layar HP)"
+    echo -e "       - Tampilan mobile ala Ubuntu Touch (Lomiri) dengan launcher vertikal di sisi kiri."
+    echo -e "       - Tombol & ikon besar ramah sentuhan (touchscreen friendly) & single-tap."
+    echo -e "       - Integrasi On-Screen Keyboard (Gboard & Onboard auto-popup di kolom teks)."
+    echo -e "       - Dilengkapi Python Mobile Studio (cocok untuk Mini PC & koding di HP)."
+    echo -e "\033[1;35m==============================================================================\033[0m"
+
+    INSTALL_MODE="desktop"
+    echo -e "Pilih mode dalam 5 detik (Default: [1] Desktop):"
+    for ((i=5; i>=1; i--)); do
+        echo -ne "\r⏳ Memilih [1] Desktop otomatis dalam \033[1;33m${i}s\033[0m (Tekan \033[1;32m2\033[0m untuk Touch): "
+        if read -t 1 -n 1 user_input; then
+            echo ""
+            if [ "$user_input" = "2" ]; then
+                INSTALL_MODE="touch"
+                echo -e "\033[1;32m✓ Mode Dipilih: Ubuntu Touch Mobile Edition!\033[0m"
+            else
+                INSTALL_MODE="desktop"
+                echo -e "\033[1;36m✓ Mode Dipilih: Ubuntu Desktop Edition!\033[0m"
+            fi
+            break
+        fi
+    done
+    if [ -z "$user_input" ]; then
+        echo -e "\n\033[1;33m⏱️ Waktu habis. Otomatis memilih mode: Ubuntu Desktop Edition (Default)\033[0m"
+        INSTALL_MODE="desktop"
+    fi
+fi
+
+if [ "$INSTALL_MODE" != "touch" ]; then
+    INSTALL_MODE="desktop"
+fi
+
+mkdir -p /etc/ubroid
+echo "$INSTALL_MODE" > /etc/ubroid/mode
+echo -e "-> Mode Aktif: \033[1;32m$INSTALL_MODE\033[0m"
+
 export DEBIAN_FRONTEND=noninteractive
 
 # 1. Pastikan DNS resolver aktif di PRoot (Anti-Fail DNS)
@@ -127,7 +191,7 @@ fi
 apt-get update -y || true
 
 # 2. Pastikan seluruh dependencies desktop dan utilitas terpasang
-echo "[2/10] Memasang paket desktop XFCE, Firefox & library sistem..."
+echo "[2/10] Memasang paket desktop XFCE, Firefox, Python Mini PC & library sistem..."
 apt-get install -y --fix-missing \
     xfce4 xfce4-panel xfwm4 xfce4-settings xfce4-terminal \
     yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
@@ -135,6 +199,8 @@ apt-get install -y --fix-missing \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
     firefox thunar-archive-plugin file-roller ristretto \
     adb wmctrl jq terminator mousepad pavucontrol onboard \
+    dconf-cli dconf-gsettings-backend gsettings-desktop-schemas \
+    python3 python3-pip python3-venv python3-dev build-essential ipython3 \
     xclip xsel wl-clipboard || true
 
 # Jalankan perbaikan dependensi & pastikan paket esensial tidak ada yang terlewat
@@ -145,7 +211,9 @@ apt-get install -y \
     yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
     libgtk-3-dev gcc pkg-config x11proto-dev libx11-dev xdotool scrot \
     pulseaudio-utils dbus-x11 bc synaptic sudo firefox \
-    terminator mousepad xclip xsel wl-clipboard || true
+    terminator mousepad onboard dconf-cli \
+    python3 python3-pip python3-venv \
+    xclip xsel wl-clipboard || true
 
 # Bersihkan browser berat seperti Chromium jika ada
 apt-get purge -y chromium chromium-common 2>/dev/null || true
@@ -170,7 +238,7 @@ gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
 gtk-update-icon-cache -f /usr/share/icons/Yaru 2>/dev/null || true
 
 # 4. Pasang konfigurasi XFCE, GTK, Panel, Desktop & File Associations
-echo "[4/10] Mengonfigurasi panel dock, window manager, desktop & GTK..."
+echo "[4/10] Mengonfigurasi desktop environment (Profil: $INSTALL_MODE)..."
 mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /root/.config/xfce4/panel
 mkdir -p /root/.config/gtk-3.0
@@ -179,20 +247,65 @@ mkdir -p /root/.config/terminator
 mkdir -p /root/Desktop
 mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /etc/xdg/autostart
+mkdir -p /etc/ubroid/profiles
+
+# Simpan seluruh profil ke /etc/ubroid/profiles agar switch-mode siap dipakai kapan saja
+cp -r "$SCRIPT_DIR/configs/profiles/"* /etc/ubroid/profiles/ 2>/dev/null || true
+
+# Tentukan folder profil yang aktif
+ACTIVE_PROFILE_DIR="$SCRIPT_DIR/configs/profiles/$INSTALL_MODE"
+[ ! -d "$ACTIVE_PROFILE_DIR" ] && ACTIVE_PROFILE_DIR="$SCRIPT_DIR/configs/profiles/desktop"
+[ ! -d "$ACTIVE_PROFILE_DIR" ] && ACTIVE_PROFILE_DIR="$SCRIPT_DIR/configs"
 
 cp "$SCRIPT_DIR/configs/ubroid-about.desktop" /usr/share/applications/ 2>/dev/null || true
 
-# Salin seluruh XML pengaturan XFCE
-cp "$SCRIPT_DIR/configs/"*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
-cp "$SCRIPT_DIR/configs/"*.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+# Salin seluruh XML pengaturan XFCE dari profil aktif
+cp "$ACTIVE_PROFILE_DIR/"*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+cp "$ACTIVE_PROFILE_DIR/"*.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
 
 # Salin konfigurasi GTK, Terminator, & Mimeapps
-cp "$SCRIPT_DIR/configs/gtk.css" /root/.config/gtk-3.0/
+if [ -f "$ACTIVE_PROFILE_DIR/gtk.css" ]; then
+    cp "$ACTIVE_PROFILE_DIR/gtk.css" /root/.config/gtk-3.0/
+else
+    cp "$SCRIPT_DIR/configs/gtk.css" /root/.config/gtk-3.0/
+fi
 cp "$SCRIPT_DIR/configs/bookmarks" /root/.config/gtk-3.0/ 2>/dev/null || true
 cp "$SCRIPT_DIR/configs/.Xresources" /root/.Xresources 2>/dev/null || true
 cp "$SCRIPT_DIR/configs/mimeapps.list" /root/.config/mimeapps.list 2>/dev/null || true
 cp "$SCRIPT_DIR/configs/mimeapps.list" /etc/xdg/mimeapps.list 2>/dev/null || true
 cp "$SCRIPT_DIR/configs/terminator/config" /root/.config/terminator/config 2>/dev/null || true
+
+# Konfigurasi Onboard Virtual Keyboard dconf system-wide (Auto-popup pada teks)
+mkdir -p /etc/dconf/db/local.d /etc/dconf/profile
+cat << 'DCONF_EOF' > /etc/dconf/profile/user
+user-db:user
+system-db:local
+DCONF_EOF
+if [ -f "$SCRIPT_DIR/configs/onboard/01-onboard" ]; then
+    cp "$SCRIPT_DIR/configs/onboard/01-onboard" /etc/dconf/db/local.d/01-onboard
+    dconf update 2>/dev/null || true
+fi
+
+# Inisialisasi folder kerja Python Mobile Studio & Mini PC
+mkdir -p /root/Python_Workspace
+if [ ! -f /root/Python_Workspace/welcome.py ]; then
+    cat << 'PY_EOF' > /root/Python_Workspace/welcome.py
+# ==============================================================================
+# Selamat datang di Python Mobile Studio di POCO F6!
+# Anda bisa menjalankan script ini kapan saja: python3 welcome.py
+# ==============================================================================
+import platform
+import os
+import sys
+
+print(f"🚀 Selamat Datang di Python Mobile Mini PC!")
+print(f"📦 Arsitektur : {platform.machine()}")
+print(f"💻 Sistem OS  : {platform.system()} {platform.release()}")
+print(f"🐍 Python Ver : {platform.python_version()}")
+print(f"📂 Direktori  : {os.getcwd()}")
+print("\nUbRoid siap digunakan untuk analisis data, coding, dan otomasi.")
+PY_EOF
+fi
 
 # Pasang shortcut desktop resmi
 cp "$SCRIPT_DIR/configs/desktop/"*.desktop /root/Desktop/ 2>/dev/null || true
@@ -201,9 +314,13 @@ for f in /root/Desktop/*.desktop; do
     [ -f "$f" ] && gio set "$f" metadata::trusted true 2>/dev/null || true
 done
 
-# Bersihkan dan pasang panel launchers terbaru
+# Bersihkan dan pasang panel launchers dari profil aktif
 rm -rf /root/.config/xfce4/panel/launcher-*
-cp -r "$SCRIPT_DIR/configs/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
+if [ -d "$ACTIVE_PROFILE_DIR/panel_launchers" ]; then
+    cp -r "$ACTIVE_PROFILE_DIR/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
+else
+    cp -r "$SCRIPT_DIR/configs/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
+fi
 
 # 5. Pasang autostart daemons
 echo "[5/10] Memasang layanan autostart..."
@@ -215,6 +332,7 @@ echo "[6/10] Memasang daemons status bar, tools dock, & utilitas UbRoid..."
 mkdir -p /usr/local/bin
 cp "$SCRIPT_DIR/bin/"* /usr/local/bin/ 2>/dev/null || true
 chmod +x /usr/local/bin/* 2>/dev/null || true
+ln -sf /usr/local/bin/ubroid-switch-mode /usr/local/bin/switch-mode 2>/dev/null || true
 
 # 7. Konfigurasi Antigravity CLI (AGY) Turbo Mode
 echo "[7/10] Menyiapkan Antigravity CLI (agy) Turbo Mode..."

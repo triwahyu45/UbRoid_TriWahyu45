@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Trash
+Comment=View Deleted Files
+Exec=/usr/local/bin/open-trash
+Icon=/usr/share/icons/Yaru/48x48/places/user-trash.png
+Terminal=false
+Categories=System;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Menu Daya & Pengaturan Cepat
+Comment=Buka Pengaturan Cepat & Menu Daya Ubuntu
+Exec=/usr/local/bin/ubuntu-control-center
+Icon=system-shutdown-symbolic
+Terminal=false
+StartupNotify=false
+Categories=System;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ganti Mode (Desktop / Touch)
+Comment=Beralih antara Mode Desktop Klasik dan Ubuntu Touch Mobile
+Exec=/usr/local/bin/ubroid-switch-mode
+Icon=/usr/share/icons/hicolor/scalable/apps/switch-mode.svg
+Terminal=false
+StartupNotify=false
+Categories=System;Settings;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Launchpad
+Comment=Pop-Out All Applications Grid (macOS Style)
+Exec=/usr/local/bin/macos-launchpad
+Icon=/usr/share/icons/Yaru/48x48/apps/software-store.png
+Terminal=false
+Categories=System;Utility;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Launchpad Apps
+Comment=Open macOS-style Launchpad Application Grid
+Exec=/usr/local/bin/macos-launchpad
+Icon=/usr/share/icons/hicolor/scalable/apps/ubuntu-workspace-pill.svg
+Terminal=false
+Categories=System;

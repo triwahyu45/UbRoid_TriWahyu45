@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Python Mobile Studio
+Comment=Python 3 Interactive IDE & Mini PC Terminal
+Exec=terminator -T "Python 3 Mobile Studio" --working-directory=/root/Python_Workspace -e "/usr/local/bin/python-mobile"
+Icon=/usr/share/icons/hicolor/scalable/apps/python.svg
+Terminal=false
+StartupNotify=false
+Categories=Development;IDE;

@@ -1,0 +1,85 @@
+/* ==============================================================================
+ * UbRoid - Ubuntu Touch Mobile Edition GTK3 Style
+ * Designed for POCO F6 & Compact Touchscreen Devices
+ * ============================================================================== */
+
+* {
+    font-weight: 500;
+}
+
+/* Touch-Friendly Mobile Headerbar & Titlebars */
+headerbar,
+.titlebar {
+    min-height: 38px;
+    padding: 2px 8px;
+    background: #1e131d;
+    color: #ffffff;
+}
+
+headerbar button.titlebutton,
+.titlebar button.titlebutton {
+    min-height: 30px;
+    min-width: 30px;
+    padding: 2px;
+    border-radius: 6px;
+}
+
+/* Extra Thick Touch-Friendly Scrollbars for Mobile Fingers */
+scrollbar {
+    min-width: 22px;
+    min-height: 22px;
+}
+
+scrollbar slider {
+    min-width: 18px;
+    min-height: 18px;
+    border-radius: 9px;
+    background-color: rgba(233, 84, 32, 0.6); /* Ubuntu Orange */
+}
+
+scrollbar slider:hover,
+scrollbar slider:active {
+    background-color: #E95420;
+}
+
+/* Ubuntu Touch Signature Left Launcher */
+.xfce4-panel {
+    background-color: rgba(24, 16, 26, 0.96);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.xfce4-panel button {
+    border-radius: 10px;
+    padding: 4px;
+    transition: all 0.15s ease-in-out;
+}
+
+.xfce4-panel button:hover,
+.xfce4-panel button:active {
+    background-color: rgba(233, 84, 32, 0.35);
+    border: 1px solid #E95420;
+}
+
+/* Mobile Touch Targets for Entry / Text Input */
+entry, textview {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 11pt;
+    border-radius: 8px;
+}
+
+/* Single-Tap Desktop Icons */
+XfdesktopIconView.view,
+.xfdesktop-icon-view {
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px #000000, 0px 0px 4px #000000;
+}
+
+XfdesktopIconView.view:active,
+.xfdesktop-icon-view:active {
+    background-color: rgba(233, 84, 32, 0.4);
+    border-radius: 10px;
+}

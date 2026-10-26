@@ -74,14 +74,25 @@ cleanup_on_exit() {
     pkill -f "/usr/local/bin/perf-governor" 2>/dev/null || true
     kill "$RAM_GUARDIAN_PID" 2>/dev/null || true
     pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
+    pkill -9 -x onboard 2>/dev/null || true
     /usr/local/bin/linux-os-mode exit 2>/dev/null || true
 }
 trap cleanup_on_exit EXIT INT TERM HUP
 
 # Ensure all desktop launchers are marked trusted in GIO/XFCE
+chmod +x /root/Desktop/*.desktop 2>/dev/null || true
 for f in /root/Desktop/*.desktop; do
     [ -f "$f" ] && gio set "$f" metadata::trusted true 2>/dev/null || true
 done
+
+# Mode-specific initialization (Ubuntu Touch Mobile vs Desktop)
+UBROID_MODE="desktop"
+[ -f /etc/ubroid/mode ] && UBROID_MODE=$(cat /etc/ubroid/mode 2>/dev/null | tr -d '[:space:]')
+if [ "$UBROID_MODE" = "touch" ]; then
+    if command -v onboard >/dev/null 2>&1 && ! pgrep -x onboard >/dev/null; then
+        nohup onboard >/dev/null 2>&1 &
+    fi
+fi
 
 export LD_PRELOAD=/usr/local/lib/libnogap.so
 startxfce4

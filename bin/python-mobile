@@ -1,0 +1,45 @@
+#!/bin/bash
+# ==============================================================================
+# UbRoid - Python Mobile Studio & Mini PC Runner
+# Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+# Author: Tri Wahyu Handoyo (triwahyu45)
+# ==============================================================================
+
+WORKSPACE_DIR="/root/Python_Workspace"
+mkdir -p "$WORKSPACE_DIR"
+cd "$WORKSPACE_DIR" || cd "$HOME"
+
+clear
+echo -e "\033[1;35m==============================================================================\033[0m"
+echo -e "\033[1;36m  🐍 UBROID PYTHON 3.12 MOBILE STUDIO (POCO F6 MINI PC)\033[0m"
+echo -e "\033[1;35m==============================================================================\033[0m"
+echo -e "  📂 Folder Kerja : \033[1;33m$WORKSPACE_DIR\033[0m"
+echo -e "  ⚡ Python Path  : \033[1;32m$(which python3 2>/dev/null || echo '/usr/bin/python3')\033[0m"
+echo -e "  ⌨️  Ketik \033[1;37mexit()\033[0m atau tekan \033[1;37mCtrl+D\033[0m untuk keluar ke terminal shell."
+echo -e "\033[1;35m==============================================================================\033[0m\n"
+
+# Buat file script contoh jika folder masih kosong
+if [ ! -f "$WORKSPACE_DIR/welcome.py" ]; then
+    cat << 'PYEOF' > "$WORKSPACE_DIR/welcome.py"
+# ==============================================================================
+# Selamat datang di Python Mobile Studio di POCO F6!
+# Anda bisa menjalankan script ini kapan saja: python3 welcome.py
+# ==============================================================================
+import platform
+import os
+import sys
+
+print(f"🚀 Selamat Datang di Python Mobile Mini PC!")
+print(f"📦 Arsitektur : {platform.machine()}")
+print(f"💻 Sistem OS  : {platform.system()} {platform.release()}")
+print(f"🐍 Python Ver : {platform.python_version()}")
+print(f"📂 Direktori  : {os.getcwd()}")
+print("\nUbRoid siap digunakan untuk analisis data, coding, dan otomasi.")
+PYEOF
+fi
+
+if command -v ipython3 >/dev/null 2>&1; then
+    exec ipython3
+else
+    exec python3 -i "$WORKSPACE_DIR/welcome.py"
+fi

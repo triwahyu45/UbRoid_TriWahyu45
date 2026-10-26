@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="kbdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#333333"/>
+      <stop offset="100%" stop-color="#1f1f1f"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="14" width="56" height="36" rx="6" fill="url(#kbdGrad)" stroke="#E95420" stroke-width="2"/>
+  <!-- Key Row 1 -->
+  <rect x="8" y="18" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="16" y="18" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="24" y="18" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="32" y="18" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="40" y="18" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="48" y="18" width="8" height="6" rx="1.5" fill="#E95420" opacity="0.9"/>
+  <!-- Key Row 2 -->
+  <rect x="9" y="26" width="7" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="18" y="26" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="26" y="26" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="34" y="26" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="42" y="26" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="50" y="26" width="6" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <!-- Key Row 3 -->
+  <rect x="8" y="34" width="10" height="6" rx="1.5" fill="#E95420" opacity="0.9"/>
+  <rect x="20" y="34" width="24" height="6" rx="1.5" fill="#ffffff" opacity="0.85"/>
+  <rect x="46" y="34" width="10" height="6" rx="1.5" fill="#E95420" opacity="0.9"/>
+</svg>

@@ -1,0 +1,13 @@
+[org/onboard]
+layout='Phone'
+theme='Nightshade'
+auto-show-enabled=true
+show-tooltips=false
+
+[org/onboard/window]
+docking-enabled=true
+docking-edge='bottom'
+docking-monitor='primary'
+
+[org/onboard/icon-palette]
+in-use=true

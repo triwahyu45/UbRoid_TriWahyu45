@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Bersihkan RAM
+Comment=Free Inactive RAM & Clear Linux Memory Caches
+Exec=/usr/local/bin/clean-ram
+Icon=/usr/share/icons/hicolor/scalable/apps/clean-ram.svg
+Terminal=false
+StartupNotify=false
+Categories=System;

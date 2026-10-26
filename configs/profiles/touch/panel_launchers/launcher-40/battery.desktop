@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Status Baterai
+Comment=Baterai: 79% (Baterai) | Suhu: 32.5°C | Voltase: 4.05V (Klik untuk info detail)
+Exec=/usr/local/bin/dialog-battery
+Icon=/tmp/battery_live.svg
+Terminal=false
+StartupNotify=false
+Categories=Utility;

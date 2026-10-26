@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Antigravity AI
+Comment=Antigravity AI Agentic Coding Assistant
+Exec=terminator -T "Antigravity AI" -e "/usr/local/bin/agy"
+Icon=/usr/share/icons/hicolor/scalable/apps/antigravity.svg
+Terminal=false
+StartupNotify=false
+Categories=Development;

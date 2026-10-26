@@ -1,0 +1,85 @@
+#!/bin/bash
+# ==============================================================================
+# UbRoid Mode Switcher: Ubuntu Desktop <-> Ubuntu Touch Mobile
+# Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+# Author: Tri Wahyu Handoyo (triwahyu45)
+# ==============================================================================
+
+MODE_FILE="/etc/ubroid/mode"
+CURRENT_MODE="desktop"
+[ -f "$MODE_FILE" ] && CURRENT_MODE=$(cat "$MODE_FILE" 2>/dev/null | tr -d '[:space:]')
+
+TARGET_MODE="$1"
+if [ -z "$TARGET_MODE" ]; then
+    if [ "$CURRENT_MODE" = "touch" ]; then
+        TARGET_MODE="desktop"
+    else
+        TARGET_MODE="touch"
+    fi
+fi
+
+if [ "$TARGET_MODE" != "desktop" ] && [ "$TARGET_MODE" != "touch" ]; then
+    echo "Penggunaan: ubroid-switch-mode [desktop|touch]"
+    exit 1
+fi
+
+echo "Beralih ke mode UbRoid: $TARGET_MODE..."
+
+# Tentukan direktori profil
+PROFILES_BASE="/root/UbRoid_TriWahyu45/configs/profiles"
+[ ! -d "$PROFILES_BASE" ] && PROFILES_BASE="/etc/ubroid/profiles"
+TARGET_DIR="$PROFILES_BASE/$TARGET_MODE"
+
+if [ ! -d "$TARGET_DIR" ]; then
+    echo "❌ Direktori profil $TARGET_MODE tidak ditemukan di $TARGET_DIR!"
+    exit 1
+fi
+
+# Terapkan konfigurasi XML XFCE
+mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml /root/.config/gtk-3.0
+cp "$TARGET_DIR/"*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+cp "$TARGET_DIR/"*.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+
+# Terapkan CSS GTK
+if [ -f "$TARGET_DIR/gtk.css" ]; then
+    cp "$TARGET_DIR/gtk.css" /root/.config/gtk-3.0/gtk.css
+fi
+
+# Terapkan panel launchers
+if [ -d "$TARGET_DIR/panel_launchers" ]; then
+    rm -rf /root/.config/xfce4/panel/launcher-*
+    cp -r "$TARGET_DIR/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
+fi
+
+# Simpan preferensi mode
+mkdir -p /etc/ubroid
+echo "$TARGET_MODE" > "$MODE_FILE"
+
+# Atur perilaku onboard keyboard
+if [ "$TARGET_MODE" = "touch" ]; then
+    if command -v onboard >/dev/null 2>&1 && ! pgrep -x onboard >/dev/null; then
+        nohup onboard >/dev/null 2>&1 &
+    fi
+fi
+
+# Refresh XFCE components tanpa mematikan sesi X11
+xfsettingsd --replace 2>/dev/null &
+xfwm4 --replace 2>/dev/null &
+if [ -x /usr/local/bin/restart_panel.sh ]; then
+    /usr/local/bin/restart_panel.sh 2>/dev/null || true
+else
+    pkill -9 -f xfce4-panel 2>/dev/null || true
+    nohup xfce4-panel >/dev/null 2>&1 &
+fi
+
+# Kirim notifikasi desktop
+if [ "$TARGET_MODE" = "touch" ]; then
+    notify-send -i /usr/share/icons/hicolor/scalable/apps/ubuntu-workspace-pill.svg \
+        "📱 Mode Ubuntu Touch Aktif" "Tampilan mobile ramah sentuhan untuk Poco F6 siap digunakan." 2>/dev/null || true
+else
+    notify-send -i /usr/share/icons/hicolor/scalable/apps/ubuntu-workspace-pill.svg \
+        "🖥️ Mode Ubuntu Desktop Aktif" "Tampilan desktop klasik dengan dock horizontal di bawah aktif." 2>/dev/null || true
+fi
+
+echo "✓ Berhasil beralih ke mode: $TARGET_MODE!"
+exit 0
