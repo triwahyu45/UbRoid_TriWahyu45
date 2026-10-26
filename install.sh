@@ -70,14 +70,18 @@ Suites: ${CODENAME}-security
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 EOF
-fi
-
-cat << EOF > /etc/apt/sources.list
+    # Kosongkan /etc/apt/sources.list agar tidak muncul warning "configured multiple times"
+    cat << 'EOF' > /etc/apt/sources.list
+# Ubuntu sources are managed in /etc/apt/sources.list.d/ubuntu.sources
+EOF
+else
+    cat << EOF > /etc/apt/sources.list
 deb ${UBUNTU_MIRROR} ${CODENAME} main restricted universe multiverse
 deb ${UBUNTU_MIRROR} ${CODENAME}-updates main restricted universe multiverse
 deb ${UBUNTU_MIRROR} ${CODENAME}-backports main restricted universe multiverse
 deb ${UBUNTU_MIRROR} ${CODENAME}-security main restricted universe multiverse
 EOF
+fi
 
 # Bersihkan sisa lock jika ada proses instalasi sebelumnya yang terinterupsi
 rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* 2>/dev/null || true
@@ -106,7 +110,7 @@ echo "[2/10] Memasang paket desktop XFCE, Firefox & library sistem..."
 apt-get install -y --fix-missing \
     xfce4 xfce4-panel xfwm4 xfce4-settings xfce4-terminal \
     yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
-    libgtk-3-dev gcc pkg-config xdotool scrot python3-gi \
+    libgtk-3-dev gcc pkg-config x11proto-dev libx11-dev xdotool scrot python3-gi \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
     firefox thunar-archive-plugin file-roller ristretto \
     adb wmctrl jq terminator mousepad pavucontrol onboard \

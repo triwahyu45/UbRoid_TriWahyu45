@@ -9,8 +9,8 @@ export PATH="/root/.local/bin:$PATH"
 
 # 1. Cek apakah binary Antigravity CLI sudah terpasang
 if [ ! -f /root/.local/bin/agy.real ] && [ ! -f /root/.local/bin/agy ]; then
-    echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis...\033[0m"
-    curl -fsSL https://raw.githubusercontent.com/wallentx/antigravity-cli-termux/dev/install.sh | bash
+    echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis via official installer...\033[0m"
+    curl -fsSL https://antigravity.google/cli/install.sh | bash
 fi
 
 # 2. Pastikan file konfigurasi Turbo Mode siap
@@ -34,15 +34,13 @@ fi
 
 # 3. Jalankan Antigravity CLI dengan Turbo Mode & Non-blocking Permissions
 AGY_BIN="/root/.local/bin/agy.real"
-if [ ! -f "$AGY_BIN" ]; then
+if [ ! -x "$AGY_BIN" ]; then
     AGY_BIN="/root/.local/bin/agy"
 fi
 
 if [ -x "$AGY_BIN" ]; then
     exec "$AGY_BIN" --mode auto --dangerously-skip-permissions "$@"
-elif command -v agy >/dev/null 2>&1; then
-    exec command agy --mode auto --dangerously-skip-permissions "$@"
 else
-    echo -e "\033[1;31m[!] Gagal menjalankan Antigravity CLI. Pastikan instalasi berhasil.\033[0m"
+    echo -e "\033[1;31m[!] Gagal menjalankan Antigravity CLI. Binary tidak ditemukan di /root/.local/bin/agy\033[0m"
     exit 1
 fi
