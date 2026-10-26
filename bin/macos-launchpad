@@ -27,6 +27,7 @@ APPS = [
     ("Window Manager", "xfwm4", "xfwm4-settings"),
     ("Panel & Dock", "xfce4-panel", "xfce4-panel --preferences"),
     ("Trash", "user-trash", "thunar trash:///"),
+    ("Tentang UbRoid", "help-about", "/usr/local/bin/dialog-about"),
 ]
 
 

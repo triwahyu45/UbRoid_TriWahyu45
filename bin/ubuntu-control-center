@@ -53,6 +53,12 @@ class UbuntuControlCenter(Gtk.Window):
         btn_close.get_style_context().add_class("circle-btn")
         btn_close.connect("clicked", lambda b: self.close_window())
         header.pack_end(btn_close, False, False, 0)
+
+        btn_about = Gtk.Button(label="ℹ")
+        btn_about.get_style_context().add_class("circle-btn")
+        btn_about.set_tooltip_text("Tentang UbRoid")
+        btn_about.connect("clicked", lambda b: (subprocess.Popen(["/usr/local/bin/dialog-about"]), self.close_window()))
+        header.pack_end(btn_about, False, False, 4)
         main_box.pack_start(header, False, False, 0)
 
         # 2. Sliders Section (Volume & Screen Brightness)
@@ -137,14 +143,19 @@ class UbuntuControlCenter(Gtk.Window):
         main_box.pack_start(grid, False, False, 0)
 
         # 4. Footer Actions
-        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         
-        btn_all_settings = Gtk.Button(label="⚙ Pengaturan Android")
+        btn_about_ft = Gtk.Button(label="ℹ Tentang")
+        btn_about_ft.get_style_context().add_class("footer-btn")
+        btn_about_ft.connect("clicked", lambda b: (subprocess.Popen(["/usr/local/bin/dialog-about"]), self.close_window()))
+        footer.pack_start(btn_about_ft, True, True, 0)
+
+        btn_all_settings = Gtk.Button(label="⚙ Android")
         btn_all_settings.get_style_context().add_class("footer-btn")
         btn_all_settings.connect("clicked", lambda b: self.launch_android_settings("android.settings.SETTINGS"))
         footer.pack_start(btn_all_settings, True, True, 0)
 
-        btn_power = Gtk.Button(label="⏻ Matikan / Keluar")
+        btn_power = Gtk.Button(label="⏻ Keluar")
         btn_power.get_style_context().add_class("power-btn")
         btn_power.connect("clicked", lambda b: subprocess.Popen(["xfce4-session-logout"]))
         footer.pack_start(btn_power, True, True, 0)

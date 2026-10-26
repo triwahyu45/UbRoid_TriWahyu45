@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""
+UbRoid - About / Tentang UbRoid Dialog
+Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+Author: Tri Wahyu Handoyo (triwahyu45 / DetronicsID)
+"""
+import os
+import subprocess
+import sys
+
+os.environ.setdefault("DISPLAY", ":0")
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GdkPixbuf
+
+def get_cmd(cmd):
+    try:
+        return subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.DEVNULL).strip()
+    except Exception:
+        return ""
+
+class UbRoidAboutDialog(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Tentang UbRoid")
+        self.set_default_size(380, 460)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_border_width(16)
+        self.set_resizable(False)
+
+        # Device & System Info
+        dev_name = get_cmd("getprop ro.product.marketname") or get_cmd("getprop ro.product.model") or "Android Device"
+        arch = get_cmd("uname -m") or "aarch64"
+        ram_info = get_cmd("free -h | awk '/Mem:/ {print $3 \" / \" $2}'") or "Tersedia"
+        
+        # Display info
+        scr = Gdk.Screen.get_default()
+        res_w = scr.get_width() if scr else 1136
+        res_h = scr.get_height() if scr else 711
+        density = get_cmd("/system/bin/dumpsys display 2>/dev/null | grep -o 'density [0-9]*' | head -n1 | awk '{print $2}'") or "Auto"
+
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        self.add(vbox)
+
+        # 1. Header with Logo & Title
+        header_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        
+        icon_theme = Gtk.IconTheme.get_default()
+        logo = None
+        for icon_name in ["distributor-logo-ubuntu", "ubuntu-logo", "org.xfce.about"]:
+            if icon_theme.has_icon(icon_name):
+                try:
+                    logo = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
+                    break
+                except Exception:
+                    pass
+        if not logo:
+            logo = Gtk.Label(label="<span font='36'>⚡</span>", use_markup=True)
+
+        header_box.pack_start(logo, False, False, 0)
+
+        lbl_title = Gtk.Label(label="<span font='16' weight='bold' color='#e95420'>UbRoid Desktop</span>", use_markup=True)
+        lbl_sub = Gtk.Label(label="<span color='#a0a0a0'>Ubuntu 24.04 LTS (Noble Numbat) for Android</span>", use_markup=True)
+        header_box.pack_start(lbl_title, False, False, 0)
+        header_box.pack_start(lbl_sub, False, False, 0)
+        vbox.pack_start(header_box, False, False, 0)
+
+        # 2. Specs Info Card
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        card.get_style_context().add_class("card-box")
+
+        specs = [
+            ("📱 Perangkat", f"<b>{dev_name}</b>"),
+            ("⚙️ Arsitektur", f"<b>{arch}</b> (ARM64)"),
+            ("🖥️ Lingkungan", "<b>XFCE4 Ubuntu Yaru Desktop</b>"),
+            ("📊 Resolusi Layar", f"<b>{res_w} x {res_h} px</b> (DPI {density})"),
+            ("🧠 Alokasi Memori", f"<b>{ram_info}</b>"),
+            ("🛡️ Integrasi", "<b>PRoot Linux + Termux-X11</b>"),
+            ("🚀 Optimasi", "<b>Anti-LMK Guardian & Dynamic Scale</b>"),
+            ("👨‍💻 Pengembang", "<b>Tri Wahyu Handoyo (DetronicsID)</b>"),
+        ]
+
+        for label, val in specs:
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            lbl_k = Gtk.Label(label=f"<small>{label}</small>", use_markup=True, xalign=0)
+            lbl_k.get_style_context().add_class("dim-label")
+            lbl_v = Gtk.Label(label=f"<small>{val}</small>", use_markup=True, xalign=1)
+            row.pack_start(lbl_k, True, True, 0)
+            row.pack_end(lbl_v, False, False, 0)
+            card.pack_start(row, False, False, 0)
+
+        vbox.pack_start(card, True, True, 0)
+
+        # 3. Footer Links & Buttons
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+        btn_github = Gtk.Button(label="🌐 Buka GitHub")
+        btn_github.get_style_context().add_class("footer-btn")
+        btn_github.connect("clicked", lambda b: subprocess.Popen(["firefox", "https://github.com/triwahyu45/UbRoid_TriWahyu45"]))
+        btn_box.pack_start(btn_github, True, True, 0)
+
+        btn_close = Gtk.Button(label="Tutup")
+        btn_close.get_style_context().add_class("card-btn")
+        btn_close.connect("clicked", lambda b: self.destroy())
+        btn_box.pack_start(btn_close, True, True, 0)
+
+        vbox.pack_start(btn_box, False, False, 0)
+
+        # Styling CSS
+        css = b'''
+        window {
+            background-color: #1e1e1e;
+        }
+        .card-box {
+            background-color: #282828;
+            border: 1px solid #383838;
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+        .dim-label {
+            color: #b0b0b0;
+        }
+        .card-btn {
+            background-color: #383838;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-weight: 600;
+        }
+        .card-btn:hover {
+            background-color: #e95420;
+        }
+        .footer-btn {
+            background-color: rgba(233, 84, 32, 0.2);
+            color: #ff7844;
+            border: 1px solid #e95420;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-weight: 700;
+        }
+        .footer-btn:hover {
+            background-color: #e95420;
+            color: #ffffff;
+        }
+        '''
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+if __name__ == "__main__":
+    if not Gtk.init_check()[0]:
+        dev_name = get_cmd("getprop ro.product.marketname") or get_cmd("getprop ro.product.model") or "Android Device"
+        arch = get_cmd("uname -m") or "aarch64"
+        print(f"=== Tentang UbRoid ===")
+        print(f"Sistem: Ubuntu 24.04 LTS (Noble Numbat)")
+        print(f"Perangkat: {dev_name} ({arch})")
+        print(f"Pengembang: Tri Wahyu Handoyo (DetronicsID)")
+        print(f"Repositori: https://github.com/triwahyu45/UbRoid_TriWahyu45")
+        sys.exit(0)
+    win = UbRoidAboutDialog()
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    Gtk.main()

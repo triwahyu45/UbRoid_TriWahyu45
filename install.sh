@@ -65,6 +65,8 @@ mkdir -p /root/.config/autostart
 mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /etc/xdg/autostart
 
+cp "$SCRIPT_DIR/configs/ubroid-about.desktop" /usr/share/applications/ 2>/dev/null || true
+
 cp "$SCRIPT_DIR/configs/xfce4-panel.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
 cp "$SCRIPT_DIR/configs/xfwm4.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
 cp "$SCRIPT_DIR/configs/xsettings.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/

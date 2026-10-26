@@ -11,6 +11,7 @@ alias ll='ls -alF --color=auto'
 alias la='ls -A --color=auto'
 alias l='ls -CF --color=auto'
 alias sudo='sudo '
+alias about='dialog-about'
 
 # Detronics ID Terminal Welcome Banner
 if [[ $- == *i* ]]; then
@@ -23,7 +24,9 @@ if [[ $- == *i* ]]; then
     echo -e "\033[1;38;2;255;120;0m ──────────────────────────────────────────────────────\033[0m"
     echo -e "\033[1;37mWelcome to Ubuntu 24.04 LTS (Noble Numbat aarch64) - $DEV_NAME\033[0m"
     echo ""
+    echo -e " \033[1;38;2;0;255;200m*\033[0m UbRoid:             \033[1;38;2;233;84;32mAuthentic Ubuntu Desktop Environment for Android\033[0m"
     echo -e " \033[1;38;2;0;255;200m*\033[0m DetronicsID:        \033[1;38;2;0;255;136mEmbedded & Robotics Linux Environment\033[0m"
+    echo -e " \033[1;38;2;0;255;200m*\033[0m Tentang Sistem:     Ketik \033[1;38;2;255;200;0mdialog-about\033[0m atau \033[1;38;2;255;200;0mabout\033[0m untuk info lengkap"
     echo -e " \033[1;38;2;0;255;200m*\033[0m Shortcut Keluar:    \033[1;38;2;255;200;0mshutdown-ubuntu\033[0m (atau tutup session)"
     echo -e " \033[1;38;2;0;255;200m*\033[0m Perintah Jaringan:  \033[1;38;2;0;229;255mwifi-scan\033[0m | \033[1;38;2;0;229;255mwifi-status\033[0m | \033[1;38;2;0;229;255mifconfig\033[0m"
     echo ""

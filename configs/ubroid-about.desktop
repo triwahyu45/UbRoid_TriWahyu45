@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Tentang UbRoid
+Name[en]=About UbRoid
+Comment=Informasi Sistem UbRoid Desktop (Ubuntu 24.04 LTS for Android)
+Exec=/usr/local/bin/dialog-about
+Icon=help-about
+Terminal=false
+StartupNotify=false
+Categories=Utility;Settings;X-XFCE;X-Xfce-Toplevel;

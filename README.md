@@ -36,6 +36,7 @@
 - 🛡️ **Anti-Freeze & Anti-LMK Protection**: Dilengkapi `ram-guardian` dan `perf-governor` otomatis untuk menjaga multitasking tetap lancar tanpa terhenti oleh sistem Android.
 - 📱 **Launcher Native 1-Tap (`Ubuntu_Launcher.apk`)**: Cukup tap icon Ubuntu di homescreen Android Anda, sesi Ubuntu akan otomatis berjalan di background dan langsung membuka desktop tanpa perlu membuka terminal Termux manual.
 - 📁 **Integrasi Penyimpanan Internal Android**: Akses langsung folder `/sdcard`, Download, dan foto tablet melalui shortcut **Android Storage** di file manager Thunar.
+- ℹ️ **Dialog Tentang UbRoid & Info Sistem (`dialog-about`)**: Dialog informasi GTK3 modern dan CLI (`about`) yang menampilkan model perangkat aktif (misal POCO F6 atau Redmi Pad 2), arsitektur CPU, resolusi layar, pemakaian RAM, dan identitas pengembang DetronicsID.
 
 ---
 
@@ -177,6 +178,29 @@ Tekan **Allow** / **Izinkan** pada jendela pop-up Android.
 Agar performa maksimal dan sesi tidak terputus saat berpindah aplikasi:
 - Buka **Settings Android** -> **Apps** -> **Termux** & **Termux-X11**.
 - Set **Battery Saver** ke **No Restrictions** (Tanpa Pembatasan).
+
+### 5. Memeriksa Informasi Sistem (Tentang UbRoid)
+Untuk melihat spesifikasi sistem, model perangkat yang terdeteksi, memori, dan resolusi:
+- Klik tombol **ℹ** di sudut kanan atas panel **Pengaturan Cepat** (`ubuntu-control-center`), atau
+- Buka aplikasi **Tentang UbRoid** dari Launchpad aplikasi, atau
+- Ketik perintah `about` atau `dialog-about` di terminal Ubuntu.
+
+---
+
+## ℹ️ Tentang UbRoid (About UbRoid)
+
+**UbRoid** adalah distribusi desktop teroptimasi berbasis **Ubuntu 24.04 LTS (Noble Numbat)** yang dikembangkan khusus untuk perangkat Android (Tablet maupun Ponsel berarsitektur ARM64 / `aarch64`). 
+
+| Komponen | Spesifikasi & Keterangan |
+| :--- | :--- |
+| **Sistem Operasi** | Ubuntu 24.04.5 LTS (Noble Numbat) |
+| **Desktop Environment** | XFCE 4.18 (Ubuntu Yaru-Dark Custom Theme) |
+| **Mesin Eksekusi** | PRoot Containerization (Non-Root) |
+| **Display Server** | Termux-X11 Native Surface Buffer |
+| **Audio Server** | PulseAudio TCP Bridge (OpenSL ES Android Speaker) |
+| **Scaling Engine** | Dynamic DPI Detection (`dumpsys display` / Android density) |
+| **Perangkat Teruji** | Redmi Pad 2 (Tablet), Xiaomi POCO F6 (Phone), dll. |
+| **Pengembang & Riset** | **Tri Wahyu Handoyo (DetronicsID)** |
 
 ---
 
