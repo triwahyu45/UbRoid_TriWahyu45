@@ -168,15 +168,17 @@ elif [ -d "$PROOT_ROOTFS_DIR/ubuntu:24.04" ] || proot-distro list 2>/dev/null | 
     UBUNTU_CONTAINER="ubuntu:24.04"
     echo -e "${GREEN}✓ Container 'ubuntu:24.04' sudah terpasang.${NC}"
 else
-    echo "Mengunduh & memasang Ubuntu 24.04 LTS via proot-distro..."
-    # Gunakan tag versi terkunci 24.04 agar tidak terpasang versi rolling yang tidak stabil
-    if proot-distro install ubuntu:24.04 --override-alias ubuntu 2>/dev/null; then
+    echo "Mengunduh & memasang Ubuntu 24.04 LTS (Noble Numbat) via proot-distro..."
+    # Kunci secara spesifik ke Ubuntu 24.04 LTS Noble Numbat
+    if proot-distro install ubuntu:24.04 --name ubuntu 2>/dev/null; then
         UBUNTU_CONTAINER="ubuntu"
     elif proot-distro install ubuntu:24.04 2>/dev/null; then
-        UBUNTU_CONTAINER="ubuntu:24.04"
-    else
-        proot-distro install ubuntu
         UBUNTU_CONTAINER="ubuntu"
+    elif proot-distro install ubuntu 2>/dev/null; then
+        UBUNTU_CONTAINER="ubuntu"
+    else
+        echo -e "${RED}[!] Gagal memasang rootfs Ubuntu via proot-distro.${NC}"
+        exit 1
     fi
     echo -e "${GREEN}✓ Rootfs Ubuntu 24.04 LTS berhasil dipasang.${NC}"
 fi
