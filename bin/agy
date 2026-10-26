@@ -8,9 +8,19 @@
 export PATH="/root/.local/bin:$PATH"
 
 # 1. Cek apakah binary Antigravity CLI sudah terpasang
-if [ ! -f /root/.local/bin/agy.real ] && [ ! -f /root/.local/bin/agy ]; then
-    echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis via official installer...\033[0m"
-    curl -fsSL https://antigravity.google/cli/install.sh | bash
+if [ ! -f /root/.local/bin/agy.real ]; then
+    if [ -f /root/.local/bin/agy ] && [ ! -L /root/.local/bin/agy ]; then
+        mv /root/.local/bin/agy /root/.local/bin/agy.real
+    else
+        echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis via official installer...\033[0m"
+        curl -fsSL https://antigravity.google/cli/install.sh | bash
+        if [ -f /root/.local/bin/agy ] && [ ! -L /root/.local/bin/agy ]; then
+            mv /root/.local/bin/agy /root/.local/bin/agy.real
+        fi
+    fi
+    if [ ! -e /root/.local/bin/agy ] && [ -f /usr/local/bin/agy ]; then
+        ln -sf /usr/local/bin/agy /root/.local/bin/agy
+    fi
 fi
 
 # 2. Pastikan file konfigurasi Turbo Mode siap

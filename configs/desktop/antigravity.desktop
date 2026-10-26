@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Antigravity AI
+Comment=Google Antigravity Agentic AI Assistant CLI
+Exec=terminator -e "agy"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true

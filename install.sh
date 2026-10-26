@@ -210,9 +210,27 @@ chmod +x /usr/local/bin/* 2>/dev/null || true
 
 # 7. Konfigurasi Antigravity CLI (AGY) Turbo Mode
 echo "[7/10] Menyiapkan Antigravity CLI (agy) Turbo Mode..."
-mkdir -p /root/.gemini/antigravity-cli /root/.local/bin
+mkdir -p /root/.gemini/antigravity-cli /root/.local/bin /usr/local/bin
 if [ -f "$SCRIPT_DIR/configs/antigravity/settings.json" ]; then
     cp "$SCRIPT_DIR/configs/antigravity/settings.json" /root/.gemini/antigravity-cli/settings.json
+fi
+
+# Unduh & siapkan binary resmi Antigravity CLI jika belum ada
+if [ ! -f /root/.local/bin/agy.real ]; then
+    if [ -f /root/.local/bin/agy ] && [ ! -L /root/.local/bin/agy ]; then
+        mv /root/.local/bin/agy /root/.local/bin/agy.real
+    else
+        echo "  -> Memasang Antigravity CLI resmi..."
+        curl -fsSL https://antigravity.google/cli/install.sh | bash 2>/dev/null || true
+        if [ -f /root/.local/bin/agy ] && [ ! -L /root/.local/bin/agy ]; then
+            mv /root/.local/bin/agy /root/.local/bin/agy.real
+        fi
+    fi
+fi
+if [ -f "$SCRIPT_DIR/bin/agy" ]; then
+    cp "$SCRIPT_DIR/bin/agy" /usr/local/bin/agy
+    chmod +x /usr/local/bin/agy
+    ln -sf /usr/local/bin/agy /root/.local/bin/agy 2>/dev/null || true
 fi
 
 # 8. Kompilasi libnogap.so (Native C Interceptor)
