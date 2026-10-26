@@ -1,0 +1,34 @@
+[global_config]
+  suppress_multiple_term_dialog = True
+  title_transmit_bg_color = "#000000"
+  title_transmit_fg_color = "#ffffff"
+  title_inactive_bg_color = "#000000"
+  title_inactive_fg_color = "#666666"
+[keybindings]
+[profiles]
+  [[default]]
+    background_color = "#000000"
+    foreground_color = "#f8f8f2"
+    cursor_color = "#00ffcc"
+    cursor_shape = block
+    cursor_blink = True
+    font = Ubuntu Mono Bold 9.5
+    use_system_font = False
+    show_titlebar = False
+    palette = "#000000:#ff3355:#00ff77:#ffcc00:#00d9ff:#cc44ff:#00ffff:#ffffff:#444444:#ff5577:#33ff99:#ffdd33:#33e5ff:#dd66ff:#33ffff:#ffffff"
+    scrollback_infinite = False
+    scrollback_lines = 3000
+    scrollbar_position = right
+    scroll_on_keystroke = True
+    scroll_on_output = False
+[layouts]
+  [[default]]
+    [[[window0]]]
+      type = Window
+      parent = ""
+      size = 780, 480
+    [[[child1]]]
+      type = Terminal
+      parent = window0
+      profile = default
+[plugins]

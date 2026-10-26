@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Bersihkan RAM (Clean RAM)
+Comment=Bebaskan memori background Android untuk Ubuntu
+Exec=/usr/local/bin/clean-ram
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Utility;

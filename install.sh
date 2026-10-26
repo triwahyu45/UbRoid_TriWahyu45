@@ -33,7 +33,7 @@ apt-get install -y \
     yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
     libgtk-3-dev gcc pkg-config xdotool scrot python3-gi \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
-    firefox thunar-archive-plugin file-roller \
+    firefox thunar-archive-plugin file-roller ristretto \
     adb wmctrl jq terminator mousepad pavucontrol onboard
 
 # Bersihkan browser berat seperti Chromium jika ada
@@ -57,32 +57,34 @@ cp "$SCRIPT_DIR"/assets/icons/*.svg /usr/share/icons/Yaru/scalable/apps/ 2>/dev/
 gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
 gtk-update-icon-cache -f /usr/share/icons/Yaru 2>/dev/null || true
 
-# 4. Pasang konfigurasi XFCE, GTK, Panel, dan Launchers
-echo "[4/10] Mengonfigurasi panel dock, window manager & GTK..."
+# 4. Pasang konfigurasi XFCE, GTK, Panel, Desktop & File Associations
+echo "[4/10] Mengonfigurasi panel dock, window manager, desktop & GTK..."
 mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /root/.config/xfce4/panel
 mkdir -p /root/.config/gtk-3.0
 mkdir -p /root/.config/autostart
+mkdir -p /root/.config/terminator
+mkdir -p /root/Desktop
 mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /etc/xdg/autostart
 
 cp "$SCRIPT_DIR/configs/ubroid-about.desktop" /usr/share/applications/ 2>/dev/null || true
-cp "$SCRIPT_DIR/configs/xfce4-panel.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xfwm4.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xsettings.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xfce4-desktop.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xfce4-settings-manager.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
-cp "$SCRIPT_DIR/configs/thunar.xml" /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
 
-cp "$SCRIPT_DIR/configs/xfce4-panel.xml" /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xfwm4.xml" /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xsettings.xml" /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xfce4-desktop.xml" /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-cp "$SCRIPT_DIR/configs/xfce4-settings-manager.xml" /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+# Salin seluruh XML pengaturan XFCE
+cp "$SCRIPT_DIR/configs/"*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+cp "$SCRIPT_DIR/configs/"*.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
 
+# Salin konfigurasi GTK, Terminator, & Mimeapps
 cp "$SCRIPT_DIR/configs/gtk.css" /root/.config/gtk-3.0/
 cp "$SCRIPT_DIR/configs/bookmarks" /root/.config/gtk-3.0/ 2>/dev/null || true
 cp "$SCRIPT_DIR/configs/.Xresources" /root/.Xresources 2>/dev/null || true
+cp "$SCRIPT_DIR/configs/mimeapps.list" /root/.config/mimeapps.list 2>/dev/null || true
+cp "$SCRIPT_DIR/configs/mimeapps.list" /etc/xdg/mimeapps.list 2>/dev/null || true
+cp "$SCRIPT_DIR/configs/terminator/config" /root/.config/terminator/config 2>/dev/null || true
+
+# Pasang shortcut desktop resmi
+cp "$SCRIPT_DIR/configs/desktop/"*.desktop /root/Desktop/ 2>/dev/null || true
+chmod +x /root/Desktop/*.desktop 2>/dev/null || true
 
 # Bersihkan dan pasang panel launchers terbaru
 rm -rf /root/.config/xfce4/panel/launcher-*

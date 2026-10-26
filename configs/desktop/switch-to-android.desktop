@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kembali ke Android
+Comment=Keluar dari Linux dan pulihkan semua fitur Android secara normal
+Exec=/usr/local/bin/shutdown-ubuntu
+Icon=system-shutdown
+Categories=System;
+Terminal=false
+StartupNotify=false

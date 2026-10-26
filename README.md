@@ -84,14 +84,8 @@ UbRoid_TriWahyu45/
 
 ## 🚀 Cara Instalasi Cepat (Otomatis 1 Baris)
 
-### Langkah 1: Pasang APK Pendukung
-Download dan pasang ketiga APK dari folder [`apks/`](apks/):
-1. [`termux-app.apk`](apks/termux-app.apk)
-2. [`termux-x11.apk`](apks/termux-x11.apk)
-3. [`Ubuntu_Launcher.apk`](apks/Ubuntu_Launcher.apk)
-
-### Langkah 2: Jalankan Script Master Installer di Termux
-Buka aplikasi **Termux**, salin dan tempel perintah berikut:
+### Langkah 1: Jalankan Script Master Installer di Termux
+Cukup buka aplikasi **Termux**, salin dan tempel **satu perintah** berikut:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/ubroid.sh | bash
@@ -105,12 +99,23 @@ bash ubroid.sh
 ```
 
 Script akan otomatis:
-1. Memperbarui paket Termux & memasang dependensi (`proot-distro`, `x11-repo`, `pulseaudio`, `bc`, dll.).
-2. Mengunduh dan memasang container resmi **Ubuntu 24.04 LTS (Noble Numbat)** dengan tag terkunci.
-3. Memasang XFCE4, Firefox PPA asli (bukan snap), tema Yaru-dark, font Ubuntu, dan dependensi desktop.
-4. Mengaplikasikan wallpaper ungu resmi Noble Numbat, icon vektor Yaru, floating dock anti-glitch, dan optimasi performa RAM.
-5. Mendeteksi resolusi dan DPI layar Android secara dinamis (otomatis menyesuaikan skala tampilan baik di Ponsel maupun Tablet).
-6. Mengonfigurasi terminal Termux dan Ubuntu dengan **DetronicsID Terminal Welcome Banner** interaktif.
+1. Memeriksa izin penyimpanan (`termux-setup-storage`) & membersihkan terminal (`~/.hushlogin`).
+2. Memperbarui paket Termux & memasang dependensi (`proot-distro`, `x11-repo`, `pulseaudio`, `bc`, dll.).
+3. Mengunduh dan memasang container resmi **Ubuntu 24.04 LTS (Noble Numbat)** dengan tag versi terkunci.
+4. Memasang XFCE4, Firefox PPA asli (bukan snap), tema Yaru-dark, font Ubuntu, dan dependensi desktop.
+5. Menyiapkan Antigravity CLI (`agy`) Turbo Mode dan shortcut desktop resmi.
+6. Menyalin file APK pendukung secara otomatis ke folder internal:
+   📁 **`/sdcard/Download/UbRoid_APKs/`**
+7. Mendeteksi resolusi dan DPI layar Android secara dinamis (menyesuaikan skala tampilan baik di Ponsel maupun Tablet).
+8. Mengonfigurasi terminal Termux dan Ubuntu dengan **DetronicsID Terminal Welcome Banner** interaktif.
+
+### Langkah 2: Pasang APK Pendukung dari Folder Download
+Buka aplikasi **File Manager** bawaan Android Anda:
+1. Masuk ke folder **Download** -> **`UbRoid_APKs`**.
+2. Pasang kedua aplikasi pendukung:
+   - [`termux-x11.apk`](apks/termux-x11.apk) (X11 Display Server)
+   - [`Ubuntu_Launcher.apk`](apks/Ubuntu_Launcher.apk) (Peluncur 1-Tap Homescreen)
+3. Pastikan izin **"Tampilkan di atas aplikasi lain"** (Display over other apps) aktif untuk aplikasi **Termux-X11**.
 
 ### Langkah 3: Menjalankan Ubuntu Desktop
 Anda dapat menjalankan Ubuntu dengan salah satu cara berikut:
@@ -209,6 +214,10 @@ Selain membekukan aplikasi, eksperimen ADB pada UbRoid juga melakukan:
 - **`cmd notification set_dnd on` & `heads_up_notifications_enabled 0`**: Memblokir pop-up notifikasi melayang yang sering menutupi panel status bar atas Ubuntu saat mengetik atau browsing.
 - **`device_config put activity_manager max_cached_processes 8`**: Mengurangi alokasi proses cache Android agar prioritas RAM 100% diberikan ke proses Linux PRoot (XFCE, Firefox, GCC).
 - **`cmd power set-fixed-performance-mode-enabled true`**: Mengunci CPU governor agar tidak terjadi throttling saat compile kode atau browsing berat.
+
+> [!TIP]
+> **Cara Cepat Pairing ADB Wireless di Android 11+ (Poco F6 / Tablet):**
+> Anda tidak perlu mengetik perintah ADB manual yang rumit. Cukup ketik perintah **`adb-pair`** di terminal Ubuntu, lalu masukkan port & kode pairing 6 digit dari menu *Developer Options -> Wireless Debugging*. Skrip akan otomatis mengonfigurasi koneksi ke `127.0.0.1:5555`.
 
 ---
 

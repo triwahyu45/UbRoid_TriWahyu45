@@ -3,7 +3,7 @@
 # UbRoid - Authentic Ubuntu 24.04 LTS Desktop Environment for Android
 # Master 1-Click Universal Installer (Phones & Tablets)
 # Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
-# Author: Tri Wahyu Handoyo (triwahyu45)
+# Author: Tri Wahyu Handoyo (triwahyu45 / DetronicsID)
 # ==============================================================================
 
 set -e
@@ -60,6 +60,15 @@ fi
 # ------------------------------------------------------------------------------
 # KASUS 2: DIJALANKAN DARI TERMUX (MASTER INSTALLER)
 # ------------------------------------------------------------------------------
+
+# 0. Pastikan izin penyimpanan & kebersihan login terminal
+if [ ! -d "$HOME/storage" ] && [ ! -d "/sdcard/Download" ]; then
+    echo -e "${YELLOW}[!] Meminta izin akses penyimpanan Android (Storage Permission)...${NC}"
+    termux-setup-storage 2>/dev/null || true
+    sleep 2
+fi
+touch "$HOME/.hushlogin"
+
 echo -e "${CYAN}[1/7] Menyiapkan environment Termux & dependensi dasar...${NC}"
 pkg update -y
 pkg install -y proot-distro x11-repo pulseaudio wget git tar bc
@@ -151,13 +160,25 @@ proot-distro login "$UBUNTU_CONTAINER" \
   --bind "$TMPDIR/resolv.conf:/etc/resolv.conf" \
   -- bash /root/UbRoid_TriWahyu45/install.sh
 
-# 7. Selesai
+# 7. Salin APK ke folder Download Android agar mudah dipasang pengguna
+echo -e "${CYAN}[7/7] Menyalin APK pendukung ke folder Download Android...${NC}"
+APK_DEST="/sdcard/Download/UbRoid_APKs"
+mkdir -p "$APK_DEST" 2>/dev/null || true
+cp "$REPO_DIR"/apks/*.apk "$APK_DEST/" 2>/dev/null || true
+
+# Buka dialog izin Overlay Android untuk Termux-X11
+/system/bin/am start -a android.settings.action.MANAGE_OVERLAY_PERMISSION -d "package:com.termux.x11" 2>/dev/null || true
+
+# 8. Selesai
 echo -e "\n${GREEN}==============================================================================${NC}"
 echo -e "${GREEN}🎉 INSTALASI UBROID BERHASIL DISELESAIKAN UNTUK ${DEV_NAME}!${NC}"
 echo -e "${GREEN}==============================================================================${NC}"
-echo -e "Langkah Selanjutnya:"
-echo -e "1. Install APK pendukung dari folder: ${YELLOW}$REPO_DIR/apks/${NC}"
-echo -e "   - ${CYAN}termux-x11.apk${NC} (X11 Display Server)"
-echo -e "   - ${CYAN}Ubuntu_Launcher.apk${NC} (Peluncur 1-Tap dari Homescreen Android)"
-echo -e "2. Jalankan perintah di Termux: ${YELLOW}ubuntu${NC} (atau klik icon aplikasi Ubuntu di Homescreen Android)"
+echo -e "Langkah Terakhir (Sangat Mudah):"
+echo -e "1. File APK pendukung otomatis disalin ke folder internal:"
+echo -e "   📂 ${YELLOW}/sdcard/Download/UbRoid_APKs/${NC}"
+echo -e "   Buka File Manager Android -> Download -> UbRoid_APKs, lalu pasang:"
+echo -e "   - ${CYAN}termux-x11.apk${NC} (Display Server X11)"
+echo -e "   - ${CYAN}Ubuntu_Launcher.apk${NC} (Peluncur 1-Tap Homescreen)"
+echo -e "2. Pastikan izin ${YELLOW}'Tampilkan di atas aplikasi lain'${NC} aktif untuk Termux-X11."
+echo -e "3. Jalankan perintah di Termux: ${YELLOW}ubuntu${NC} (atau tap icon aplikasi Ubuntu di Homescreen)!"
 echo -e "${GREEN}==============================================================================${NC}\n"

@@ -1,0 +1,59 @@
+#!/bin/bash
+# ==============================================================================
+# UbRoid ADB Wireless Debugging Pairing Helper
+# Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+# Author: Tri Wahyu Handoyo (triwahyu45 / DetronicsID)
+# ==============================================================================
+
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${CYAN}==============================================================================${NC}"
+echo -e "${GREEN}📱 UbRoid ADB Wireless Debugging Pairing Helper${NC}"
+echo -e "${CYAN}==============================================================================${NC}"
+echo -e "Petunjuk di Android:"
+echo -e "1. Buka ${YELLOW}Settings -> Opsi Pengembang (Developer Options)${NC}"
+echo -e "2. Aktifkan ${YELLOW}Debugging Nirkabel (Wireless Debugging)${NC}"
+echo -e "3. Tap ${YELLOW}'Pasangkan perangkat dengan kode pemasangan'${NC}\n"
+
+read -p "Masukkan Port Pairing (contoh: 38451): " PAIR_PORT
+if [ -z "$PAIR_PORT" ]; then
+    echo -e "${RED}[!] Port tidak boleh kosong.${NC}"
+    exit 1
+fi
+
+read -p "Masukkan Kode Pairing 6 Digit (contoh: 123456): " PAIR_CODE
+if [ -z "$PAIR_CODE" ]; then
+    echo -e "${RED}[!] Kode pairing tidak boleh kosong.${NC}"
+    exit 1
+fi
+
+echo -e "\n${CYAN}[*] Melakukan pairing ke 127.0.0.1:$PAIR_PORT...${NC}"
+adb pair "127.0.0.1:$PAIR_PORT" "$PAIR_CODE"
+
+echo -e "\n${YELLOW}Sekarang lihat di layar Wireless Debugging Android pada bagian:${NC}"
+echo -e "${YELLOW}'Alamat IP & Port' (Port Utama, bukan port pairing tadi).${NC}"
+read -p "Masukkan Port Wireless Debugging Utama: " MAIN_PORT
+if [ -z "$MAIN_PORT" ]; then
+    echo -e "${RED}[!] Port tidak boleh kosong.${NC}"
+    exit 1
+fi
+
+echo -e "${CYAN}[*] Menyambungkan ke 127.0.0.1:$MAIN_PORT...${NC}"
+adb connect "127.0.0.1:$MAIN_PORT"
+sleep 1
+
+echo -e "${CYAN}[*] Mengalihkan ADB ke Port Standar 5555...${NC}"
+adb -s "127.0.0.1:$MAIN_PORT" tcpip 5555 2>/dev/null || adb tcpip 5555
+sleep 1
+adb connect 127.0.0.1:5555
+
+echo -e "\n${GREEN}==============================================================================${NC}"
+echo -e "${GREEN}✓ ADB BERHASIL TERHUBUNG KE 127.0.0.1:5555!${NC}"
+echo -e "${GREEN}==============================================================================${NC}"
+echo -e "Fitur Dedicated Linux OS Mode, pembekuan aplikasi, status baterai, dan kontrol"
+echo -e "volume hardware kini aktif sepenuhnya di UbRoid."
+echo -e "${GREEN}==============================================================================${NC}\n"
