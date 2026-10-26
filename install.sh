@@ -43,13 +43,31 @@ nameserver 9.9.9.9
 EOF
 fi
 
-# 2. Deteksi Arsitektur & Codename Ubuntu (Noble/Jammy, Ports vs Archive)
+# Konfigurasi retry dan timeout APT agar tahan gangguan jaringan / VPN
+mkdir -p /etc/apt/apt.conf.d
+cat << 'EOF' > /etc/apt/apt.conf.d/99ubroid-network
+Acquire::Retries "5";
+Acquire::http::Timeout "30";
+Acquire::https::Timeout "30";
+Acquire::Queue-Mode "host";
+EOF
+
+# 2. Deteksi Arsitektur & Mirror Tercepat (Anti-Lag Mirror Auto-Select)
 ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
 case "$ARCH" in
-    aarch64|arm64) UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/" ;;
-    armhf|armv7l)  UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/" ;;
-    riscv64)       UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/" ;;
-    *)             UBUNTU_MIRROR="http://archive.ubuntu.com/ubuntu/" ;;
+    aarch64|arm64|armhf|armv7l|riscv64)
+        UBUNTU_MIRROR="http://ports.ubuntu.com/ubuntu-ports/"
+        for cand in "http://free.nchc.org.tw/ubuntu-ports/" "http://mirror.math.princeton.edu/pub/ubuntu-ports/"; do
+            if curl -s -o /dev/null -w "%{http_code}" -m 3 "${cand}dists/noble/Release" 2>/dev/null | grep -q "200"; then
+                UBUNTU_MIRROR="$cand"
+                echo "✓ Menggunakan high-speed mirror: $UBUNTU_MIRROR"
+                break
+            fi
+        done
+        ;;
+    *)
+        UBUNTU_MIRROR="http://archive.ubuntu.com/ubuntu/"
+        ;;
 esac
 
 CODENAME="$(grep VERSION_CODENAME /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')"
@@ -114,7 +132,17 @@ apt-get install -y --fix-missing \
     gir1.2-gtk-3.0 pulseaudio-utils dbus-x11 bc synaptic sudo \
     firefox thunar-archive-plugin file-roller ristretto \
     adb wmctrl jq terminator mousepad pavucontrol onboard \
-    xclip xsel wl-clipboard || apt-get install -f -y
+    xclip xsel wl-clipboard || true
+
+# Jalankan perbaikan dependensi & pastikan paket esensial tidak ada yang terlewat
+dpkg --configure -a || true
+apt-get install -f -y || true
+apt-get install -y \
+    xfce4 xfce4-panel xfwm4 xfce4-settings xfce4-terminal \
+    yaru-theme-gtk yaru-theme-icon fonts-ubuntu \
+    libgtk-3-dev gcc pkg-config x11proto-dev libx11-dev xdotool scrot \
+    pulseaudio-utils dbus-x11 bc synaptic sudo firefox \
+    terminator mousepad xclip xsel wl-clipboard || true
 
 # Bersihkan browser berat seperti Chromium jika ada
 apt-get purge -y chromium chromium-common 2>/dev/null || true
