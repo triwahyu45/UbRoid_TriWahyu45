@@ -25,7 +25,7 @@ alias u="ubuntu"
 ubuntu-cli() {
     local c
     c=$(_get_ubroid_container)
-    proot-distro login "$c" "$@"
+    proot-distro login "$c" --bind /sdcard:/sdcard "$@"
 }
 alias uc="ubuntu-cli"
 
@@ -33,7 +33,7 @@ alias uc="ubuntu-cli"
 agy() {
     local c
     c=$(_get_ubroid_container)
-    proot-distro login "$c" -- agy "$@"
+    proot-distro login "$c" --bind /sdcard:/sdcard -- agy "$@"
 }
 
 alias wifi-scan="termux-wifi-scaninfo"
