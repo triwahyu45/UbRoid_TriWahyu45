@@ -29,7 +29,7 @@
     <property name="MenuImages" type="bool" value="true"/>
     <property name="ToolbarStyle" type="string" value="icons"/>
     <property name="ToolbarIconSize" type="int" value="3"/>
-    <property name="IconSizes" type="string" value="gtk-menu=24,24:gtk-button=24,24:gtk-small-toolbar=24,24:gtk-large-toolbar=32,32:gtk-dnd=32,32:gtk-dialog=48,48"/>
+    <property name="IconSizes" type="string" value="gtk-menu=26,26:gtk-button=30,30:gtk-small-toolbar=26,26:gtk-large-toolbar=36,36:gtk-dnd=36,36:gtk-dialog=48,48"/>
     <property name="DecorationLayout" type="string" value="menu:minimize,maximize,close"/>
     <property name="EnableAnimations" type="bool" value="false"/>
   </property>

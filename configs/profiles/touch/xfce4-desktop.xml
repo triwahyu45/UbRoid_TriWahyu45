@@ -56,7 +56,7 @@
   </property>
   <property name="desktop-icons" type="empty">
     <property name="style" type="int" value="0"/>
-    <property name="icon-size" type="uint" value="64"/>
+    <property name="icon-size" type="uint" value="58"/>
     <property name="show-thumbnails" type="bool" value="false"/>
     <property name="show-tooltips" type="bool" value="false"/>
     <property name="single-click" type="bool" value="true"/>
@@ -67,6 +67,6 @@
       <property name="show-removable" type="bool" value="false"/>
     </property>
     <property name="use-custom-font-size" type="bool" value="true"/>
-    <property name="font-size" type="double" value="12"/>
+    <property name="font-size" type="double" value="10.5"/>
   </property>
 </channel>

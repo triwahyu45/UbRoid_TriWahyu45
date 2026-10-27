@@ -86,7 +86,7 @@
     </property>
   </property>
   <property name="desktop-icons" type="empty">
-    <property name="icon-size" type="uint" value="44"/>
+    <property name="icon-size" type="uint" value="58"/>
     <property name="show-thumbnails" type="bool" value="false"/>
     <property name="show-tooltips" type="bool" value="false"/>
     <property name="single-click" type="bool" value="false"/>
@@ -97,6 +97,6 @@
       <property name="show-removable" type="bool" value="false"/>
     </property>
     <property name="use-custom-font-size" type="bool" value="true"/>
-    <property name="font-size" type="double" value="9"/>
+    <property name="font-size" type="double" value="10.5"/>
   </property>
 </channel>

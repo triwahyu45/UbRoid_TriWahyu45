@@ -10,8 +10,8 @@
       <property name="position" type="string" value="p=6;x=0;y=0"/>
       <property name="length" type="uint" value="100"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="18"/>
-      <property name="size" type="uint" value="34"/>
+      <property name="icon-size" type="uint" value="24"/>
+      <property name="size" type="uint" value="38"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="21"/>
@@ -27,10 +27,10 @@
       <property name="mode" type="uint" value="0"/>
       <property name="autohide-behavior" type="uint" value="0"/>
       <property name="position" type="string" value="p=10;x=0;y=0"/>
-      <property name="length" type="uint" value="82"/>
+      <property name="length" type="uint" value="86"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="32"/>
-      <property name="size" type="uint" value="52"/>
+      <property name="icon-size" type="uint" value="44"/>
+      <property name="size" type="uint" value="64"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="13"/>

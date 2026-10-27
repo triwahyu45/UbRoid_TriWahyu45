@@ -27,7 +27,9 @@ options timeout:2 attempts:2
 RESOLV
 fi
 
-# Prevent gpg-agent / ssh-agent / gnome-keyring / portal bloat in PRoot (saves ~10 process slots)
+# Prevent gpg-agent / ssh-agent / gnome-keyring / evolution spin loops in PRoot
+chmod -x /usr/libexec/evolution* 2>/dev/null || true
+pkill -9 -f "evolution" 2>/dev/null || true
 chmod -x /etc/X11/Xsession.d/90gpg-agent 2>/dev/null || true
 pkill -9 -f "[g]pg-agent" 2>/dev/null || true
 pkill -9 -f "[s]sh-agent" 2>/dev/null || true
@@ -61,13 +63,13 @@ rm -rf /root/.cache/sessions/* 2>/dev/null || true
 
 # Safe Inset Bezel & Floating Rounded Dock via xfconf-query
 xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 100 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 35 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 20 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 38 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 24 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 84 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 54 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 34 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 64 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 44 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
 
@@ -206,15 +208,19 @@ xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
 
     # Safe Inset Bezel & Floating Rounded Dock via xfconf-query
     xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 100 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 35 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 20 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 38 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 24 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 84 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 54 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 34 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 64 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 44 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p /desktop-icons/icon-size -s 58 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p /desktop-icons/font-size -s 10.5 2>/dev/null || true
+    xfconf-query -c xsettings -p /Gtk/IconSizes -s "gtk-menu=26,26:gtk-button=30,30:gtk-small-toolbar=26,26:gtk-large-toolbar=36,36:gtk-dnd=36,36:gtk-dialog=48,48" 2>/dev/null || true
+    xfconf-query -c xsettings -p /Gtk/ToolbarIconSize -s 3 2>/dev/null || true
     xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
     echo "gboard" > /etc/ubroid/keyboard_pref 2>/dev/null || true
 ) &

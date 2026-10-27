@@ -128,7 +128,6 @@ window.lomiri-drawer {
     background-color: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.04);
     min-width: 96px;
-    max-width: 120px;
     transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
@@ -421,7 +420,7 @@ class LomiriAppDrawer(Gtk.Window):
         box.get_style_context().add_class("app-card")
 
         # Suru Squircle Icon
-        img = self.get_icon_image(item.icon_name, icon_theme, 56)
+        img = self.get_icon_image(item.icon_name, icon_theme, 64)
         img.get_style_context().add_class("app-icon")
         box.pack_start(img, False, False, 0)
 
@@ -456,16 +455,22 @@ class LomiriAppDrawer(Gtk.Window):
             
             # Check icon theme
             if icon_theme and icon_theme.has_icon(icon_str):
-                return Gtk.Image.new_from_icon_name(icon_str, Gtk.IconSize.DIALOG)
+                img = Gtk.Image.new_from_icon_name(icon_str, Gtk.IconSize.DIALOG)
+                img.set_pixel_size(size)
+                return img
             
             # Try parsing themed icon name
             clean_name = icon_str.split()[-1] if " " in icon_str else icon_str
             if icon_theme and icon_theme.has_icon(clean_name):
-                return Gtk.Image.new_from_icon_name(clean_name, Gtk.IconSize.DIALOG)
+                img = Gtk.Image.new_from_icon_name(clean_name, Gtk.IconSize.DIALOG)
+                img.set_pixel_size(size)
+                return img
         except Exception:
             pass
 
-        return Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+        img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+        img.set_pixel_size(size)
+        return img
 
     def launch_app(self, item):
         try:
