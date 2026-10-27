@@ -1,0 +1,411 @@
+#!/usr/bin/env python3
+"""
+UbRoid - Lomiri Multitasking Overview (Task Spread)
+Official Ubuntu Touch Card Switcher for Android (POCO F6)
+"""
+
+import os
+import sys
+import time
+import subprocess
+import gi
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('GdkPixbuf', '2.0')
+gi.require_version('Wnck', '3.0')
+from gi.repository import Gtk, Gdk, GdkPixbuf, Wnck, GLib, Pango
+
+if 'DISPLAY' not in os.environ:
+    os.environ['DISPLAY'] = ':0'
+
+UBUNTU_ORANGE = "#E95420"
+UBUNTU_AUBERGINE = "#77216F"
+
+CSS_STYLES = b"""
+window.lomiri-spread {
+    background-color: rgba(18, 9, 20, 0.96);
+    color: #ffffff;
+    font-family: 'Ubuntu', -apple-system, sans-serif;
+}
+
+.spread-header {
+    padding: 16px 20px 8px 20px;
+}
+
+.spread-title {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.spread-subtitle {
+    font-size: 9pt;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.close-btn {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    font-size: 12pt;
+    font-weight: bold;
+    transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+    background-color: #E95420;
+    color: #ffffff;
+}
+
+.close-all-btn {
+    background-color: rgba(233, 84, 32, 0.2);
+    color: #ff8559;
+    border: 1px solid #E95420;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-size: 9pt;
+    font-weight: 700;
+    transition: all 0.15s ease;
+}
+
+.close-all-btn:hover {
+    background-color: #E95420;
+    color: #ffffff;
+}
+
+.cards-scroll {
+    background: transparent;
+    padding: 8px 16px 24px 16px;
+}
+
+.card-item {
+    background-color: rgba(42, 20, 45, 0.7);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 12px;
+    margin: 8px 0;
+    transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.card-item:hover {
+    background-color: rgba(233, 84, 32, 0.22);
+    border-color: #E95420;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(233, 84, 32, 0.3);
+}
+
+.card-icon {
+    margin-right: 12px;
+}
+
+.card-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.card-appname {
+    font-size: 8.5pt;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.card-close {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    font-size: 10pt;
+    font-weight: bold;
+    transition: all 0.15s ease;
+}
+
+.card-close:hover {
+    background-color: #df382c;
+    color: #ffffff;
+}
+
+.empty-box {
+    padding: 60px 20px;
+}
+
+.empty-title {
+    font-size: 13pt;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 14px;
+}
+
+.empty-sub {
+    font-size: 9.5pt;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 20px;
+}
+
+.launch-drawer-btn {
+    background-color: #E95420;
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    padding: 10px 20px;
+    font-size: 10.5pt;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(233, 84, 32, 0.4);
+}
+"""
+
+class LomiriTaskSpread(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("Lomiri Task Spread")
+        self.set_role("lomiri-task-spread")
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+        self.get_style_context().add_class("lomiri-spread")
+
+        screen = Gdk.Screen.get_default()
+        width = screen.get_width() if screen else 554
+        height = screen.get_height() if screen else 1232
+        self.set_default_size(width, height)
+        self.fullscreen()
+
+        self.apply_css()
+
+        self.connect("key-press-event", self.on_key_press)
+
+        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.add(self.main_box)
+
+        # Header Box
+        header_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        header_box.get_style_context().add_class("spread-header")
+
+        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        
+        info_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        lbl_title = Gtk.Label(label="Multitasking Overview", xalign=0)
+        lbl_title.get_style_context().add_class("spread-title")
+        lbl_sub = Gtk.Label(label="Beralih antar aplikasi • Ketuk untuk membuka", xalign=0)
+        lbl_sub.get_style_context().add_class("spread-subtitle")
+        info_col.pack_start(lbl_title, False, False, 0)
+        info_col.pack_start(lbl_sub, False, False, 0)
+        top_row.pack_start(info_col, True, True, 0)
+
+        self.btn_close_all = Gtk.Button(label="Tutup Semua")
+        self.btn_close_all.get_style_context().add_class("close-all-btn")
+        self.btn_close_all.connect("clicked", self.on_close_all)
+        top_row.pack_end(self.btn_close_all, False, False, 4)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("close-btn")
+        btn_close.connect("clicked", lambda b: self.close_switcher())
+        top_row.pack_end(btn_close, False, False, 0)
+
+        header_box.pack_start(top_row, False, False, 0)
+        self.main_box.pack_start(header_box, False, False, 0)
+
+        # Container for cards
+        self.scroll = Gtk.ScrolledWindow()
+        self.scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.scroll.get_style_context().add_class("cards-scroll")
+
+        self.cards_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.scroll.add(self.cards_box)
+        self.main_box.pack_start(self.scroll, True, True, 0)
+
+        # Populate windows via Wnck
+        self.wnck_screen = Wnck.Screen.get_default()
+        self.wnck_screen.force_update()
+        
+        # Populate on idle to ensure window hierarchy is clean
+        GLib.idle_add(self.populate_windows)
+
+    def apply_css(self):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS_STYLES)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+    def populate_windows(self):
+        self.wnck_screen.force_update()
+        windows = self.wnck_screen.get_windows()
+        
+        app_windows = []
+        my_xid = self.get_window().get_xid() if self.get_window() else 0
+
+        for w in windows:
+            # Filter non-app windows
+            wtype = w.get_window_type()
+            if wtype in (Wnck.WindowType.DESKTOP, Wnck.WindowType.DOCK):
+                continue
+            if w.get_xid() == my_xid:
+                continue
+            name = w.get_name() or ""
+            if any(ign in name for ign in ["Lomiri Task Spread", "Lomiri App Scope", "xfce4-panel", "Desktop"]):
+                continue
+            app_windows.append(w)
+
+        if not app_windows:
+            self.btn_close_all.set_sensitive(False)
+            self.show_empty_state()
+            return
+
+        self.btn_close_all.set_sensitive(True)
+        for w in app_windows:
+            card = self.create_window_card(w)
+            self.cards_box.pack_start(card, False, False, 0)
+
+        self.cards_box.show_all()
+
+    def create_window_card(self, wnck_win):
+        ev = Gtk.EventBox()
+        ev.set_visible_window(False)
+
+        card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        card.get_style_context().add_class("card-item")
+
+        # Window Icon
+        icon_pix = wnck_win.get_icon()
+        if not icon_pix:
+            icon_pix = wnck_win.get_mini_icon()
+
+        if icon_pix:
+            # Scale to 48x48
+            scaled_pix = icon_pix.scale_simple(48, 48, GdkPixbuf.InterpType.BILINEAR) if hasattr(icon_pix, 'scale_simple') else icon_pix
+            img = Gtk.Image.new_from_pixbuf(scaled_pix)
+        else:
+            img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+        img.get_style_context().add_class("card-icon")
+        card.pack_start(img, False, False, 0)
+
+        # Window Labels
+        text_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        
+        title_str = wnck_win.get_name() or "Aplikasi"
+        lbl_title = Gtk.Label(label=title_str, xalign=0)
+        lbl_title.get_style_context().add_class("card-title")
+        lbl_title.set_ellipsize(Pango.EllipsizeMode.END)
+        lbl_title.set_max_width_chars(32)
+
+        app_obj = wnck_win.get_application()
+        app_name = app_obj.get_name() if app_obj else "Linux App"
+        lbl_app = Gtk.Label(label=app_name, xalign=0)
+        lbl_app.get_style_context().add_class("card-appname")
+
+        text_col.pack_start(lbl_title, False, False, 0)
+        text_col.pack_start(lbl_app, False, False, 0)
+        card.pack_start(text_col, True, True, 0)
+
+        # Close button for this specific window
+        btn_close_win = Gtk.Button(label="✕")
+        btn_close_win.get_style_context().add_class("card-close")
+        btn_close_win.connect("clicked", lambda b: self.close_single_window(wnck_win, card))
+        card.pack_end(btn_close_win, False, False, 0)
+
+        ev.add(card)
+        ev.connect("button-press-event", lambda w, e: self.activate_window(wnck_win))
+        return ev
+
+    def activate_window(self, wnck_win):
+        t = int(time.time())
+        try:
+            wnck_win.activate(t)
+        except Exception:
+            pass
+        self.close_switcher()
+
+    def close_single_window(self, wnck_win, card_widget):
+        t = int(time.time())
+        try:
+            wnck_win.close(t)
+        except Exception:
+            pass
+        card_widget.destroy()
+        # Check if empty
+        GLib.timeout_add(300, self.check_remaining_windows)
+
+    def check_remaining_windows(self):
+        if len(self.cards_box.get_children()) == 0:
+            self.show_empty_state()
+
+    def on_close_all(self, btn):
+        t = int(time.time())
+        for child in self.cards_box.get_children():
+            child.destroy()
+        windows = self.wnck_screen.get_windows()
+        for w in windows:
+            wtype = w.get_window_type()
+            if wtype in (Wnck.WindowType.DESKTOP, Wnck.WindowType.DOCK):
+                continue
+            name = w.get_name() or ""
+            if any(ign in name for ign in ["Lomiri Task Spread", "xfce4-panel", "Desktop"]):
+                continue
+            try:
+                w.close(t)
+            except Exception:
+                pass
+        self.show_empty_state()
+
+    def show_empty_state(self):
+        for c in self.cards_box.get_children():
+            c.destroy()
+
+        empty_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        empty_box.get_style_context().add_class("empty-box")
+        empty_box.set_halign(Gtk.Align.CENTER)
+        empty_box.set_valign(Gtk.Align.CENTER)
+
+        icon = Gtk.Image.new_from_icon_name("view-grid-symbolic", Gtk.IconSize.DIALOG)
+        icon.set_pixel_size(64)
+        empty_box.pack_start(icon, False, False, 0)
+
+        lbl = Gtk.Label(label="Tidak ada aplikasi yang sedang berjalan")
+        lbl.get_style_context().add_class("empty-title")
+        empty_box.pack_start(lbl, False, False, 0)
+
+        sub = Gtk.Label(label="Layar Anda bersih. Buka aplikasi dari App Scope.")
+        sub.get_style_context().add_class("empty-sub")
+        empty_box.pack_start(sub, False, False, 0)
+
+        btn_open = Gtk.Button(label="Buka App Scope")
+        btn_open.get_style_context().add_class("launch-drawer-btn")
+        btn_open.connect("clicked", lambda b: (subprocess.Popen(["/usr/local/bin/lomiri-app-drawer"]), self.close_switcher()))
+        empty_box.pack_start(btn_open, False, False, 0)
+
+        self.cards_box.pack_start(empty_box, True, True, 0)
+        self.cards_box.show_all()
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            self.close_switcher()
+            return True
+        return False
+
+    def close_switcher(self):
+        self.destroy()
+        Gtk.main_quit()
+
+if __name__ == "__main__":
+    curr_pid = os.getpid()
+    try:
+        out = subprocess.check_output(["pgrep", "-f", "lomiri-task-spread"]).decode().split()
+        for p in out:
+            if int(p) != curr_pid:
+                os.kill(int(p), 15)
+    except Exception:
+        pass
+
+    spread = LomiriTaskSpread()
+    spread.show_all()
+    Gtk.main()

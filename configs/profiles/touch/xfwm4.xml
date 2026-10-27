@@ -6,12 +6,12 @@
     <property name="use_compositing" type="bool" value="false"/>
     <property name="box_resize" type="bool" value="false"/>
     <property name="box_move" type="bool" value="false"/>
-    <property name="title_font" type="string" value="Ubuntu Bold 10"/>
-    <property name="button_layout" type="string" value="O|HMC"/>
+    <property name="title_font" type="string" value="Ubuntu Bold 13"/>
+    <property name="button_layout" type="string" value="|C"/>
     <property name="activate_action" type="string" value="bring"/>
     <property name="borderless_maximize" type="bool" value="true"/>
     <property name="button_offset" type="int" value="0"/>
-    <property name="button_spacing" type="int" value="2"/>
+    <property name="button_spacing" type="int" value="4"/>
     <property name="click_to_focus" type="bool" value="true"/>
     <property name="cycle_apps_only" type="bool" value="false"/>
     <property name="cycle_draw_frame" type="bool" value="true"/>

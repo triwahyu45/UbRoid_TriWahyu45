@@ -1,0 +1,554 @@
+#!/usr/bin/env python3
+"""
+UbRoid - Lomiri Fullscreen App Drawer (Scope)
+Official Ubuntu Touch / Suru Design Language for Android (POCO F6)
+"""
+
+import os
+import sys
+import subprocess
+import gi
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('Gio', '2.0')
+from gi.repository import Gtk, Gdk, Gio, GLib, Pango
+
+# Ensure DISPLAY is set
+if 'DISPLAY' not in os.environ:
+    os.environ['DISPLAY'] = ':0'
+
+UBUNTU_ORANGE = "#E95420"
+UBUNTU_AUBERGINE = "#77216F"
+DARK_AUBERGINE = "#2C001E"
+
+CSS_STYLES = b"""
+window.lomiri-drawer {
+    background-color: rgba(20, 10, 22, 0.96);
+    color: #ffffff;
+    font-family: 'Ubuntu', -apple-system, sans-serif;
+}
+
+.header-box {
+    padding: 16px 20px 8px 20px;
+}
+
+.scope-title {
+    font-size: 17pt;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.scope-subtitle {
+    font-size: 9.5pt;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.close-btn {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    font-size: 13pt;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover, .close-btn:active {
+    background-color: #E95420;
+    border-color: #E95420;
+    color: #ffffff;
+}
+
+.search-entry {
+    min-height: 46px;
+    border-radius: 23px;
+    padding: 4px 18px;
+    background-color: rgba(45, 24, 48, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 11pt;
+    transition: all 0.2s ease;
+}
+
+.search-entry:focus {
+    border-color: #E95420;
+    background-color: rgba(55, 28, 59, 0.95);
+    box-shadow: 0 0 8px rgba(233, 84, 32, 0.4);
+}
+
+.category-bar {
+    padding: 4px 16px 8px 16px;
+}
+
+.cat-btn {
+    border-radius: 16px;
+    padding: 4px 14px;
+    min-height: 32px;
+    margin: 0 4px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 9.5pt;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.cat-btn:hover {
+    background-color: rgba(233, 84, 32, 0.25);
+    color: #ffffff;
+    border-color: rgba(233, 84, 32, 0.5);
+}
+
+.cat-btn.active {
+    background-color: #E95420;
+    color: #ffffff;
+    border-color: #E95420;
+    box-shadow: 0 2px 8px rgba(233, 84, 32, 0.4);
+}
+
+.apps-scroll {
+    background: transparent;
+}
+
+.apps-flowbox {
+    background: transparent;
+    padding: 12px 14px 28px 14px;
+}
+
+.app-card {
+    border-radius: 18px;
+    padding: 10px 4px 8px 4px;
+    margin: 4px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    min-width: 96px;
+    max-width: 120px;
+    transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.app-card:hover, .app-card:selected {
+    background-color: rgba(233, 84, 32, 0.22);
+    border-color: rgba(233, 84, 32, 0.7);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(233, 84, 32, 0.35);
+}
+
+.app-icon {
+    margin-bottom: 6px;
+}
+
+.app-label {
+    color: #ffffff;
+    font-size: 9pt;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.app-sublabel {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 7.5pt;
+}
+
+.no-match-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12pt;
+    font-weight: 500;
+    padding: 40px;
+}
+"""
+
+CUSTOM_APPS = [
+    {
+        "name": "Python Mobile Studio",
+        "exec": "terminator -T 'Python 3 Mobile Studio' --working-directory=/root/Python_Workspace -e /usr/local/bin/python-mobile",
+        "icon": "python3",
+        "categories": ["Pengembangan", "Utilitas", "Favorit"],
+        "comment": "IDE & Interactive Python Console"
+    },
+    {
+        "name": "Antigravity AI",
+        "exec": "terminator -T 'Antigravity AI' -e /usr/local/bin/agy",
+        "icon": "help-browser",
+        "categories": ["Pengembangan", "Favorit"],
+        "comment": "AI Coding Assistant CLI"
+    },
+    {
+        "name": "Quick Settings",
+        "exec": "/usr/local/bin/lomiri-control-center",
+        "icon": "preferences-system",
+        "categories": ["Sistem", "Favorit"],
+        "comment": "Pengaturan Cepat & Indikator"
+    },
+    {
+        "name": "Task Switcher",
+        "exec": "/usr/local/bin/lomiri-task-spread",
+        "icon": "view-grid-symbolic",
+        "categories": ["Sistem", "Favorit"],
+        "comment": "Multitasking Overview Card Switcher"
+    },
+    {
+        "name": "Bersihkan RAM",
+        "exec": "/usr/local/bin/clean-ram",
+        "icon": "system-run",
+        "categories": ["Sistem", "Utilitas"],
+        "comment": "Bebaskan RAM & Cache Android"
+    },
+    {
+        "name": "Ganti Mode Desktop/Touch",
+        "exec": "/usr/local/bin/ubroid-switch-mode",
+        "icon": "video-display",
+        "categories": ["Sistem"],
+        "comment": "Beralih Mode Tampilan UbRoid"
+    },
+    {
+        "name": "Penyimpanan Android",
+        "exec": "thunar /sdcard",
+        "icon": "folder",
+        "categories": ["Utilitas", "Favorit"],
+        "comment": "Akses Internal Storage HP"
+    },
+    {
+        "name": "Tentang UbRoid",
+        "exec": "/usr/local/bin/dialog-about",
+        "icon": "help-about",
+        "categories": ["Sistem"],
+        "comment": "Informasi Sistem & Pengembang"
+    }
+]
+
+class AppItem:
+    def __init__(self, name, exec_cmd, icon_name, categories=None, comment=""):
+        self.name = name
+        self.exec_cmd = exec_cmd
+        self.icon_name = icon_name or "application-x-executable"
+        self.categories = set(categories or [])
+        self.comment = comment or ""
+        self.widget = None
+
+class LomiriAppDrawer(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("Lomiri App Scope")
+        self.set_role("lomiri-app-drawer")
+        self.get_style_context().add_class("lomiri-drawer")
+        
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+
+        # Get screen size to cover fully
+        screen = Gdk.Screen.get_default()
+        width = screen.get_width() if screen else 554
+        height = screen.get_height() if screen else 1232
+        self.set_default_size(width, height)
+        self.fullscreen()
+
+        self.apply_css()
+
+        self.all_apps = []
+        self.current_category = "Semua"
+        self.active_cat_btn = None
+        self.cat_buttons = {}
+
+        self.connect("key-press-event", self.on_key_press)
+
+        # Main Layout Box
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.add(main_box)
+
+        # Header Box with Punch-Hole Camera Safe Zone
+        header_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        header_box.get_style_context().add_class("header-box")
+
+        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        
+        title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        lbl_title = Gtk.Label(label="Aplikasi", xalign=0)
+        lbl_title.get_style_context().add_class("scope-title")
+        lbl_sub = Gtk.Label(label="Ubuntu Touch Scope • POCO F6 Edition", xalign=0)
+        lbl_sub.get_style_context().add_class("scope-subtitle")
+        title_box.pack_start(lbl_title, False, False, 0)
+        title_box.pack_start(lbl_sub, False, False, 0)
+        top_row.pack_start(title_box, True, True, 0)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("close-btn")
+        btn_close.connect("clicked", lambda b: self.close_drawer())
+        top_row.pack_end(btn_close, False, False, 0)
+        header_box.pack_start(top_row, False, False, 0)
+
+        # Search Entry Bar
+        self.search_entry = Gtk.SearchEntry()
+        self.search_entry.set_placeholder_text("🔍 Cari aplikasi atau utilitas...")
+        self.search_entry.get_style_context().add_class("search-entry")
+        self.search_entry.connect("search-changed", self.on_search_changed)
+        self.search_entry.connect("activate", self.on_search_activate)
+        header_box.pack_start(self.search_entry, False, False, 0)
+
+        # Categories Scrolled/Pills Row
+        cat_scroll = Gtk.ScrolledWindow()
+        cat_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        cat_scroll.set_min_content_height(42)
+        
+        cat_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        cat_box.get_style_context().add_class("category-bar")
+
+        categories = ["Semua", "Favorit", "Internet", "Media", "Pengembangan", "Sistem", "Utilitas"]
+        for cat in categories:
+            btn = Gtk.Button(label=cat)
+            btn.get_style_context().add_class("cat-btn")
+            if cat == "Semua":
+                btn.get_style_context().add_class("active")
+                self.active_cat_btn = btn
+            btn.connect("clicked", self.on_category_clicked, cat)
+            self.cat_buttons[cat] = btn
+            cat_box.pack_start(btn, False, False, 0)
+
+        cat_scroll.add(cat_box)
+        header_box.pack_start(cat_scroll, False, False, 0)
+        main_box.pack_start(header_box, False, False, 0)
+
+        # Scrollable App Grid Container
+        self.scroll = Gtk.ScrolledWindow()
+        self.scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.scroll.get_style_context().add_class("apps-scroll")
+
+        self.flowbox = Gtk.FlowBox()
+        self.flowbox.get_style_context().add_class("apps-flowbox")
+        self.flowbox.set_valign(Gtk.Align.START)
+        self.flowbox.set_max_children_per_line(4)
+        self.flowbox.set_min_children_per_line(4)
+        self.flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.flowbox.set_homogeneous(True)
+        self.flowbox.set_column_spacing(8)
+        self.flowbox.set_row_spacing(12)
+
+        self.scroll.add(self.flowbox)
+        main_box.pack_start(self.scroll, True, True, 0)
+
+        # Load Applications
+        self.load_applications()
+        self.filter_apps()
+
+        # Set focus to search
+        GLib.idle_add(self.search_entry.grab_focus)
+
+    def apply_css(self):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS_STYLES)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+    def load_applications(self):
+        seen_names = set()
+        loaded = []
+
+        # 1. First add custom UbRoid apps
+        for c in CUSTOM_APPS:
+            app = AppItem(
+                name=c["name"],
+                exec_cmd=c["exec"],
+                icon_name=c["icon"],
+                categories=c["categories"],
+                comment=c["comment"]
+            )
+            loaded.append(app)
+            seen_names.add(c["name"].lower())
+
+        # 2. Add System .desktop apps via Gio
+        apps = Gio.DesktopAppInfo.get_all()
+        for g_app in apps:
+            if not g_app.should_show():
+                continue
+            name = g_app.get_name()
+            if not name or name.lower() in seen_names:
+                continue
+
+            exec_cmd = g_app.get_executable() or ""
+            # Filter out internal or unwanted helpers
+            if any(x in exec_cmd for x in ["xfce4-session-logout", "onboard-settings"]):
+                continue
+
+            g_icon = g_app.get_icon()
+            icon_name = g_icon.to_string() if g_icon else "application-x-executable"
+            comment = g_app.get_description() or ""
+            
+            # Map categories
+            cats = set()
+            raw_cats = g_app.get_categories() or ""
+            if any(k in raw_cats for k in ["Network", "WebBrowser", "Email"]):
+                cats.add("Internet")
+            if any(k in raw_cats for k in ["Audio", "Video", "Graphics"]):
+                cats.add("Media")
+            if any(k in raw_cats for k in ["Development", "IDE", "Programming"]):
+                cats.add("Pengembangan")
+            if any(k in raw_cats for k in ["System", "Settings", "FileManager"]):
+                cats.add("Sistem")
+            if any(k in raw_cats for k in ["Utility", "Accessories"]):
+                cats.add("Utilitas")
+            
+            # Popular apps get "Favorit"
+            if any(fav in name.lower() for fav in ["firefox", "thunar", "file", "terminal", "terminator", "mousepad", "pavucontrol"]):
+                cats.add("Favorit")
+
+            app_item = AppItem(name, exec_cmd, icon_name, cats, comment)
+            # Store launch lambda
+            app_item.gio_app = g_app
+            loaded.append(app_item)
+            seen_names.add(name.lower())
+
+        # Sort alphabetically (with Favorit / custom first)
+        loaded.sort(key=lambda a: (0 if "Favorit" in a.categories else 1, a.name.lower()))
+        self.all_apps = loaded
+
+        # Create widgets for each
+        icon_theme = Gtk.IconTheme.get_default()
+        for item in self.all_apps:
+            card = self.create_app_card(item, icon_theme)
+            item.widget = card
+
+    def create_app_card(self, item, icon_theme):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box.get_style_context().add_class("app-card")
+
+        # Suru Squircle Icon
+        img = self.get_icon_image(item.icon_name, icon_theme, 56)
+        img.get_style_context().add_class("app-icon")
+        box.pack_start(img, False, False, 0)
+
+        # Truncated Label
+        lbl = Gtk.Label(label=item.name)
+        lbl.get_style_context().add_class("app-label")
+        lbl.set_ellipsize(Pango.EllipsizeMode.END)
+        lbl.set_max_width_chars(11)
+        lbl.set_lines(2)
+        lbl.set_line_wrap(True)
+        lbl.set_justify(Gtk.Justification.CENTER)
+        box.pack_start(lbl, False, False, 0)
+
+        # Click event wrapper
+        ev = Gtk.EventBox()
+        ev.set_visible_window(False)
+        ev.add(box)
+        ev.connect("button-press-event", lambda w, e: self.launch_app(item))
+        ev.show_all()
+        return ev
+
+    def get_icon_image(self, icon_str, icon_theme, size):
+        try:
+            # Check if it is a file path
+            if os.path.isabs(icon_str) and os.path.exists(icon_str):
+                pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(icon_str, size, size, True)
+                return Gtk.Image.new_from_pixbuf(pix)
+            
+            # Check icon theme
+            if icon_theme and icon_theme.has_icon(icon_str):
+                return Gtk.Image.new_from_icon_name(icon_str, Gtk.IconSize.DIALOG)
+            
+            # Try parsing themed icon name
+            clean_name = icon_str.split()[-1] if " " in icon_str else icon_str
+            if icon_theme and icon_theme.has_icon(clean_name):
+                return Gtk.Image.new_from_icon_name(clean_name, Gtk.IconSize.DIALOG)
+        except Exception:
+            pass
+
+        return Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+
+    def launch_app(self, item):
+        try:
+            if hasattr(item, 'gio_app') and item.gio_app:
+                item.gio_app.launch_uris([], None)
+            else:
+                subprocess.Popen(item.exec_cmd, shell=True)
+        except Exception as e:
+            try:
+                subprocess.Popen(item.exec_cmd, shell=True)
+            except Exception:
+                pass
+        self.close_drawer()
+
+    def on_search_changed(self, entry):
+        self.filter_apps()
+
+    def on_search_activate(self, entry):
+        # Launch first matching app if any
+        text = entry.get_text().strip().lower()
+        if not text:
+            return
+        for item in self.all_apps:
+            if text in item.name.lower() or text in item.comment.lower():
+                self.launch_app(item)
+                return
+
+    def on_category_clicked(self, btn, cat):
+        if self.active_cat_btn:
+            self.active_cat_btn.get_style_context().remove_class("active")
+        btn.get_style_context().add_class("active")
+        self.active_cat_btn = btn
+        self.current_category = cat
+        self.filter_apps()
+
+    def filter_apps(self):
+        # Clear flowbox
+        for child in self.flowbox.get_children():
+            self.flowbox.remove(child)
+
+        query = self.search_entry.get_text().strip().lower()
+        matched = 0
+
+        for item in self.all_apps:
+            # Check category
+            if self.current_category != "Semua":
+                if self.current_category not in item.categories:
+                    continue
+
+            # Check query
+            if query:
+                in_name = query in item.name.lower()
+                in_comm = query in item.comment.lower()
+                in_exec = query in item.exec_cmd.lower()
+                if not (in_name or in_comm or in_exec):
+                    continue
+
+            self.flowbox.add(item.widget)
+            matched += 1
+
+        if matched == 0:
+            no_lbl = Gtk.Label(label="Tidak ada aplikasi yang cocok.")
+            no_lbl.get_style_context().add_class("no-match-label")
+            self.flowbox.add(no_lbl)
+
+        self.flowbox.show_all()
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            self.close_drawer()
+            return True
+        return False
+
+    def close_drawer(self):
+        self.destroy()
+        Gtk.main_quit()
+
+if __name__ == "__main__":
+    # Prevent multi-instance storms (kill previous instances if any)
+    curr_pid = os.getpid()
+    try:
+        out = subprocess.check_output(["pgrep", "-f", "lomiri-app-drawer"]).decode().split()
+        for p in out:
+            if int(p) != curr_pid:
+                os.kill(int(p), 15)
+    except Exception:
+        pass
+
+    drawer = LomiriAppDrawer()
+    drawer.show_all()
+    Gtk.main()

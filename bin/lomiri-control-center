@@ -1,0 +1,639 @@
+#!/usr/bin/env python3
+"""
+UbRoid - Lomiri Indicator & Quick Settings Sheet
+Official Ubuntu Touch / Suru Design Language for Android (POCO F6)
+"""
+
+import os
+import sys
+import subprocess
+import gi
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gtk, Gdk, GLib
+
+if 'DISPLAY' not in os.environ:
+    os.environ['DISPLAY'] = ':0'
+
+UBUNTU_ORANGE = "#E95420"
+UBUNTU_AUBERGINE = "#77216F"
+
+def run_cmd(cmd, timeout=2):
+    try:
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=timeout).decode().strip()
+    except Exception:
+        return ""
+
+def adb_cmd(cmd, timeout=2):
+    return run_cmd(f"adb -s 127.0.0.1:5555 shell {cmd}", timeout=timeout)
+
+CSS_STYLES = b"""
+window.lomiri-sheet {
+    background-color: rgba(24, 12, 26, 0.97);
+    color: #ffffff;
+    font-family: 'Ubuntu', -apple-system, sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.main-container {
+    padding: 16px;
+}
+
+.time-title {
+    font-size: 20pt;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+.date-sub {
+    font-size: 9.5pt;
+    color: rgba(255, 255, 255, 0.65);
+    font-weight: 500;
+}
+
+.battery-pill {
+    background-color: rgba(76, 175, 80, 0.25);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 9pt;
+    font-weight: 700;
+}
+
+.close-btn {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    font-size: 11pt;
+    font-weight: bold;
+    transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+    background-color: #E95420;
+    color: #ffffff;
+}
+
+.section-card {
+    background-color: rgba(42, 20, 45, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 12px;
+}
+
+.slider-row {
+    padding: 2px 0;
+}
+
+.slider-icon-btn {
+    background: transparent;
+    border: none;
+    font-size: 14pt;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+}
+
+.slider-val-label {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 42px;
+}
+
+scale trough {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    min-height: 10px;
+}
+
+scale highlight {
+    background-color: #E95420;
+    border-radius: 6px;
+}
+
+scale slider {
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 11px;
+    background-color: #ffffff;
+    border: 2px solid #E95420;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.toggle-btn {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 10px 6px;
+    transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.toggle-btn:hover {
+    background-color: rgba(233, 84, 32, 0.2);
+    border-color: rgba(233, 84, 32, 0.5);
+}
+
+.toggle-btn.active {
+    background-color: rgba(233, 84, 32, 0.35);
+    border: 1.5px solid #E95420;
+    box-shadow: 0 2px 10px rgba(233, 84, 32, 0.3);
+}
+
+.toggle-icon {
+    font-size: 15pt;
+    margin-bottom: 2px;
+}
+
+.toggle-name {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.toggle-state {
+    font-size: 7.5pt;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.info-title {
+    font-size: 9pt;
+    font-weight: 700;
+    color: #E95420;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.info-text {
+    font-size: 8.5pt;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.4;
+}
+
+.footer-btn {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 9pt;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.footer-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.power-btn {
+    background-color: rgba(233, 84, 32, 0.25);
+    color: #ff8559;
+    border: 1px solid #E95420;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 9pt;
+    font-weight: 700;
+}
+
+.power-btn:hover {
+    background-color: #E95420;
+    color: #ffffff;
+}
+"""
+
+class LomiriControlCenter(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Ubuntu Touch Quick Settings")
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_role("lomiri-control-center")
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_keep_above(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.get_style_context().add_class("lomiri-sheet")
+
+        self.apply_css()
+
+        self.connect("key-press-event", self.on_key_press)
+        self.connect("focus-out-event", lambda w, e: self.close_window())
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        main_box.get_style_context().add_class("main-container")
+        self.add(main_box)
+
+        # 1. Header (Time, Date, Battery Pill, Close)
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        
+        info_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        time_str = run_cmd("date '+%H:%M'")
+        date_str = run_cmd("date '+%A, %d %B %Y'")
+        
+        lbl_time = Gtk.Label(label=time_str, xalign=0)
+        lbl_time.get_style_context().add_class("time-title")
+        lbl_date = Gtk.Label(label=date_str, xalign=0)
+        lbl_date.get_style_context().add_class("date-sub")
+        
+        info_col.pack_start(lbl_time, False, False, 0)
+        info_col.pack_start(lbl_date, False, False, 0)
+        header.pack_start(info_col, True, True, 0)
+
+        # Battery pill in header
+        bat_pct, bat_charging, bat_temp = self.get_battery_data()
+        bat_txt = f"⚡ {bat_pct}%" if bat_charging else f"🔋 {bat_pct}%"
+        lbl_bat_pill = Gtk.Label(label=bat_txt)
+        lbl_bat_pill.get_style_context().add_class("battery-pill")
+        header.pack_end(lbl_bat_pill, False, False, 4)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("close-btn")
+        btn_close.connect("clicked", lambda b: self.close_window())
+        header.pack_end(btn_close, False, False, 0)
+
+        main_box.pack_start(header, False, False, 0)
+
+        # 2. Sliders Section (Brightness & Volume)
+        sliders_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        sliders_box.get_style_context().add_class("section-card")
+
+        # --- Screen Brightness Slider ---
+        row_bright = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        row_bright.get_style_context().add_class("slider-row")
+        
+        btn_bright = Gtk.Button(label="☀️")
+        btn_bright.get_style_context().add_class("slider-icon-btn")
+        btn_bright.connect("clicked", self.cycle_brightness)
+        
+        curr_bright = self.get_brightness()
+        self.scale_bright = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 10, 255, 5)
+        self.scale_bright.set_value(curr_bright)
+        self.scale_bright.set_hexpand(True)
+        self.scale_bright.set_draw_value(False)
+        self.scale_bright.connect("value-changed", self.on_brightness_changed)
+
+        bright_pct = int((curr_bright / 255.0) * 100)
+        self.lbl_bright_val = Gtk.Label(label=f"{bright_pct}%")
+        self.lbl_bright_val.get_style_context().add_class("slider-val-label")
+
+        row_bright.pack_start(btn_bright, False, False, 0)
+        row_bright.pack_start(self.scale_bright, True, True, 0)
+        row_bright.pack_start(self.lbl_bright_val, False, False, 0)
+        sliders_box.pack_start(row_bright, False, False, 0)
+
+        # --- Volume Master Slider ---
+        row_vol = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        row_vol.get_style_context().add_class("slider-row")
+
+        self.btn_vol = Gtk.Button(label="🔊")
+        self.btn_vol.get_style_context().add_class("slider-icon-btn")
+        self.btn_vol.connect("clicked", self.toggle_volume_mute)
+
+        curr_vol = self.get_volume()
+        self.scale_vol = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 5)
+        self.scale_vol.set_value(curr_vol)
+        self.scale_vol.set_hexpand(True)
+        self.scale_vol.set_draw_value(False)
+        self.scale_vol.connect("value-changed", self.on_volume_changed)
+
+        self.lbl_vol_val = Gtk.Label(label=f"{curr_vol}%")
+        self.lbl_vol_val.get_style_context().add_class("slider-val-label")
+
+        row_vol.pack_start(self.btn_vol, False, False, 0)
+        row_vol.pack_start(self.scale_vol, True, True, 0)
+        row_vol.pack_start(self.lbl_vol_val, False, False, 0)
+        sliders_box.pack_start(row_vol, False, False, 0)
+
+        main_box.pack_start(sliders_box, False, False, 0)
+
+        # 3. Quick Toggles Grid (6 buttons: Wi-Fi, BT, Dark Mode, Rotation, Clean RAM, Keyboard)
+        toggles_grid = Gtk.Grid()
+        toggles_grid.set_column_spacing(8)
+        toggles_grid.set_row_spacing(8)
+        toggles_grid.set_column_homogeneous(True)
+
+        # 1. Wi-Fi Toggle
+        self.btn_wifi, self.lbl_wifi_st = self.create_toggle_item(
+            icon="📶", name="Wi-Fi", state_text=self.get_wifi_status_text(),
+            action=self.toggle_wifi, is_active=self.is_wifi_on()
+        )
+        toggles_grid.attach(self.btn_wifi, 0, 0, 1, 1)
+
+        # 2. Bluetooth Toggle
+        self.btn_bt, self.lbl_bt_st = self.create_toggle_item(
+            icon="ᛒ", name="Bluetooth", state_text=self.get_bt_status_text(),
+            action=self.toggle_bluetooth, is_active=self.is_bt_on()
+        )
+        toggles_grid.attach(self.btn_bt, 1, 0, 1, 1)
+
+        # 3. Dark Mode Toggle
+        self.btn_dark, self.lbl_dark_st = self.create_toggle_item(
+            icon="🌙", name="Dark Mode", state_text="Aktif",
+            action=self.toggle_dark_mode, is_active=True
+        )
+        toggles_grid.attach(self.btn_dark, 2, 0, 1, 1)
+
+        # 4. Lock Rotation Toggle
+        self.btn_rot, self.lbl_rot_st = self.create_toggle_item(
+            icon="🔄", name="Rotasi", state_text=self.get_rotation_status_text(),
+            action=self.toggle_rotation, is_active=self.is_rotation_locked()
+        )
+        toggles_grid.attach(self.btn_rot, 0, 1, 1, 1)
+
+        # 5. Clean RAM Action
+        self.btn_ram, self.lbl_ram_st = self.create_toggle_item(
+            icon="⚡", name="Clean RAM", state_text="Bebaskan",
+            action=self.action_clean_ram, is_active=False
+        )
+        toggles_grid.attach(self.btn_ram, 1, 1, 1, 1)
+
+        # 6. Keyboard Gboard Toggle
+        self.btn_kb, self.lbl_kb_st = self.create_toggle_item(
+            icon="⌨", name="Gboard", state_text="Sentuh",
+            action=self.action_toggle_gboard, is_active=False
+        )
+        toggles_grid.attach(self.btn_kb, 2, 1, 1, 1)
+
+        main_box.pack_start(toggles_grid, False, False, 0)
+
+        # 4. Detailed Status Cards (Battery & Hardware, Network)
+        status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        status_box.set_homogeneous(True)
+
+        # Card A: Battery POCO F6
+        card_bat = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        card_bat.get_style_context().add_class("section-card")
+        
+        lbl_bat_head = Gtk.Label(label="🔋 Baterai POCO F6", xalign=0)
+        lbl_bat_head.get_style_context().add_class("info-title")
+        card_bat.pack_start(lbl_bat_head, False, False, 0)
+
+        status_msg = "⚡ Mengisi Daya" if bat_charging else "🔋 Mode Baterai"
+        lbl_bat_detail = Gtk.Label(
+            label=f"Level: <b>{bat_pct}%</b>\nStatus: {status_msg}\nSuhu: <b>{bat_temp}</b>\nKesehatan: Baik",
+            xalign=0, use_markup=True
+        )
+        lbl_bat_detail.get_style_context().add_class("info-text")
+        card_bat.pack_start(lbl_bat_detail, True, True, 0)
+        status_box.pack_start(card_bat, True, True, 0)
+
+        # Card B: Network Info
+        card_net = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        card_net.get_style_context().add_class("section-card")
+
+        lbl_net_head = Gtk.Label(label="🌐 Jaringan & IP", xalign=0)
+        lbl_net_head.get_style_context().add_class("info-title")
+        card_net.pack_start(lbl_net_head, False, False, 0)
+
+        ssid, ip_addr, rssi = self.get_network_details()
+        lbl_net_detail = Gtk.Label(
+            label=f"SSID: <b>{ssid}</b>\nIP: {ip_addr}\nSinyal: {rssi}\nADB: 127.0.0.1:5555",
+            xalign=0, use_markup=True
+        )
+        lbl_net_detail.get_style_context().add_class("info-text")
+        card_net.pack_start(lbl_net_detail, True, True, 0)
+        status_box.pack_start(card_net, True, True, 0)
+
+        main_box.pack_start(status_box, False, False, 0)
+
+        # 5. Bottom Action Buttons (Android Settings, Storage, Logout)
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        
+        btn_settings = Gtk.Button(label="⚙ Android")
+        btn_settings.get_style_context().add_class("footer-btn")
+        btn_settings.connect("clicked", lambda b: (subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "am", "start", "-a", "android.settings.SETTINGS"]), self.close_window()))
+        footer.pack_start(btn_settings, True, True, 0)
+
+        btn_files = Gtk.Button(label="📁 Storage")
+        btn_files.get_style_context().add_class("footer-btn")
+        btn_files.connect("clicked", lambda b: (subprocess.Popen(["thunar", "/sdcard"]), self.close_window()))
+        footer.pack_start(btn_files, True, True, 0)
+
+        btn_about = Gtk.Button(label="ℹ UbRoid")
+        btn_about.get_style_context().add_class("footer-btn")
+        btn_about.connect("clicked", lambda b: (subprocess.Popen(["/usr/local/bin/dialog-about"]), self.close_window()))
+        footer.pack_start(btn_about, True, True, 0)
+
+        btn_power = Gtk.Button(label="⏻ Keluar")
+        btn_power.get_style_context().add_class("power-btn")
+        btn_power.connect("clicked", lambda b: subprocess.Popen(["xfce4-session-logout"]))
+        footer.pack_start(btn_power, True, True, 0)
+
+        main_box.pack_start(footer, False, False, 0)
+
+    def apply_css(self):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS_STYLES)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+    def create_toggle_item(self, icon, name, state_text, action, is_active=False):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        lbl_icon = Gtk.Label(label=icon)
+        lbl_icon.get_style_context().add_class("toggle-icon")
+        lbl_name = Gtk.Label(label=name)
+        lbl_name.get_style_context().add_class("toggle-name")
+        lbl_st = Gtk.Label(label=state_text)
+        lbl_st.get_style_context().add_class("toggle-state")
+
+        box.pack_start(lbl_icon, False, False, 0)
+        box.pack_start(lbl_name, False, False, 0)
+        box.pack_start(lbl_st, False, False, 0)
+
+        btn = Gtk.Button()
+        btn.get_style_context().add_class("toggle-btn")
+        if is_active:
+            btn.get_style_context().add_class("active")
+        btn.add(box)
+        btn.connect("clicked", lambda b: action(btn, lbl_st))
+        return btn, lbl_st
+
+    # --- Hardware Queries & Actions ---
+
+    def get_battery_data(self):
+        binfo = adb_cmd("dumpsys battery")
+        level = 85
+        charging = False
+        temp_str = "35.0°C"
+        for line in binfo.splitlines():
+            line = line.strip()
+            if line.startswith("level:"):
+                try: level = int(line.split(":")[1].strip())
+                except: pass
+            elif line.startswith("status:"):
+                # 2 = CHARGING
+                charging = (line.split(":")[1].strip() == "2")
+            elif line.startswith("temperature:"):
+                try:
+                    raw = int(line.split(":")[1].strip())
+                    temp_str = f"{raw / 10.0:.1f}°C"
+                except: pass
+        return level, charging, temp_str
+
+    def get_brightness(self):
+        out = adb_cmd("settings get system screen_brightness")
+        try:
+            return int(out)
+        except:
+            return 120
+
+    def on_brightness_changed(self, scale):
+        val = int(scale.get_value())
+        pct = int((val / 255.0) * 100)
+        self.lbl_bright_val.set_text(f"{pct}%")
+        subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "settings", "put", "system", "screen_brightness", str(val)])
+
+    def cycle_brightness(self, btn):
+        curr = int(self.scale_bright.get_value())
+        new_val = 60 if curr > 200 else (150 if curr < 100 else 240)
+        self.scale_bright.set_value(new_val)
+
+    def get_volume(self):
+        out = run_cmd("pactl get-sink-volume @DEFAULT_SINK@")
+        if "%" in out:
+            try:
+                part = out.split("%")[0].split("/")[-1].strip()
+                return int(part)
+            except: pass
+        return 75
+
+    def on_volume_changed(self, scale):
+        val = int(scale.get_value())
+        self.lbl_vol_val.set_text(f"{val}%")
+        subprocess.Popen(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{val}%"])
+
+    def toggle_volume_mute(self, btn):
+        subprocess.call(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"])
+        is_muted = "yes" in run_cmd("pactl get-sink-mute @DEFAULT_SINK@")
+        btn.set_label("🔇" if is_muted else "🔊")
+
+    def is_wifi_on(self):
+        return adb_cmd("settings get global wifi_on") == "1"
+
+    def get_wifi_status_text(self):
+        if not self.is_wifi_on():
+            return "Mati"
+        out = adb_cmd('dumpsys wifi | grep -m1 "mWifiInfo"')
+        if 'SSID: "' in out:
+            ssid = out.split('SSID: "')[1].split('"')[0]
+            return ssid[:12]
+        return "Aktif"
+
+    def toggle_wifi(self, btn, lbl):
+        new_state = "disable" if self.is_wifi_on() else "enable"
+        subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "svc", "wifi", new_state])
+        is_active = (new_state == "enable")
+        if is_active:
+            btn.get_style_context().add_class("active")
+            lbl.set_text("Aktif")
+        else:
+            btn.get_style_context().remove_class("active")
+            lbl.set_text("Mati")
+
+    def is_bt_on(self):
+        return adb_cmd("settings get global bluetooth_on") == "1"
+
+    def get_bt_status_text(self):
+        return "Aktif" if self.is_bt_on() else "Mati"
+
+    def toggle_bluetooth(self, btn, lbl):
+        new_state = "disable" if self.is_bt_on() else "enable"
+        subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "svc", "bluetooth", new_state])
+        is_active = (new_state == "enable")
+        if is_active:
+            btn.get_style_context().add_class("active")
+            lbl.set_text("Aktif")
+        else:
+            btn.get_style_context().remove_class("active")
+            lbl.set_text("Mati")
+
+    def toggle_dark_mode(self, btn, lbl):
+        # Already dark by default in Lomiri
+        lbl.set_text("Lomiri Dark")
+
+    def is_rotation_locked(self):
+        return adb_cmd("settings get system accelerometer_rotation") == "0"
+
+    def get_rotation_status_text(self):
+        return "Portrait" if self.is_rotation_locked() else "Auto"
+
+    def toggle_rotation(self, btn, lbl):
+        locked = self.is_rotation_locked()
+        new_val = "1" if locked else "0"
+        subprocess.Popen(["adb", "-s", "127.0.0.1:5555", "shell", "settings", "put", "system", "accelerometer_rotation", new_val])
+        if new_val == "0":
+            btn.get_style_context().add_class("active")
+            lbl.set_text("Portrait")
+        else:
+            btn.get_style_context().remove_class("active")
+            lbl.set_text("Auto")
+
+    def action_clean_ram(self, btn, lbl):
+        btn.get_style_context().add_class("active")
+        lbl.set_text("Membersihkan...")
+        subprocess.Popen(["/usr/local/bin/clean-ram"])
+        GLib.timeout_add(1500, lambda: (btn.get_style_context().remove_class("active"), lbl.set_text("Selesai ✓")))
+
+    def action_toggle_gboard(self, btn, lbl):
+        subprocess.Popen(["/usr/local/bin/toggle-keyboard"])
+        self.close_window()
+
+    def get_network_details(self):
+        out = adb_cmd('dumpsys wifi | grep -m1 "mWifiInfo"')
+        ssid = "Wi-Fi Terhubung"
+        if 'SSID: "' in out:
+            ssid = out.split('SSID: "')[1].split('"')[0]
+        rssi = "-50 dBm"
+        if "RSSI: " in out:
+            rssi = out.split("RSSI: ")[1].split(",")[0] + " dBm"
+        ip = run_cmd("ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'")
+        if not ip:
+            ip = adb_cmd("ip route get 1.1.1.1 2>/dev/null | grep -o 'src [0-9.]*' | awk '{print $2}'") or "192.168.1.100"
+        return ssid, ip, rssi
+
+    def on_key_press(self, widget, event):
+        if event.keyval == Gdk.KEY_Escape:
+            self.close_window()
+            return True
+        return False
+
+    def close_window(self):
+        self.destroy()
+        Gtk.main_quit()
+
+if __name__ == "__main__":
+    curr_pid = os.getpid()
+    try:
+        out = subprocess.check_output(["pgrep", "-f", "lomiri-control-center"]).decode().split()
+        for p in out:
+            if int(p) != curr_pid:
+                os.kill(int(p), 15)
+    except Exception:
+        pass
+
+    win = LomiriControlCenter()
+    
+    # Calculate screen geometry for perfect top positioning under punch hole
+    scr = Gdk.Screen.get_default()
+    screen_w = scr.get_width() if scr else 554
+    sheet_w = min(480, screen_w - 20)
+    win.set_default_size(sheet_w, 480)
+    win.show_all()
+    
+    # Position centered horizontally, y=44 (just below the top status bar)
+    pos_x = max(10, (screen_w - sheet_w) // 2)
+    win.move(pos_x, 44)
+    
+    Gtk.main()

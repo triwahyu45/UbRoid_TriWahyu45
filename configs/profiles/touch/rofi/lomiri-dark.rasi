@@ -1,0 +1,99 @@
+/**
+ * UbRoid - Lomiri Dark Aubergine Rofi Theme
+ * Official Ubuntu Touch styling for Task Switcher and App Runner
+ */
+
+configuration {
+    modi: "window,drun,run";
+    show-icons: true;
+    icon-theme: "Yaru";
+    font: "Ubuntu 11";
+    display-window: "📱 Aplikasi Berjalan";
+    display-drun: "🔍 Cari";
+    window-format: "{w} • {t}";
+}
+
+* {
+    bg: rgba(22, 11, 24, 0.96);
+    bg-alt: rgba(45, 24, 48, 0.75);
+    fg: #ffffff;
+    fg-dim: rgba(255, 255, 255, 0.65);
+    accent: #E95420;
+    aubergine: #77216F;
+    border-col: rgba(255, 255, 255, 0.1);
+    
+    background-color: transparent;
+    text-color: @fg;
+    margin: 0;
+    padding: 0;
+}
+
+window {
+    background-color: @bg;
+    border: 1.5px;
+    border-color: @border-col;
+    border-radius: 20px;
+    width: 90%;
+    padding: 16px;
+    location: center;
+    anchor: center;
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+    spacing: 12px;
+}
+
+inputbar {
+    background-color: @bg-alt;
+    border: 1.5px;
+    border-color: @border-col;
+    border-radius: 14px;
+    padding: 10px 14px;
+    children: [ prompt, entry ];
+    spacing: 10px;
+}
+
+prompt {
+    text-color: @accent;
+    font: "Ubuntu Bold 11";
+}
+
+entry {
+    placeholder: "Ketik untuk mencari jendela...";
+    placeholder-color: @fg-dim;
+    text-color: @fg;
+}
+
+listview {
+    columns: 1;
+    lines: 7;
+    spacing: 8px;
+    scrollbar: false;
+}
+
+element {
+    background-color: @bg-alt;
+    border: 1px;
+    border-color: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px;
+    spacing: 12px;
+    children: [ element-icon, element-text ];
+}
+
+element selected {
+    background-color: rgba(233, 84, 32, 0.35);
+    border-color: @accent;
+    text-color: #ffffff;
+}
+
+element-icon {
+    size: 40px;
+}
+
+element-text {
+    vertical-align: 0.5;
+    text-color: inherit;
+    font: "Ubuntu 11";
+}

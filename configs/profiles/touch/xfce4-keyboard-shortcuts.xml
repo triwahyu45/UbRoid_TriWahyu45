@@ -32,6 +32,10 @@
       <property name="&lt;Alt&gt;&lt;Super&gt;s" type="empty"/>
     </property>
     <property name="custom" type="empty">
+      <property name="&lt;Super&gt;a" type="string" value="/usr/local/bin/lomiri-app-drawer"/>
+      <property name="&lt;Super&gt;Tab" type="string" value="/usr/local/bin/lomiri-task-spread"/>
+      <property name="&lt;Super&gt;c" type="string" value="/usr/local/bin/lomiri-control-center"/>
+      <property name="&lt;Alt&gt;Tab" type="string" value="rofi -show window -theme /etc/rofi/lomiri-dark.rasi"/>
       <property name="&lt;Alt&gt;F2" type="string" value="xfce4-appfinder --collapsed">
         <property name="startup-notify" type="bool" value="true"/>
       </property>
