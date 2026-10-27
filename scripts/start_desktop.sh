@@ -90,26 +90,20 @@ cleanup_on_exit() {
 trap cleanup_on_exit EXIT INT TERM HUP
 
 # Anti-Rat Wallpaper Enforcement (Eliminate XFCE teal mouse fallback completely)
-if [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && [ ! -f "/usr/share/backgrounds/ubuntu-touch-default.png" ]; then
-    mkdir -p /usr/share/backgrounds 2>/dev/null || true
+if [ -f "/sdcard/Download/ubuntu-touch-default.png" ]; then
+    mkdir -p /usr/share/backgrounds/xfce /usr/share/xfce4/backdrops 2>/dev/null || true
     cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
+    cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
+    cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
+    cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
+    cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
+    cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
+    find /usr/share/backgrounds -type f -name "*.png" -exec cp -f "/sdcard/Download/ubuntu-touch-default.png" {} \; 2>/dev/null || true
+    find /usr/share/xfce4 -type f -name "*.png" -exec cp -f "/sdcard/Download/ubuntu-touch-default.png" {} \; 2>/dev/null || true
 fi
 
 UBUNTU_WP="/usr/share/backgrounds/ubuntu-touch-default.png"
-if [ ! -f "$UBUNTU_WP" ]; then
-    UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
-fi
-if [ -f "$UBUNTU_WP" ]; then
-    mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
-    for xf in /usr/share/backgrounds/xfce/*.png; do
-        [ -e "$xf" ] && cp -f "$UBUNTU_WP" "$xf" 2>/dev/null || true
-    done
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
-fi
+[ ! -f "$UBUNTU_WP" ] && UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
 
 # Ensure all desktop launchers are marked trusted in GIO/XFCE
 chmod +x /root/Desktop/*.desktop 2>/dev/null || true
@@ -137,14 +131,16 @@ pkill -9 -f "onboard" 2>/dev/null || true
 gsettings set org.onboard auto-show false 2>/dev/null || true
 dconf write /org/onboard/auto-show false 2>/dev/null || true
 
-# Optimasi Mobile UI Ubuntu Touch (Maximized windows khas Android/Lomiri)
+# Optimasi Mobile UI Ubuntu Touch (Maximized windows khas Android/Lomiri & Bersihkan Desktop)
 xfconf-query -c xfwm4 -p /general/placement_mode -s "maximized" 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/borderless_maximize -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/title_alignment -s "center" 2>/dev/null || true
+xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
 
 # Asynchronously enforce Ubuntu wallpaper on all monitors once XFCE starts
 (
     sleep 1.2
+    xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
     for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image'); do
         xfconf-query -c xfce4-desktop -p "$prop" -s "$UBUNTU_WP" 2>/dev/null || true
     done
