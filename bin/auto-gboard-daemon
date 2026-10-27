@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""
+UbRoid - Auto Gboard Pop-Out Daemon
+Monitors focused UI elements (GTK/Qt text entries, terminals, textareas).
+Triggers Android native Gboard softly without shifting or resizing the X11 screen.
+"""
+
+import os
+import sys
+import time
+import subprocess
+import threading
+
+# Prevent bionic linker conflicts when invoking host /system/bin/am
+if "LD_PRELOAD" in os.environ:
+    del os.environ["LD_PRELOAD"]
+
+os.environ["PATH"] = "/data/data/com.termux/files/usr/bin:/system/bin:" + os.environ.get("PATH", "")
+
+last_trigger_time = 0
+debounce_lock = threading.Lock()
+
+def show_gboard():
+    global last_trigger_time
+    with debounce_lock:
+        now = time.time()
+        if now - last_trigger_time < 1.5:
+            return
+        last_trigger_time = now
+
+    try:
+        if os.path.exists("/system/bin/am"):
+            subprocess.run(
+                ["/system/bin/am", "broadcast", "--user", "0",
+                 "-a", "com.termux.x11.ACTION_CUSTOM",
+                 "-p", "com.termux.x11",
+                 "--es", "what", "swipeUp"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5
+            )
+        elif subprocess.run(["which", "adb"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+            subprocess.run(
+                ["adb", "-s", "127.0.0.1:5555", "shell",
+                 "am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 --es what 'swipeUp'"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=1.5
+            )
+    except Exception:
+        pass
+
+def run_atspi_listener():
+    try:
+        import pyatspi
+        reg = pyatspi.Registry
+
+        def on_focus_event(event):
+            try:
+                if not event or event.detail1 != 1:
+                    return
+                src = event.source
+                if not src:
+                    return
+                role = src.getRole()
+                target_roles = [
+                    pyatspi.ROLE_ENTRY,
+                    pyatspi.ROLE_PASSWORD_TEXT,
+                    pyatspi.ROLE_TERMINAL,
+                    pyatspi.ROLE_TEXT,
+                    pyatspi.ROLE_DOCUMENT_FRAME
+                ]
+                if role in target_roles:
+                    show_gboard()
+                    return
+                # Check editable state
+                state_set = src.getState()
+                if state_set and state_set.contains(pyatspi.STATE_EDITABLE):
+                    show_gboard()
+            except Exception:
+                pass
+
+        reg.registerEventListener(on_focus_event, "object:state-changed:focused")
+        reg.start()
+    except Exception as e:
+        # AT-SPI bus not yet active, fallback gracefully
+        pass
+
+def run_active_window_watcher():
+    last_win = None
+    while True:
+        try:
+            out = subprocess.check_output(
+                ["xdotool", "getactivewindow", "getwindowclassname"],
+                stderr=subprocess.DEVNULL,
+                timeout=1.0
+            ).decode().strip()
+            if out and out != last_win:
+                last_win = out
+                lower = out.lower()
+                # If newly focused window is terminal, text editor, or search input
+                if any(k in lower for k in ["terminator", "terminal", "xterm", "mousepad", "gedit", "code"]):
+                    show_gboard()
+        except Exception:
+            pass
+        time.sleep(1.0)
+
+if __name__ == "__main__":
+    t_win = threading.Thread(target=run_active_window_watcher, daemon=True)
+    t_win.start()
+
+    # Main thread runs AT-SPI event loop
+    run_atspi_listener()
+
+    # Keep alive if AT-SPI exited
+    while True:
+        time.sleep(60)

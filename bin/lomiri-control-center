@@ -169,7 +169,6 @@ scale slider {
     font-size: 9pt;
     font-weight: 700;
     color: #E95420;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
 }
@@ -177,7 +176,6 @@ scale slider {
 .info-text {
     font-size: 8.5pt;
     color: rgba(255, 255, 255, 0.85);
-    line-height: 1.4;
 }
 
 .footer-btn {

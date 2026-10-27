@@ -163,11 +163,15 @@ sleep 0.5
   --es PIP false \
   --es dexMetaKeyCapture true \
   --es filterOutWinkey true \
-  --ez showAdditionalKbd true \
+  --ez showAdditionalKbd false \
+  --ez adjustResolution false \
+  --ez adjustHeightForEK false \
+  --ez barReservesKeyboardSpace false \
+  --ez softKeyboardResizesDisplay false \
   --es displayResolutionMode scaled \
   --es displayScale $SCALE \
   --es forceOrientation "$TARGET_ORIENTATION" \
-  --es touchMode 3 \
+  --es touchMode 1 \
   --es swipeUpAction "toggle soft keyboard" \
   --es backButtonAction "toggle soft keyboard" \
   --es swipeDownAction "no action" \

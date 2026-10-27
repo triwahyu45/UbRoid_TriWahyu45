@@ -1,5 +1,8 @@
 #!/bin/bash
-# UbRoid - Force Toggle Android Gboard
+# UbRoid - Force Toggle Android Gboard (Native IME without shifting X11 desktop)
+unset LD_PRELOAD
+export PATH=/data/data/com.termux/files/usr/bin:/system/bin:$PATH
+
 if [ -x "/system/bin/am" ]; then
     /system/bin/am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 \
       --es what "swipeUp" >/dev/null 2>&1

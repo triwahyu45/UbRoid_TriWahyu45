@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=UbRoid Auto Gboard Daemon
+Comment=Auto Pop-out Gboard on text focus
+Exec=/usr/local/bin/auto-gboard-daemon
+Terminal=false
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

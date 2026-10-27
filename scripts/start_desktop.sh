@@ -6,9 +6,12 @@ export XDG_CURRENT_DESKTOP=XFCE
 export XDG_SESSION_TYPE=x11
 export LANG=C.UTF-8
 export MOZ_USE_XINPUT2=1
-export NO_AT_BRIDGE=1
-export LP_NUM_THREADS=4
+export LP_NUM_THREADS=8
 export VBLANK_MODE=0
+export GALLIUM_DRIVER=llvmpipe
+export MESA_GL_VERSION_OVERRIDE=4.6
+export MESA_GLSL_VERSION_OVERRIDE=460
+export GDK_CORE_DEVICE_EVENTS=1
 export MALLOC_ARENA_MAX=2
 export MALLOC_TRIM_THRESHOLD_=131072
 export MALLOC_MMAP_THRESHOLD_=131072
@@ -57,14 +60,14 @@ xsetroot -cursor_name left_ptr 2>/dev/null || true
 rm -rf /root/.cache/sessions/* 2>/dev/null || true
 
 # Safe Inset Bezel & Floating Rounded Dock via xfconf-query
-xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 88 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 34 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 18 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 100 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 35 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 20 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 82 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 52 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 32 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 84 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 54 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 34 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
 
@@ -113,8 +116,9 @@ if [ -f "/sdcard/Download/ubuntu-touch-default.png" ]; then
     find /usr/share/xfce4 -type f -name "*.png" -exec cp -f "/sdcard/Download/ubuntu-touch-default.png" {} \; 2>/dev/null || true
 fi
 
-UBUNTU_WP="/usr/share/backgrounds/ubuntu-touch-default.png"
+UBUNTU_WP="/usr/share/backgrounds/ubuntu-noble-crowned-portrait.png"
 [ ! -f "$UBUNTU_WP" ] && UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
+[ ! -f "$UBUNTU_WP" ] && UBUNTU_WP="/usr/share/backgrounds/ubuntu-touch-default.png"
 
 # Ensure all desktop launchers are marked trusted in GIO/XFCE
 chmod +x /root/Desktop/*.desktop 2>/dev/null || true
@@ -192,22 +196,23 @@ xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
     for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image'); do
         xfconf-query -c xfce4-desktop -p "$prop" -s "$UBUNTU_WP" 2>/dev/null || true
     done
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorscreen/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitordefault/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
+    for mon in monitorbuiltin monitor0 monitorscreen monitordefault monitorVirtual-0 monitorVirtual-1 monitorVirtual-2; do
+        xfconf-query -c xfce4-desktop -p "/backdrop/screen0/$mon/workspace0/last-image" -s "$UBUNTU_WP" 2>/dev/null || true
+        xfconf-query -c xfce4-desktop -p "/backdrop/screen0/$mon/workspace0/image-style" -s 5 2>/dev/null || true
+    done
     for m in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style'); do
         xfconf-query -c xfce4-desktop -p "$m" -s 5 2>/dev/null || true
     done
 
     # Safe Inset Bezel & Floating Rounded Dock via xfconf-query
-    xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 88 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 34 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 18 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 100 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 35 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 20 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 82 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 52 2>/dev/null || true
-    xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 32 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 84 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 54 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 34 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
     xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true

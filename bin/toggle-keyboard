@@ -6,6 +6,7 @@
 # ==============================================================================
 
 unset LD_PRELOAD
+export PATH=/data/data/com.termux/files/usr/bin:/system/bin:$PATH
 export DISPLAY=:0
 
 PREF_FILE="/etc/ubroid/keyboard_pref"
