@@ -2,7 +2,7 @@
 # ==============================================================================
 # UbRoid - Pure OpenCV Pop-Out Launcher
 # Menjalankan script Python OpenCV murni dalam Jendela Mengambang HyperOS
-# ZERO BLACK BORDER & ULTRA-LOW LATENCY
+# ZERO BLACK BORDER & COMPACT 4:3 DESKTOP WINDOW
 # ==============================================================================
 
 SCRIPT="${1:-/root/lane_detector.py}"
@@ -24,23 +24,32 @@ fi
 mkdir -p /tmp/.X11-unix 2>/dev/null || true
 ln -sf /data/data/com.termux/files/usr/tmp/.X11-unix/X0 /tmp/.X11-unix/X0 2>/dev/null || true
 
-# 4. Atur preferensi Termux-X11: scaled mode + displayStretchEnabled agar pas dengan ukuran Jendela Mengambang (Zero Black Borders)
+# 4. Atur preferensi Termux-X11: exact 640x480 + displayStretchEnabled (Zero Black Border)
 if command -v adb >/dev/null 2>&1; then
     adb -s 127.0.0.1:5555 shell "am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
-      --es displayResolutionMode scaled \
+      --es displayResolutionMode exact \
+      --es displayResolutionExact 640x480 \
       --ez displayStretchEnabled true \
       --es displayScale 100 \
       --ez fullscreen true \
       --ez hideCutout true" >/dev/null 2>&1 || true
 
-    # 5. Buka Termux-X11 langsung ke mode Jendela Mengambang (Floating Window HyperOS)
+    # 5. Buka Termux-X11 ke mode Jendela Mengambang (Floating Window HyperOS)
     adb -s 127.0.0.1:5555 shell "am start -n com.termux.x11/com.termux.x11.MainActivity --windowingMode 5" >/dev/null 2>&1 || true
+    sleep 0.4
+
+    # 6. Resize jendela mengambang menjadi kotak 4:3 proporsional (bukan 9:16 yang panjang ke bawah)
+    TASK_ID=$(adb -s 127.0.0.1:5555 shell "cmd activity stack list | grep 'com.termux.x11' | sed -n 's/.*taskId=\([0-9]*\):.*/\1/p' | head -n 1" | tr -d '\r\n')
+    if [ -n "$TASK_ID" ]; then
+        # Bounds: [left=110, top=550, right=1110, bottom=1300] -> Width=1000, Height=750 (rasio 4:3)
+        adb -s 127.0.0.1:5555 shell "cmd activity task resize $TASK_ID 110 550 1110 1300" >/dev/null 2>&1 || true
+    fi
 fi
 
-# 6. Eksekusi script Python OpenCV dengan DISPLAY=:0
+# 7. Eksekusi script Python OpenCV dengan DISPLAY=:0
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
 
-echo "✓ Jendela Mengambang siap! Menjalankan $SCRIPT..."
+echo "✓ Jendela Mengambang (Kotak 4:3) siap! Menjalankan $SCRIPT..."
 exec python3 "$SCRIPT" "${@:2}"

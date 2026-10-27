@@ -2,7 +2,7 @@
 # ==============================================================================
 # UbRoid - Zero-Delay OpenCV Lane Detection with Native ADB Camera Stream
 # Designed for Xiaomi POCO F6 (Android 16 HyperOS Floating Window)
-# ZERO BLACK BORDER & ADAPTIVE ORIENTATION & LOW LATENCY
+# ZERO BLACK BORDER & COMPACT 4:3 WINDOW & PICTURE-IN-PICTURE THRESHOLD
 # ==============================================================================
 import sys
 import os
@@ -15,29 +15,6 @@ import termios
 import array
 import cv2
 import numpy as np
-
-def get_android_orientation():
-    """Deteksi orientasi fisik smartphone: 0 (portrait), 1 (landscape), 2 (reverse portrait), 3 (reverse landscape)."""
-    try:
-        out = subprocess.check_output(
-            ["adb", "-s", "127.0.0.1:5555", "shell", "dumpsys display | grep -E 'mCurrentOrientation'"],
-            stderr=subprocess.DEVNULL
-        ).decode()
-        for line in out.splitlines():
-            if "mCurrentOrientation=" in line:
-                return int(line.split("=")[1].strip())
-    except Exception:
-        pass
-    return 0
-
-def get_screen_resolution():
-    """Dapatkan resolusi sebenarnya dari canvas Termux-X11 agar fit 100% tanpa tepi hitam."""
-    try:
-        out = subprocess.check_output("xrandr | grep -m1 'current' | awk -F, '{print $2}'", shell=True).decode()
-        parts = out.replace('current', '').strip().split('x')
-        return int(parts[0].strip()), int(parts[1].strip())
-    except Exception:
-        return 584, 1048
 
 class ADBCameraCapture:
     """Zero-delay native Android Camera Capture via ADB without any 3rd party apps."""
@@ -72,7 +49,7 @@ class ADBCameraCapture:
 
         # 4. Hubungkan socket ke scrcpy-server
         self.sock = None
-        for _ in range(20):
+        for _ in range(25):
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(('127.0.0.1', 28200))
@@ -102,7 +79,7 @@ class ADBCameraCapture:
         self.t_grab = threading.Thread(target=self._frame_grabber, daemon=True)
         self.t_grab.start()
 
-        # Tunggu frame pertama siap (ISP Android 16 butuh ~2-5 detik inisialisasi)
+        # Tunggu frame pertama siap (ISP Android butuh ~2-4 detik inisialisasi)
         for _ in range(120):
             if self.latest_frame is not None:
                 break
@@ -222,10 +199,19 @@ def main():
         print("[-] Gagal membuka sumber kamera/video.")
         sys.exit(1)
 
-    # Deteksi rotasi awal dari orientasi fisik smartphone
-    # Kamera belakang pada HP posisi tegak (Portrait = 0) butuh 90° CW agar gambar tegak
-    orient_phone = get_android_orientation()
-    rot_state = 1 if orient_phone == 0 else 0
+    # Inisialisasi jendela pop-out tepat 640x480 (Kotak 4:3 proporsional)
+    win_name = "UbRoid Lane Detector"
+    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+    cv2.moveWindow(win_name, 0, 0)
+    cv2.resizeWindow(win_name, 640, 480)
+    cv2.setWindowProperty(win_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    # State rotasi & tampilan PiP
+    rot_state = 0  # 0: Landscape Native (640x480), 1: 90 CW, 2: 180, 3: 270 CW
+    pip_mode = 0   # 0: PiP Inset (Pojok Kanan Atas), 1: Layar Penuh Threshold, 2: Sembunyi (Hanya Kamera)
+
+    # Parameter Visual & ROI Asli
+    roi_x, roi_y, roi_w, roi_h = 10, 190, 620, 200
 
     BIRU = (255, 0, 0)
     MERAH = (0, 0, 255)
@@ -236,7 +222,9 @@ def main():
     WARNA_TITIK_UNGU = (255, 0, 255)
     WARNA_GARIS_TITIK = (255, 255, 255)
     WARNA_GARIS_3_4 = (255, 0, 255)
+    X_3_4 = int(roi_w * 0.75)
 
+    MIN_TINGGI_BORDER = 0.5 * roi_h
     MIN_AREA_DASH = 15
     MIN_AREA_DASH_TRACK = 40
     GATE_DASH = 0.6
@@ -249,8 +237,10 @@ def main():
     MAX_SALAH = 5
     MAX_TEBAL = 25
 
-    mem_lebar = 200.0
-    mem_lajur = 100.0
+    mem_kiri = roi_w * 0.25
+    mem_kanan = roi_w * 0.75
+    mem_lebar = mem_kanan - mem_kiri
+    mem_lajur = mem_lebar / 2
     coef_c = None
     coef_r = None
     coef_l = None
@@ -266,19 +256,11 @@ def main():
         hilang = 0
         salah = 0
 
-    # Inisialisasi jendela pop-out yang mengisi 100% Floating Window
-    screen_w, screen_h = get_screen_resolution()
-    win_name = "UbRoid Lane Detector"
-    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
-    cv2.moveWindow(win_name, 0, 0)
-    cv2.resizeWindow(win_name, screen_w, screen_h)
-
-    print(f"[*] Dashboard aktif (Resolusi Canvas: {screen_w}x{screen_h})!")
-    print("[*] Pintasan keyboard: [r] Rotasi 90° | [q] Keluar.")
+    print("[*] Jendela Mengambang Aktif (640x480 Kotak 4:3)!")
+    print("[*] Pintasan: [r] Putar Rotasi 90° | [t] Mode Thresh PiP | [q] Keluar.")
     fps_time = time.time()
     fps_counter = 0
     fps_display = 30.0
-    frame_count = 0
 
     while True:
         ok, raw_frame = cap.read()
@@ -286,44 +268,24 @@ def main():
             time.sleep(0.005)
             continue
 
-        frame_count += 1
-        # Sinkronkan ukuran canvas jika user mengubah ukuran jendela mengambang
-        if frame_count % 45 == 0:
-            sw, sh = get_screen_resolution()
-            if sw != screen_w or sh != screen_h:
-                screen_w, screen_h = sw, sh
-                cv2.resizeWindow(win_name, screen_w, screen_h)
+        # Pastikan ukuran frame 640x480
+        if raw_frame.shape[1] != 640 or raw_frame.shape[0] != 480:
+            raw_frame = cv2.resize(raw_frame, (640, 480))
 
-        # 1. Terapkan Rotasi Kamera
+        # Terapkan rotasi jika dipilih oleh pengguna
         if rot_state == 1:
-            frame = cv2.rotate(raw_frame, cv2.ROTATE_90_CLOCKWISE)
+            frame = cv2.resize(cv2.rotate(raw_frame, cv2.ROTATE_90_CLOCKWISE), (640, 480))
         elif rot_state == 2:
             frame = cv2.rotate(raw_frame, cv2.ROTATE_180)
         elif rot_state == 3:
-            frame = cv2.rotate(raw_frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            frame = cv2.resize(cv2.rotate(raw_frame, cv2.ROTATE_90_COUNTERCLOCKWISE), (640, 480))
         else:
             frame = raw_frame.copy()
 
-        h_f, w_f = frame.shape[:2]
-
-        # 2. Dinamis ROI sesuai orientasi (Portrait vs Landscape)
-        if w_f < h_f:  # Mode Portrait (480x640)
-            roi_x = int(0.04 * w_f)
-            roi_w = int(0.92 * w_f)
-            roi_y = int(0.48 * h_f)
-            roi_h = int(0.44 * h_f)
-        else:          # Mode Landscape (640x480)
-            roi_x = 10
-            roi_w = w_f - 20
-            roi_y = int(0.40 * h_f)
-            roi_h = int(0.45 * h_f)
-
-        MIN_TINGGI_BORDER = 0.5 * roi_h
-        X_3_4 = int(roi_w * 0.75)
-
+        # Ekstrak ROI 640x480
         roi = frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
 
-        # 3. Preprocessing Citra
+        # Preprocessing Citra
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
         _, thresh = cv2.threshold(blur, 205, 255, cv2.THRESH_BINARY)
@@ -334,7 +296,7 @@ def main():
         dashes = []
         tracking = coef_c is not None
 
-        # 4. Deteksi & Klasifikasi Kontur
+        # Deteksi & Klasifikasi Kontur
         if tracking:
             cand_kiri, cand_kanan = [], []
             for c in contours:
@@ -392,7 +354,7 @@ def main():
         if kanan is not None:
             cv2.drawContours(roi, [kanan], -1, MERAH, cv2.FILLED)
 
-        # 5. Fit Garis Dash & Garis Pinggir
+        # Fit Garis Dash & Garis Pinggir
         if len(dashes) >= 2:
             pts = np.vstack([d[:, 0, :] for d in dashes]).astype(np.float64)
             deg = 2 if len(dashes) >= 4 else 1
@@ -432,7 +394,7 @@ def main():
             xg = (xc + xr) / 2
             cv2.polylines(roi, [np.column_stack([xg, ys]).astype(np.int32)], False, IJO, 2)
 
-        # 6. Auto Reset & Validasi
+        # Auto Reset & Validasi
         if tracking and coef_c is not None:
             if len(dashes) < 2 or (kiri is None and kanan is None):
                 hilang += 1
@@ -460,7 +422,7 @@ def main():
 
         cv2.line(roi, (X_3_4, 0), (X_3_4, roi_h), WARNA_GARIS_3_4, 2)
 
-        # 7. 5 Titik Vektor
+        # 5 Titik Vektor
         if xg is not None:
             for p in PERSEN_TITIK:
                 y_t = int(p * (roi_h - 1))
@@ -471,8 +433,9 @@ def main():
                 cv2.circle(roi, (x_h, y_t), 4, WARNA_TITIK_HIJAU, -1)
                 cv2.circle(roi, (X_3_4, y_t), 4, WARNA_TITIK_UNGU, -1)
 
-        # Kotak ROI
+        # Kotak ROI Asli
         cv2.rectangle(frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h), WARNA_ROI, 2)
+        cv2.putText(frame, "ROI", (roi_x, roi_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.5, WARNA_ROI, 1)
 
         # FPS calculation
         fps_counter += 1
@@ -482,30 +445,39 @@ def main():
             fps_counter = 0
             fps_time = now
 
-        # HUD Informasi di atas frame
-        rot_names = ["0° (Landscape)", "90° (Portrait)", "180°", "270°"]
+        # HUD Informasi di pojok kiri atas
+        rot_names = ["0°", "90°", "180°", "270°"]
         status_txt = "TRACKING" if coef_c is not None else "SEARCHING"
         status_col = (0, 255, 0) if coef_c is not None else (0, 255, 255)
 
-        cv2.putText(frame, f"FPS: {fps_display:.1f} | Status: {status_txt}", (15, 25), 
+        cv2.putText(frame, f"FPS: {fps_display:.1f} | {status_txt}", (12, 22), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, status_col, 2)
-        cv2.putText(frame, f"Rotasi: {rot_names[rot_state]} [R]", (15, 50), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(frame, f"Rotasi: {rot_names[rot_state]} [R] | Mode: [T] | Keluar: [Q]", (12, 42), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
 
-        # 8. Satukan View Menjadi Single Unified Dashboard (Zero Black Border)
-        thresh_bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-        diag_h = int(h_f * 0.35)
-        thresh_resized = cv2.resize(thresh_bgr, (w_f, diag_h))
-        cv2.putText(thresh_resized, "Binary Threshold (ROI Contours)", (10, 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
-        cv2.putText(thresh_resized, "Pintasan: [R] Putar Layar | [Q] Keluar", (10, diag_h - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+        # Mode Tampilan Threshold (PiP Inset / Full / Off)
+        if pip_mode == 0:
+            # Picture-in-Picture: Inset kecil rapi di pojok kanan atas
+            pip_w, pip_h = 160, 95
+            thresh_bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+            thresh_pip = cv2.resize(thresh_bgr, (pip_w, pip_h))
+            cv2.rectangle(thresh_pip, (0, 0), (pip_w - 1, pip_h - 1), (0, 255, 255), 2)
+            cv2.putText(thresh_pip, "THRESH", (6, 16), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
+            x_off = 640 - pip_w - 10
+            y_off = 10
+            frame[y_off:y_off + pip_h, x_off:x_off + pip_w] = thresh_pip
+            display_output = frame
+        elif pip_mode == 1:
+            # Mode Fullscreen Threshold
+            thresh_bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+            display_output = cv2.resize(thresh_bgr, (640, 480))
+            cv2.putText(display_output, "MODE BINARY THRESHOLD", (15, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+        else:
+            # Mode Pure Kamera (Tanpa PiP)
+            display_output = frame
 
-        dashboard = np.vstack([frame, thresh_resized])
-        
-        # Fit tepat ke ukuran canvas floating window (0 tepi hitam)
-        display_frame = cv2.resize(dashboard, (screen_w, screen_h), interpolation=cv2.INTER_LINEAR)
-        cv2.imshow(win_name, display_frame)
+        cv2.imshow(win_name, display_output)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -513,7 +485,11 @@ def main():
         elif key == ord('r'):
             rot_state = (rot_state + 1) % 4
             reset_tracking()
-            print(f"[*] Rotasi diubah ke: {rot_names[rot_state]}")
+            print(f"[*] Rotasi: {rot_names[rot_state]}")
+        elif key == ord('t'):
+            pip_mode = (pip_mode + 1) % 3
+            pip_names = ["PiP Inset", "Fullscreen Thresh", "Murni Kamera"]
+            print(f"[*] Mode Tampilan: {pip_names[pip_mode]}")
 
     cap.release()
     cv2.destroyAllWindows()
