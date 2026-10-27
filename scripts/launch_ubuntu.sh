@@ -96,7 +96,6 @@ fi
   --es screenIdleTimeout "Never (keep screen on)" \
   --es PIP false \
   --es dexMetaKeyCapture true \
-  --es enableAccessibilityServiceAutomatically true \
   --es filterOutWinkey true \
   --es showAdditionalKbd false \
   --es displayResolutionMode scaled \
@@ -124,6 +123,7 @@ done
 
 # 8. Munculkan Termux-X11 ke layar
 /system/bin/am broadcast --user 0 -a com.termux.x11.CmdEntryPoint.ACTION_START -p com.termux.x11 2>/dev/null
+/system/bin/am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
 
 # 9. Pastikan DNS resolver disiapkan (Multi-tier Android Network DNS + Fallback)
 DNS_LIST=()
