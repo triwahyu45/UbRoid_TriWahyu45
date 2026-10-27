@@ -271,14 +271,14 @@ mkdir -p "$TMPDIR/.X11-unix"
 
 # Siapkan DNS multi-tier (Android Network DNS + Gateway + Fallback Public DNS)
 DNS_LIST=()
+# Prioritaskan Tailscale MagicDNS dan DNS internal eduroam UNY / Android
+DNS_LIST+=("100.100.100.100" "10.11.12.57" "10.100.1.3")
 for prop in net.dns1 net.dns2 net.dns3 net.dns4 net.wlan0.dns1 net.wlan0.dns2 net.rmnet_data0.dns1; do
     d=$(getprop "$prop" 2>/dev/null)
     [ -n "$d" ] && DNS_LIST+=("$d")
 done
 GW=$(ip route show 2>/dev/null | awk '/default/ {print $3}' | head -n1)
 [ -n "$GW" ] && DNS_LIST+=("$GW")
-# Prioritaskan Tailscale MagicDNS dan DNS internal eduroam/Android
-DNS_LIST+=("100.100.100.100")
 for d in $(/system/bin/dumpsys connectivity 2>/dev/null | grep -o 'DnsAddresses: \[ [^]]* \]' | tr -d '[]/' | tr ',' ' '); do
     [ "$d" != "DnsAddresses:" ] && DNS_LIST+=("$d")
 done

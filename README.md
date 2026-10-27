@@ -132,6 +132,15 @@ Anda dapat menjalankan Ubuntu dengan salah satu cara berikut:
 - **Cara 1 (Paling Mudah)**: Klik icon aplikasi **Ubuntu** di homescreen Android Anda.
 - **Cara 2 (Lewat Terminal)**: Buka Termux, lalu ketik `ubuntu` dan tekan Enter.
 
+### Langkah 4: Menjalankan Antigravity AI CLI (`agy`) Turbo Mode
+UbRoid telah terintegrasi penuh dengan **Google Antigravity AI CLI** (`agy`) untuk asisten coding AI & automasi sistem langsung di HP/Tablet:
+- **Cara Masuk**: Ketik `agy` di Termux (atau terminal Ubuntu) lalu tekan Enter.
+- **Cara Keluar**:
+  - Ketik **/exit** lalu tekan Enter, ATAU
+  - Tekan **Double `Ctrl + C`** (tekan `Ctrl` lalu `c` dua kali berturut-turut).
+- **Anti-Blokir DNS Kampus (eduroam UNY)**: Dilengkapi resolver DNS multi-tier (Tailscale MagicDNS `100.100.100.100` + DNS kampus lokal) sehingga koneksi token Google aman tanpa timeout.
+- **Auto-Sync Kredensial**: Otomatis menyimpan dan membaca file login dari `/sdcard/Download/.gemini/` sehingga Anda tidak perlu login ulang saat membuka sesi baru.
+
 ---
 
 ## 🛠️ Panduan Instalasi Manual (Step-by-Step)

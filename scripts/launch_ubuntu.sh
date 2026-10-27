@@ -127,8 +127,8 @@ done
 
 # 9. Pastikan DNS resolver disiapkan (Multi-tier Android Network DNS + Fallback)
 DNS_LIST=()
-# Prioritaskan Tailscale MagicDNS jika terhubung (Ultra-cepat, anti-blokir firewall kampus/eduroam)
-DNS_LIST+=("100.100.100.100")
+# Prioritaskan Tailscale MagicDNS & DNS kampus/internal jika terhubung (Anti-blokir eduroam UNY port 53)
+DNS_LIST+=("100.100.100.100" "10.11.12.57" "10.100.1.3")
 for prop in net.dns1 net.dns2 net.dns3 net.dns4 net.wlan0.dns1 net.wlan0.dns2 net.rmnet_data0.dns1; do
     d=$(getprop "$prop" 2>/dev/null)
     [ -n "$d" ] && DNS_LIST+=("$d")
