@@ -9,7 +9,7 @@ unset LD_PRELOAD
 export DISPLAY=:0
 
 PREF_FILE="/etc/ubroid/keyboard_pref"
-KEYBOARD_PREF="smart"
+KEYBOARD_PREF="gboard"
 [ -f "$PREF_FILE" ] && KEYBOARD_PREF=$(cat "$PREF_FILE" 2>/dev/null | tr -d '[:space:]')
 
 toggle_onboard() {
@@ -28,27 +28,26 @@ toggle_onboard() {
 
 toggle_gboard() {
     # 1. Pemicu Termux-X11 native soft keyboard via broadcast
-    /system/bin/am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 \
-      --es what "swipeUp" >/dev/null 2>&1 || true
+    if [ -x "/system/bin/am" ]; then
+        /system/bin/am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 \
+          --es what "swipeUp" >/dev/null 2>&1 || true
+    fi
 
-    # 2. Pemicu fallback via adb jika tersedia
+    # 2. Pemicu via ADB wrapper (koneksi lokal ke 127.0.0.1:5555 di PRoot)
     if command -v adb >/dev/null 2>&1; then
-        adb shell input keyevent 111 >/dev/null 2>&1 || true
+        adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+        adb -s 127.0.0.1:5555 shell "am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 --es what 'swipeUp'" >/dev/null 2>&1 || {
+            adb shell "am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 --es what 'swipeUp'" >/dev/null 2>&1 || true
+        }
     fi
 }
 
 case "$KEYBOARD_PREF" in
-    "gboard")
-        toggle_gboard
-        ;;
     "onboard")
         toggle_onboard
         ;;
-    *)
-        # Mode Smart: Coba Onboard terlebih dahulu, jika gagal atau tidak terpasang fallback ke Gboard
-        if ! toggle_onboard; then
-            toggle_gboard
-        fi
+    "gboard"|*)
+        toggle_gboard
         ;;
 esac
 

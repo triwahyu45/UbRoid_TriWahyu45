@@ -15,13 +15,11 @@
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="21"/>
-        <value type="int" value="2"/>
         <value type="int" value="3"/>
-        <value type="int" value="4"/>
         <value type="int" value="41"/>
-        <value type="int" value="42"/>
-        <value type="int" value="43"/>
+        <value type="int" value="2"/>
         <value type="int" value="40"/>
+        <value type="int" value="25"/>
         <value type="int" value="7"/>
       </property>
     </property>
@@ -29,7 +27,7 @@
       <property name="mode" type="uint" value="0"/>
       <property name="autohide-behavior" type="uint" value="0"/>
       <property name="position" type="string" value="p=10;x=0;y=0"/>
-      <property name="length" type="uint" value="86"/>
+      <property name="length" type="uint" value="82"/>
       <property name="position-locked" type="bool" value="true"/>
       <property name="icon-size" type="uint" value="32"/>
       <property name="size" type="uint" value="52"/>
@@ -42,7 +40,6 @@
         <value type="int" value="50"/>
         <value type="int" value="16"/>
         <value type="int" value="15"/>
-        <value type="int" value="7"/>
       </property>
       <property name="length-adjust" type="bool" value="false"/>
       <property name="enable-struts" type="bool" value="true"/>

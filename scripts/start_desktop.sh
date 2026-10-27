@@ -62,15 +62,14 @@ xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 34 2>/dev/null ||
 xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 18 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 82 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 52 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 32 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
 
-# Lightweight Compositing: Enable ARGB transparency for clean rounded dock corners
-# while disabling expensive frame/dock shadows, blur, and move opacity to eliminate drag lag
-xfconf-query -c xfwm4 -p /general/use_compositing -s true 2>/dev/null || true
+# Matikan software compositing di PRoot agar UI 60 FPS instan tanpa lag
+xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_dock_shadow -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_frame_shadow -s false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_popup_shadow -s false 2>/dev/null || true
@@ -132,6 +131,26 @@ if [ -f "/sdcard/Download/linux-os-mode" ]; then
     chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
 fi
 
+if [ -f "/sdcard/Download/toggle-keyboard" ]; then
+    cp -f "/sdcard/Download/toggle-keyboard" /usr/local/bin/toggle-keyboard 2>/dev/null || true
+    chmod +x /usr/local/bin/toggle-keyboard 2>/dev/null || true
+fi
+
+if [ -f "/sdcard/Download/toggle-gboard" ]; then
+    cp -f "/sdcard/Download/toggle-gboard" /usr/local/bin/toggle-gboard 2>/dev/null || true
+    chmod +x /usr/local/bin/toggle-gboard 2>/dev/null || true
+fi
+
+if [ -f "/sdcard/Download/status-bar-daemon" ]; then
+    cp -f "/sdcard/Download/status-bar-daemon" /usr/local/bin/status-bar-daemon 2>/dev/null || true
+    chmod +x /usr/local/bin/status-bar-daemon 2>/dev/null || true
+fi
+
+if [ -f "/sdcard/Download/smart-launch" ]; then
+    cp -f "/sdcard/Download/smart-launch" /usr/local/bin/smart-launch 2>/dev/null || true
+    chmod +x /usr/local/bin/smart-launch 2>/dev/null || true
+fi
+
 if [ -d "/root/termux_home" ] && [ -f "/sdcard/Download/launch_ubuntu.sh" ]; then
     cp -f "/sdcard/Download/launch_ubuntu.sh" "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
     chmod +x "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
@@ -186,11 +205,13 @@ xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 18 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 82 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 52 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 32 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
     xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
+    xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
+    echo "gboard" > /etc/ubroid/keyboard_pref 2>/dev/null || true
 ) &
 
 export LD_PRELOAD=/usr/local/lib/libnogap.so

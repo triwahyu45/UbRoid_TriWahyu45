@@ -152,12 +152,13 @@ sleep 0.2
   --es displayScale $SCALE \
   --es forceOrientation "$TARGET_ORIENTATION" \
   --es touchMode "Direct touch" \
-  --es swipeUpAction "no action" \
-  --es backButtonAction "no action" \
+  --es swipeUpAction "toggle soft keyboard" \
+  --es backButtonAction "toggle soft keyboard" \
   --es swipeDownAction "no action" \
-  --es notificationButton0Action "no action" \
+  --es notificationButton0Action "toggle soft keyboard" \
   --es volumeUpAction "no action" \
   --es volumeDownAction "no action" \
+  --es enforceCharBasedInput true \
   --es mediaKeysAction "send media action" 2>/dev/null
 
 # 6. Jalankan Termux-X11 display server
@@ -204,6 +205,8 @@ PROOT_BINDS=()
 [ -f "$TMPDIR/resolv.conf" ] && PROOT_BINDS+=(--bind "$TMPDIR/resolv.conf:/etc/resolv.conf")
 
 # Override start_desktop & wallpaper & profil touch dari /sdcard/Download jika tersedia
+[ -f "/sdcard/Download/status-bar-daemon" ] && PROOT_BINDS+=(--bind "/sdcard/Download/status-bar-daemon:/usr/local/bin/status-bar-daemon")
+[ -f "/sdcard/Download/toggle-keyboard" ] && PROOT_BINDS+=(--bind "/sdcard/Download/toggle-keyboard:/usr/local/bin/toggle-keyboard")
 [ -f "/sdcard/Download/linux-os-mode" ] && PROOT_BINDS+=(--bind "/sdcard/Download/linux-os-mode:/usr/local/bin/linux-os-mode")
 [ -f "/sdcard/Download/start_desktop.sh" ] && PROOT_BINDS+=(--bind "/sdcard/Download/start_desktop.sh:/root/start_desktop.sh")
 [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubuntu-touch-default.png:/usr/share/backgrounds/ubuntu-touch-default.png")
