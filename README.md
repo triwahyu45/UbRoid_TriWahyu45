@@ -141,6 +141,39 @@ UbRoid telah terintegrasi penuh dengan **Google Antigravity AI CLI** (`agy`) unt
 - **Anti-Blokir DNS Kampus (eduroam UNY)**: Dilengkapi resolver DNS multi-tier (Tailscale MagicDNS `100.100.100.100` + DNS kampus lokal) sehingga koneksi token Google aman tanpa timeout.
 - **Auto-Sync Kredensial**: Otomatis menyimpan dan membaca file login dari `/sdcard/Download/.gemini/` sehingga Anda tidak perlu login ulang saat membuka sesi baru.
 
+### Langkah 5: Berpindah Mode Tampilan (Desktop ↔ Ubuntu Touch Mobile)
+Jika Anda menggunakan smartphone berlayar ringkas seperti **Xiaomi POCO F6**, antarmuka **Ubuntu Touch Mobile Edition** jauh lebih nyaman, ringan, dan ramah jempol daripada tampilan Desktop klasik.
+
+Anda **TIDAK PERLU menginstal ulang** jika saat instalasi pertama kali terlanjur memilih mode Desktop! Anda dapat berpindah mode kapan saja secara instan:
+
+#### Cara 1: Lewat Terminal (Paling Cepat & Praktis)
+- **Beralih ke Ubuntu Touch Mobile**:
+  - Jika Anda sedang di **Termux**:
+    ```bash
+    proot-distro login ubuntu -- switch-mode touch
+    ```
+  - Jika Anda sedang di dalam **Terminal Ubuntu**:
+    ```bash
+    switch-mode touch
+    ```
+- **Kembali ke Ubuntu Desktop**:
+  ```bash
+  switch-mode desktop
+  ```
+
+#### Cara 2: Lewat Icon Aplikasi (1-Klik)
+- Di dalam sesi Ubuntu, klik icon **Ganti Mode Tampilan (Switch UI Mode)** di Desktop atau menu aplikasi.
+- Sistem akan otomatis memuat ulang tata letak panel tanpa mematikan sesi display server Anda.
+
+#### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP:
+1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal di sisi kiri layar yang sangat mudah dijangkau jempol satu tangan saat HP dipegang secara horizontal (*landscape*).
+2. **Touch-Friendly UI**: Scrollbar tebal 22px (mudah digulir dengan jari tanpa bantuan mouse fisik), baris judul jendela lebih besar, dan icon 54px yang jelas.
+3. **Single-Tap Navigation**: Aplikasi dan folder langsung terbuka cukup dengan **1 ketukan jari** (tanpa perlu repot double-tap di layar sentuh).
+4. **Dual Keyboard Support**:
+   - Usap layar (*swipe up*) ke atas dari bezel bawah untuk memunculkan keyboard bawaan Android (**Gboard**).
+   - Atau gunakan keyboard virtual sentuh **Onboard** yang otomatis *pop-up* saat kolom input teks disentuh.
+5. **Python Mobile Studio & Mini PC Mode**: Shortcut `python-mobile` langsung tersemat di launcher kiri, membuka workspace coding `/root/Python_Workspace` secara instan.
+
 ---
 
 ## 🛠️ Panduan Instalasi Manual (Step-by-Step)
