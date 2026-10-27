@@ -110,7 +110,37 @@ elif [ "$SCALE" -gt 320 ]; then
     SCALE=320
 fi
 
-# 5. Set preferensi Termux-X11 ke Mode Dedicated Linux OS + Native Direct Touch
+# 5. Deteksi Orientasi Layar (Ubuntu Touch = PORTRAIT vertikal khas HP smartphone, Desktop = LANDSCAPE)
+TARGET_ORIENTATION="portrait"
+ROOTFS_MODE_FILE="/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/$UBUNTU_CONTAINER/etc/ubroid/mode"
+UBROID_MODE="touch"
+if [ -f "$ROOTFS_MODE_FILE" ]; then
+    UBROID_MODE=$(cat "$ROOTFS_MODE_FILE" 2>/dev/null | tr -d '[:space:]')
+fi
+if [ "$UBROID_MODE" = "desktop" ]; then
+    TARGET_ORIENTATION="landscape"
+fi
+
+for arg in "$@"; do
+    case "$arg" in
+        --portrait|-p)
+            TARGET_ORIENTATION="portrait"
+            ;;
+        --landscape|-l)
+            TARGET_ORIENTATION="landscape"
+            ;;
+        --sensor|-s)
+            TARGET_ORIENTATION="sensor"
+            ;;
+    esac
+done
+
+# Optimalisasi Skala Tampilan Khusus Smartphone Portrait (POCO F6)
+if [ "$TARGET_ORIENTATION" = "portrait" ] && [ "$SCALE" -gt 240 ]; then
+    SCALE=220
+fi
+
+# 6. Set preferensi Termux-X11 ke Mode Dedicated Linux OS + Native Direct Touch
 /system/bin/am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
   --es fullscreen true \
   --es hideCutout true \
@@ -121,7 +151,7 @@ fi
   --es showAdditionalKbd false \
   --es displayResolutionMode scaled \
   --es displayScale $SCALE \
-  --es forceOrientation landscape \
+  --es forceOrientation "$TARGET_ORIENTATION" \
   --es touchMode "Direct touch" \
   --es swipeUpAction "toggle soft keyboard" \
   --es backButtonAction "toggle soft keyboard" \

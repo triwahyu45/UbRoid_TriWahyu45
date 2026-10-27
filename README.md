@@ -174,15 +174,23 @@ Perintah di atas akan langsung mengubah konfigurasi sistem ke **Ubuntu Touch Mob
 - Di dalam sesi Ubuntu yang sedang berjalan, Anda juga dapat mengklik icon **Ganti Mode Tampilan (Switch UI Mode)** di desktop atau mengetik `switch-mode touch` di terminal. Tata letak akan otomatis diperbarui tanpa merestart HP atau display server.
 
 #### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP (POCO F6, Terinspirasi dari [Ubuntu Touch Lomiri](https://www.ubuntu-touch.io/)):
-1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal 68px di sisi kiri layar dengan container squircle dan icon 48px yang sangat mudah dijangkau jempol saat HP dipegang secara horizontal (*landscape*).
-2. **Skala Layar Proporsional (170 DPI)**: Ukuran font, tombol, dan headerbar diperbesar secara proporsional (~36% lebih besar) sehingga teks terbaca sangat jelas di layar 1.5K AMOLED POCO F6 tanpa membuat mata lelah.
-3. **Wallpaper Otentik 4K Ubuntu Touch (UBports Lomiri)**: Menggunakan wallpaper resmi 4K Ubuntu Touch (`ubuntu-touch-default.png` dari UBports) dengan gradasi aubergine & orange origami khas Suru, bebas dari wallpaper tikus XFCE selamanya.
-4. **Desain Suru & Touch Scrollbar 26px**: Scrollbar tebal 26px dengan slider pill oranye Ubuntu yang nyaman digeser dengan jari tanpa mouse fisik, serta target tombol sentuh minimal 44px dengan sudut membulat (*rounded corners*).
-5. **Single-Tap Navigation**: Aplikasi dan folder langsung terbuka cukup dengan **1 ketukan jari** (tanpa perlu repot double-tap di layar sentuh).
-6. **Dual Keyboard Support**:
+1. **Orientasi Vertikal Alami Smartphone (PORTRAIT)**: Sesuai dengan hakikat smartphone, Ubuntu Touch otomatis berjalan dalam **mode vertikal tegak lurus (portrait)** sehingga Anda memegang HP secara natural layaknya smartphone biasa tanpa perlu memutar layar ke samping (*landscape*).
+2. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal 68px di sisi kiri layar dengan container squircle dan icon 48px yang sangat mudah dijangkau jempol satu tangan.
+3. **Skala Layar Proporsional (170 DPI / 220 Scale)**: Ukuran font, tombol, dan headerbar diperbesar secara proporsional (~36% lebih besar) sehingga teks terbaca sangat jelas di layar 1.5K AMOLED POCO F6 tanpa membuat mata lelah.
+4. **Wallpaper Otentik 4K Ubuntu Touch (UBports Lomiri)**: Menggunakan wallpaper resmi 4K Ubuntu Touch (`ubuntu-touch-default.png` dari UBports) dengan gradasi aubergine & orange origami khas Suru, bebas dari wallpaper tikus XFCE selamanya.
+5. **Desain Suru & Touch Scrollbar 26px**: Scrollbar tebal 26px dengan slider pill oranye Ubuntu yang nyaman digeser dengan jari tanpa mouse fisik, serta target tombol sentuh minimal 44px dengan sudut membulat (*rounded corners*).
+6. **Single-Tap Navigation**: Aplikasi dan folder langsung terbuka cukup dengan **1 ketukan jari** (tanpa perlu repot double-tap di layar sentuh).
+7. **Dual Keyboard Support**:
    - Usap layar (*swipe up*) ke atas dari bezel bawah untuk memunculkan keyboard bawaan Android (**Gboard**).
    - Atau gunakan keyboard virtual sentuh **Onboard** yang otomatis *pop-up* saat kolom input teks disentuh.
-7. **Python Mobile Studio & Mini PC Mode**: Shortcut `python-mobile` langsung tersemat di launcher kiri, membuka workspace coding `/root/Python_Workspace` secara instan.
+8. **Python Mobile Studio & Mini PC Mode**: Shortcut `python-mobile` langsung tersemat di launcher kiri, membuka workspace coding `/root/Python_Workspace` secara instan.
+
+#### 🔄 Pengaturan Orientasi Layar (Portrait vs Landscape vs Sensor)
+Anda bisa mengatur orientasi sesuai kenyamanan:
+- **`ubuntu`** : Otomatis memilih Portrait untuk Touch Mode, atau Landscape untuk Desktop Mode.
+- **`ubuntu -p`** atau **`u-port`** : Paksa mode **Portrait (Vertikal tegak)**.
+- **`ubuntu -l`** atau **`u-land`** : Paksa mode **Landscape (Horizontal miring)**.
+- **`ubuntu -s`** atau **`u-auto`** : Mode **Sensor** (Layar berputar otomatis mengikuti posisi fisik HP).
 
 ---
 

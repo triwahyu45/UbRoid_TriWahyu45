@@ -22,12 +22,17 @@ ubuntu() {
     bash ~/launch_ubuntu.sh "$@"
 }
 alias u="ubuntu"
+alias u-port="ubuntu --portrait"
+alias u-land="ubuntu --landscape"
+alias u-auto="ubuntu --sensor"
 
 # Mode Dedicated Linux OS: Murni meninggalkan Android (ADB suspend app 3rd-party, 100% RAM & CPU)
 ubuntu-os() {
     bash ~/launch_ubuntu.sh --dedicated "$@"
 }
 alias uos="ubuntu-os"
+alias uos-port="ubuntu-os --portrait"
+alias uos-land="ubuntu-os --landscape"
 
 ubuntu-cli() {
     local c
