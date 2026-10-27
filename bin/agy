@@ -25,8 +25,17 @@ fi
 
 # 2. Pastikan file konfigurasi Turbo Mode siap
 SETTINGS_FILE="/root/.gemini/antigravity-cli/settings.json"
+mkdir -p "/root/.gemini/antigravity-cli"
+
+# Sinkronisasi otomatis kredensial Google Antigravity jika tersedia di Android Storage
+for sync_dir in "/root/Android_Storage/Download/.gemini" "/sdcard/Download/.gemini" "/storage/emulated/0/Download/.gemini"; do
+    if [ -d "$sync_dir" ]; then
+        cp -f "$sync_dir/"* /root/.gemini/ 2>/dev/null || true
+        break
+    fi
+done
+
 if [ ! -f "$SETTINGS_FILE" ]; then
-    mkdir -p "/root/.gemini/antigravity-cli"
     cat << 'EOF' > "$SETTINGS_FILE"
 {
   "agentMode": "auto",
