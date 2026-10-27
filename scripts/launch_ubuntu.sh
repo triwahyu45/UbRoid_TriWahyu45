@@ -92,12 +92,13 @@ sleep 0.3
 mkdir -p $TMPDIR/.X11-unix
 chmod 1777 $TMPDIR/.X11-unix
 
-# 3. Aktifkan WakeLock & Audio Server PulseAudio (OpenSL ES Speaker Bridge)
+# 3. Aktifkan WakeLock & Audio Server PulseAudio (OpenSL ES Speaker & Microphone Capture Bridge)
 termux-wake-lock 2>/dev/null || true
 if [ -x "/data/data/com.termux/files/usr/bin/pulseaudio" ]; then
     env -i HOME=/data/data/com.termux/files/home PREFIX=/data/data/com.termux/files/usr PATH=/data/data/com.termux/files/usr/bin:/system/bin TMPDIR=/data/data/com.termux/files/usr/tmp \
         /data/data/com.termux/files/usr/bin/pulseaudio --start \
         --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
+        --load="module-sles-source" \
         --exit-idle-time=-1 2>/dev/null || true
 fi
 
@@ -219,7 +220,14 @@ fi
 
 if [ -n "$STORAGE_TARGET" ]; then
     PROOT_BINDS+=(--bind "$STORAGE_TARGET:/root/Android_Storage")
+    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/sdcard")
+    PROOT_BINDS+=(--bind "$STORAGE_TARGET:/storage/emulated/0")
 fi
+
+# Akses Perangkat Hardware (Kamera V4L2 Snapdragon & USB) jika tersedia
+for v in /dev/video*; do
+    [ -e "$v" ] && PROOT_BINDS+=(--bind "$v:$v")
+done
 
 # 11. Jalankan Desktop XFCE Ubuntu dengan Dynamic Storage Binding
 proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- env UBROID_DEDICATED_OS="$UBROID_DEDICATED_OS" bash /root/start_desktop.sh
