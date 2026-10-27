@@ -117,14 +117,30 @@ for f in /root/Desktop/*.desktop; do
     [ -f "$f" ] && gio set "$f" metadata::trusted true 2>/dev/null || true
 done
 
-# Mode-specific initialization (Ubuntu Touch Mobile vs Desktop)
-UBROID_MODE="desktop"
-[ -f /etc/ubroid/mode ] && UBROID_MODE=$(cat /etc/ubroid/mode 2>/dev/null | tr -d '[:space:]')
-if [ "$UBROID_MODE" = "touch" ]; then
-    if command -v onboard >/dev/null 2>&1 && ! pgrep -x onboard >/dev/null; then
-        nohup onboard >/dev/null 2>&1 &
-    fi
+# Sinkronisasi file script penting langsung ke Termux & PRoot
+mkdir -p /etc/ubroid 2>/dev/null || true
+echo "touch" > /etc/ubroid/mode 2>/dev/null || true
+
+if [ -f "/sdcard/Download/linux-os-mode" ]; then
+    cp -f "/sdcard/Download/linux-os-mode" /usr/local/bin/linux-os-mode 2>/dev/null || true
+    chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
 fi
+
+if [ -d "/root/termux_home" ] && [ -f "/sdcard/Download/launch_ubuntu.sh" ]; then
+    cp -f "/sdcard/Download/launch_ubuntu.sh" "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
+    chmod +x "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
+fi
+
+# Anti-Pop Out Keyboard: Matikan total onboard & auto-popup
+pkill -9 -x onboard 2>/dev/null || true
+pkill -9 -f "onboard" 2>/dev/null || true
+gsettings set org.onboard auto-show false 2>/dev/null || true
+dconf write /org/onboard/auto-show false 2>/dev/null || true
+
+# Optimasi Mobile UI Ubuntu Touch (Maximized windows khas Android/Lomiri)
+xfconf-query -c xfwm4 -p /general/placement_mode -s "maximized" 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/borderless_maximize -s true 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/title_alignment -s "center" 2>/dev/null || true
 
 # Asynchronously enforce Ubuntu wallpaper on all monitors once XFCE starts
 (

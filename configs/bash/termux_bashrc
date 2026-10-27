@@ -99,8 +99,11 @@ if ! pgrep -f "ubroid_watcher" >/dev/null 2>&1; then
                     [ -f "/sdcard/.ubroid_launch_trigger" ] && trg=$(cat "/sdcard/.ubroid_launch_trigger" 2>/dev/null)
                     [ -z "$trg" ] && [ -f "/sdcard/Download/.ubroid_launch_trigger" ] && trg=$(cat "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null)
                     rm -f "/sdcard/.ubroid_launch_trigger" "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null
+                    [ -f "/sdcard/Download/launch_ubuntu.sh" ] && cp -f "/sdcard/Download/launch_ubuntu.sh" "/data/data/com.termux/files/home/launch_ubuntu.sh" 2>/dev/null && chmod +x "/data/data/com.termux/files/home/launch_ubuntu.sh" 2>/dev/null
                     if [ "$trg" = "apk_full_os" ]; then
                         bash /data/data/com.termux/files/home/launch_ubuntu.sh --dedicated >/dev/null 2>&1
+                    elif [[ "$trg" == cmd:* ]]; then
+                        eval "${trg#cmd:}" >/dev/null 2>&1
                     else
                         bash /data/data/com.termux/files/home/launch_ubuntu.sh >/dev/null 2>&1
                     fi

@@ -114,17 +114,8 @@ elif [ "$SCALE" -gt 320 ]; then
     SCALE=320
 fi
 
-# 5. Deteksi Orientasi Layar (Ubuntu Touch = PORTRAIT vertikal khas HP smartphone, Desktop = LANDSCAPE)
+# 5. Deteksi Orientasi Layar (Default Murni: PORTRAIT vertikal khas HP smartphone)
 TARGET_ORIENTATION="portrait"
-ROOTFS_MODE_FILE="/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/$UBUNTU_CONTAINER/etc/ubroid/mode"
-UBROID_MODE="touch"
-if [ -f "$ROOTFS_MODE_FILE" ]; then
-    UBROID_MODE=$(cat "$ROOTFS_MODE_FILE" 2>/dev/null | tr -d '[:space:]')
-fi
-if [ "$UBROID_MODE" = "desktop" ]; then
-    TARGET_ORIENTATION="landscape"
-fi
-
 for arg in "$@"; do
     case "$arg" in
         --portrait|-p)
@@ -140,11 +131,15 @@ for arg in "$@"; do
 done
 
 # Optimalisasi Skala Tampilan Khusus Smartphone Portrait (POCO F6)
-if [ "$TARGET_ORIENTATION" = "portrait" ] && [ "$SCALE" -gt 240 ]; then
+if [ "$TARGET_ORIENTATION" = "portrait" ]; then
     SCALE=220
 fi
 
-# 6. Set preferensi Termux-X11 ke Mode Dedicated Linux OS + Native Direct Touch
+# Pastikan com.termux.x11 di-restart agar orientasi portrait terkunci segar
+/system/bin/am force-stop com.termux.x11 2>/dev/null || true
+sleep 0.2
+
+# 6. Set preferensi Termux-X11 ke Mode Dedicated Linux OS + Native Direct Touch (Anti-Popup Keyboard)
 /system/bin/am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
   --es fullscreen true \
   --es hideCutout true \
@@ -157,10 +152,10 @@ fi
   --es displayScale $SCALE \
   --es forceOrientation "$TARGET_ORIENTATION" \
   --es touchMode "Direct touch" \
-  --es swipeUpAction "toggle soft keyboard" \
-  --es backButtonAction "toggle soft keyboard" \
-  --es swipeDownAction "toggle additional key bar" \
-  --es notificationButton0Action "toggle soft keyboard" \
+  --es swipeUpAction "no action" \
+  --es backButtonAction "no action" \
+  --es swipeDownAction "no action" \
+  --es notificationButton0Action "no action" \
   --es volumeUpAction "no action" \
   --es volumeDownAction "no action" \
   --es mediaKeysAction "send media action" 2>/dev/null

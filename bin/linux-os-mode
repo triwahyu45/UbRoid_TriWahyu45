@@ -174,10 +174,10 @@ if [ "$MODE" = "enter" ]; then
         --es displayFilteringMode bilinear \
         --es forceOrientation "$TARGET_ORIENTATION" \
         --es touchMode "Direct touch" \
-        --es swipeUpAction "toggle soft keyboard" \
-        --es backButtonAction "toggle soft keyboard" \
-        --es swipeDownAction "toggle additional key bar" \
-        --es notificationButton0Action "toggle soft keyboard" \
+        --es swipeUpAction "no action" \
+        --es backButtonAction "no action" \
+        --es swipeDownAction "no action" \
+        --es notificationButton0Action "no action" \
         --es volumeUpAction "no action" \
         --es volumeDownAction "no action" \
         --es mediaKeysAction "send media action" >/dev/null 2>&1 || true
@@ -190,7 +190,7 @@ if [ "$MODE" = "enter" ]; then
         if [ -f "$WHITELIST_CONF" ]; then
             CUSTOM_WL=$(grep -v '^[[:space:]]*#' "$WHITELIST_CONF" | grep -v '^[[:space:]]*$' | tr '\n' '|' | sed 's/|$//')
             if [ -n "$CUSTOM_WL" ]; then
-                WHITELIST_REGEX="^(${CUSTOM_WL}|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor)$"
+                WHITELIST_REGEX="^(${CUSTOM_WL}|com\.tailscale\.ipn|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor|com\.miui\.home|com\.mi\.android\.globallauncher|com\.android\.settings)$"
             fi
         fi
 
@@ -198,6 +198,9 @@ if [ "$MODE" = "enter" ]; then
         ALL_3RD=$(adb -s "$dev" shell "pm list packages -3 2>/dev/null | sed 's/package://'")
         TO_SUSPEND=""
         for pkg in $ALL_3RD; do
+            if [ "$pkg" = "com.tailscale.ipn" ]; then
+                continue
+            fi
             if ! echo "$pkg" | grep -Eq "$WHITELIST_REGEX"; then
                 TO_SUSPEND="$TO_SUSPEND $pkg"
             fi

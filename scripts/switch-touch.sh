@@ -148,8 +148,14 @@ PYEOF
     # Pasang paket keyboard onboard jika belum ada
     if ! command -v onboard >/dev/null 2>&1; then
         apt-get update -y >/dev/null 2>&1 || true
-        apt-get install -y onboard dconf-cli >/dev/null 2>&1 || true
+        apt-get install -y dconf-cli >/dev/null 2>&1 || true
     fi
+
+    # Anti-Pop Out Keyboard: Matikan total auto-popup onboard agar tidak mengganggu sentuhan
+    pkill -9 -x onboard 2>/dev/null || true
+    pkill -9 -f "onboard" 2>/dev/null || true
+    dconf write /org/onboard/auto-show false 2>/dev/null || true
+    gsettings set org.onboard auto-show false 2>/dev/null || true
 
     # Simpan preferensi mode permanen
     echo "touch" > /etc/ubroid/mode
