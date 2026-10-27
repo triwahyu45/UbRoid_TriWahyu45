@@ -15,6 +15,11 @@ alias sudo='sudo '
 alias about='dialog-about'
 alias agy='/usr/local/bin/agy'
 alias agy-turbo='/usr/local/bin/agy'
+alias stop-ubuntu='/usr/local/bin/shutdown-ubuntu'
+alias u-stop='/usr/local/bin/shutdown-ubuntu'
+alias restart-desktop='restart-gui'
+alias shortcuts='/usr/local/bin/shortcuts'
+alias guide='shortcuts'
 
 # Detronics ID Terminal Welcome Banner
 if [[ $- == *i* ]]; then
@@ -27,12 +32,18 @@ if [[ $- == *i* ]]; then
     echo -e "\033[1;38;2;255;120;0m ──────────────────────────────────────────────────────\033[0m"
     echo -e "\033[1;37mWelcome to Ubuntu 24.04 LTS (Noble Numbat aarch64) - $DEV_NAME\033[0m"
     echo ""
-    echo -e " \033[1;38;2;0;255;200m*\033[0m UbRoid:             \033[1;38;2;233;84;32mAuthentic Ubuntu Desktop Environment for Android\033[0m"
-    echo -e " \033[1;38;2;0;255;200m*\033[0m DetronicsID:        \033[1;38;2;0;255;136mEmbedded & Robotics Linux Environment\033[0m"
-    echo -e " \033[1;38;2;0;255;200m*\033[0m Antigravity AI:     Ketik \033[1;38;2;0;255;136magy\033[0m untuk menjalankan AI Coding Assistant (Turbo Mode)"
-    echo -e " \033[1;38;2;0;255;200m*\033[0m Tentang Sistem:     Ketik \033[1;38;2;255;200;0mdialog-about\033[0m atau \033[1;38;2;255;200;0mabout\033[0m untuk info lengkap"
-    echo -e " \033[1;38;2;0;255;200m*\033[0m Shortcut Keluar:    \033[1;38;2;255;200;0mshutdown-ubuntu\033[0m (atau tutup session)"
-    echo -e " \033[1;38;2;0;255;200m*\033[0m Perintah Jaringan:  \033[1;38;2;0;229;255mwifi-scan\033[0m | \033[1;38;2;0;229;255mwifi-status\033[0m | \033[1;38;2;0;229;255mifconfig\033[0m"
+    echo -e " \033[1;38;2;0;255;200m── PANDUAN SHORTCUT MASUK & KELUAR ───────────────────\033[0m"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mTutup Terminal Ini\033[0m : Ketik \033[1;38;2;255;200;0mexit\033[0m atau tekan \033[1;38;2;255;200;0mCtrl + D\033[0m"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mMatikan Ubuntu OS\033[0m  : Ketik \033[1;38;2;255;85;85mshutdown-ubuntu\033[0m atau \033[1;38;2;255;85;85mstop-ubuntu\033[0m"
+    echo -e "                         (Tutup Desktop GUI & pulihkan RAM ke Android)"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mRestart Tampilan\033[0m   : Ketik \033[1;38;2;0;229;255mrestart-gui\033[0m (jika panel/desktop macet)"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mPanduan Lengkap\033[0m    : Ketik \033[1;38;2;0;255;200mshortcuts\033[0m atau \033[1;38;2;0;255;200mguide\033[0m"
+    echo ""
+    echo -e " \033[1;38;2;0;255;200m── PERINTAH & FITUR SISTEM ───────────────────────────\033[0m"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mAntigravity AI\033[0m     : Ketik \033[1;38;2;0;255;136magy\033[0m untuk AI Coding Assistant"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mTentang Sistem\033[0m     : Ketik \033[1;38;2;255;200;0mdialog-about\033[0m atau \033[1;38;2;255;200;0mabout\033[0m"
+    echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mPerintah Jaringan\033[0m  : \033[1;38;2;0;229;255mwifi-scan\033[0m | \033[1;38;2;0;229;255mwifi-status\033[0m | \033[1;38;2;0;229;255mifconfig\033[0m"
+    echo -e "\033[1;38;2;255;120;0m ──────────────────────────────────────────────────────\033[0m"
     echo ""
 fi
 
@@ -40,12 +51,14 @@ fi
 if [[ $- == *i* ]]; then
     safe_exit() {
         if pgrep -x "xfce4-session" >/dev/null 2>&1; then
-            echo -e "\033[1;33m[!] PERINGATAN: Sesi Desktop XFCE sedang berjalan di latar belakang.\033[0m"
-            read -p "Apakah Anda yakin ingin keluar dari terminal ini? (y/N): " -r answer
+            echo -e "\033[1;33m[!] Catatan: Sesi Desktop XFCE sedang berjalan di latar belakang.\033[0m"
+            echo -e "    • Ketik \033[1;32my\033[0m untuk menutup jendela terminal ini saja."
+            echo -e "    • Ketik \033[1;31mshutdown-ubuntu\033[0m untuk mematikan seluruh sesi OS Ubuntu."
+            read -p "Tutup jendela terminal ini? (y/N): " -r answer
             if [[ "$answer" =~ ^[Yy]$ ]]; then
                 builtin exit
             else
-                echo -e "\033[1;32m[*] Keluar dibatalkan. Ubuntu tetap aktif berjalan.\033[0m"
+                echo -e "\033[1;32m[*] Keluar dibatalkan. Terminal tetap aktif.\033[0m"
             fi
         else
             builtin exit

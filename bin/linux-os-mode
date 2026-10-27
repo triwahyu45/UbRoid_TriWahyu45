@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# Dedicated Linux OS Mode Controller for Ubuntu 24.04 on Redmi Pad 2 (HyperOS)
+# Dedicated Linux OS Mode Controller for Ubuntu 24.04 on Android Device (HyperOS)
 # Usage:
 #   /usr/local/bin/linux-os-mode enter   (Called when starting Ubuntu)
 #   /usr/local/bin/linux-os-mode exit    (Called when shutting down Ubuntu)

@@ -328,6 +328,27 @@ Selain membekukan aplikasi, eksperimen ADB pada UbRoid juga melakukan:
 
 ---
 
+---
+
+## ⚡ Panduan Perintah Masuk, Keluar & Shortcuts (Cheatsheet)
+
+UbRoid dilengkapi panduan shortcut interaktif yang selalu muncul di terminal Termux maupun terminal Ubuntu:
+
+| Operasi | Perintah / Shortcut | Fungsi & Lokasi |
+| :--- | :--- | :--- |
+| **Masuk Desktop GUI** | `ubuntu` atau `u` | Masuk ke Desktop XFCE Ubuntu via Termux-X11 (di Termux) |
+| **Masuk Pure OS Mode**| `uos` atau `ubuntu-os` | Masuk ke Dedicated OS (100% RAM & CPU, suspensi Android) |
+| **Masuk Terminal Shell** | `ubuntu-cli` atau `uc` | Masuk ke terminal PRoot Ubuntu mode CLI (di Termux) |
+| **Keluar Terminal** | `exit` atau `Ctrl + D` | Menutup window terminal atau kembali ke Termux |
+| **Matikan Total Ubuntu** | `shutdown-ubuntu` / `stop-ubuntu` | Tutup sesi GUI & pulihkan memori RAM ke Android |
+| **Stop dari Termux** | `stop-ubuntu` / `Ctrl + C` | Hentikan X11 & background daemons langsung dari Termux |
+| **Ubah Tampilan Mode** | `touch-mode` / `desktop-mode` | Beralih antara mode Mobile HP vs Desktop Tablet |
+| **Restart Desktop** | `restart-gui` | Muat ulang panel & window manager jika tampilan macet |
+| **Buka Panduan Lengkap**| `shortcuts` atau `guide` | Tampilkan cheat sheet shortcut & kontrol di terminal |
+| **Buka AI Coding Assistant**| `agy` | Jalankan Antigravity AI Coding Assistant (Turbo Mode) |
+
+---
+
 ## ℹ️ Tentang UbRoid (About UbRoid)
 
 **UbRoid** adalah distribusi desktop teroptimasi berbasis **Ubuntu 24.04 LTS (Noble Numbat)** yang dikembangkan khusus untuk perangkat Android (Tablet maupun Ponsel berarsitektur ARM64 / `aarch64`). 

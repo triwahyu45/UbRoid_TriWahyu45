@@ -390,11 +390,15 @@ WRAPPER_EOF
 fi
 
 # 9. Pasang start desktop script & shutdown script
-echo "[9/10] Menyiapkan start_desktop.sh & shutdown-ubuntu..."
+echo "[9/10] Menyiapkan start_desktop.sh, shutdown-ubuntu, & shortcuts..."
 cp "$SCRIPT_DIR/scripts/start_desktop.sh" /root/start_desktop.sh
 chmod +x /root/start_desktop.sh
-cp "$SCRIPT_DIR/scripts/shutdown_ubuntu.sh" /usr/local/bin/shutdown-ubuntu 2>/dev/null || true
+cp "$SCRIPT_DIR/bin/shutdown-ubuntu" /usr/local/bin/shutdown-ubuntu 2>/dev/null || true
 chmod +x /usr/local/bin/shutdown-ubuntu 2>/dev/null || true
+ln -sf /usr/local/bin/shutdown-ubuntu /usr/local/bin/shutdown
+ln -sf /usr/local/bin/shutdown-ubuntu /usr/local/bin/stop-ubuntu
+ln -sf /usr/local/bin/shortcuts /usr/local/bin/guide 2>/dev/null || true
+ln -sf /usr/local/bin/shortcuts /usr/local/bin/help-ubroid 2>/dev/null || true
 
 # 10. Pasang DetronicsID Welcome Banner & bashrc
 echo "[10/10] Mengonfigurasi terminal & DetronicsID Welcome Banner..."

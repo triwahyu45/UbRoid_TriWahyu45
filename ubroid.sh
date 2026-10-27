@@ -246,11 +246,26 @@ else
     echo -e "${GREEN}✓ Rootfs Ubuntu 24.04 LTS berhasil dipasang.${NC}"
 fi
 
-# 4. Konfigurasi Termux ~/.bashrc & Banner DetronicsID
-echo -e "${CYAN}[4/7] Memasang Banner DetronicsID & shortcut di Termux...${NC}"
+# 4. Konfigurasi Termux ~/.bashrc, Script Stop Ubuntu & Panduan Shortcuts
+echo -e "${CYAN}[4/7] Memasang Banner DetronicsID, shortcuts & script kontrol di Termux...${NC}"
 if [ -f "$REPO_DIR/configs/bash/termux_bashrc" ]; then
     cp "$REPO_DIR/configs/bash/termux_bashrc" "$HOME/.bashrc"
     echo -e "${GREEN}✓ DetronicsID welcome banner & shortcut dipasang ke ~/.bashrc Termux.${NC}"
+fi
+if [ -f "$REPO_DIR/scripts/stop_ubuntu.sh" ]; then
+    cp "$REPO_DIR/scripts/stop_ubuntu.sh" "$PREFIX/bin/stop-ubuntu"
+    chmod +x "$PREFIX/bin/stop-ubuntu"
+    ln -sf "$PREFIX/bin/stop-ubuntu" "$PREFIX/bin/u-stop" 2>/dev/null || true
+    ln -sf "$PREFIX/bin/stop-ubuntu" "$PREFIX/bin/ubuntu-stop" 2>/dev/null || true
+    ln -sf "$PREFIX/bin/stop-ubuntu" "$PREFIX/bin/kill-ubuntu" 2>/dev/null || true
+    ln -sf "$PREFIX/bin/stop-ubuntu" "$HOME/stop_ubuntu.sh" 2>/dev/null || true
+    echo -e "${GREEN}✓ Script stop-ubuntu berhasil dipasang ke Termux.${NC}"
+fi
+if [ -f "$REPO_DIR/scripts/shortcuts.sh" ]; then
+    sed '1s|^#!/bin/bash|#!/data/data/com.termux/files/usr/bin/bash|' "$REPO_DIR/scripts/shortcuts.sh" > "$PREFIX/bin/shortcuts"
+    chmod +x "$PREFIX/bin/shortcuts"
+    ln -sf "$PREFIX/bin/shortcuts" "$PREFIX/bin/guide" 2>/dev/null || true
+    echo -e "${GREEN}✓ Cheat sheet shortcuts/guide berhasil dipasang ke Termux.${NC}"
 fi
 
 # 5. Pasang script peluncur ~/launch_ubuntu.sh dengan Dynamic Resolution

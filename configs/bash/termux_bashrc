@@ -41,6 +41,18 @@ ubuntu-cli() {
 }
 alias uc="ubuntu-cli"
 
+# Stop / Kill Ubuntu session & restore Android environment
+stop-ubuntu() {
+    if [ -x /data/data/com.termux/files/usr/bin/stop-ubuntu ]; then
+        /data/data/com.termux/files/usr/bin/stop-ubuntu "$@"
+    else
+        bash ~/stop_ubuntu.sh "$@"
+    fi
+}
+alias u-stop="stop-ubuntu"
+alias ubuntu-stop="stop-ubuntu"
+alias kill-ubuntu="stop-ubuntu"
+
 # Antigravity CLI (AGY) Turbo Mode from Termux
 agy() {
     local c
@@ -116,6 +128,8 @@ fi
 
 alias wifi-scan="termux-wifi-scaninfo"
 alias wifi-info="termux-wifi-connectioninfo"
+alias shortcuts="/data/data/com.termux/files/usr/bin/shortcuts"
+alias guide="shortcuts"
 
 clear
 # --- DETRONICS ID TERMINAL WELCOME BANNER (Ubuntu Style) ---
@@ -129,14 +143,23 @@ cat << 'EOF'
 EOF
 echo -e "\033[0m"
 echo -e "\033[1;37mWelcome to Ubuntu 24.04 LTS (GNU/Linux aarch64) - $DEV_NAME\033[0m"
+echo -e "\033[1;38;5;208m──────────────────────────────────────────────────────\033[0m"
 echo ""
-echo -e " * UbRoid:         \033[1;38;2;233;84;32mAuthentic Ubuntu Desktop Environment for Android\033[0m"
-echo -e " * DetronicsID:    \033[1;32mEmbedded & Robotics Linux Environment\033[0m"
-echo -e " * Mode CLI (Cepat): Ketik \033[1;32mubuntu\033[0m atau \033[1;32mu\033[0m (Co-existence, notifikasi Android aktif)"
-echo -e " * Mode Pure OS:   Ketik \033[1;32muos\033[0m atau \033[1;32mubuntu-os\033[0m (Tinggalkan Android, 100% RAM & CPU)"
-echo -e " * Ganti Tampilan: Ketik \033[1;35mtouch-mode\033[0m (Mobile HP) | \033[1;36mdesktop-mode\033[0m (Monitor)"
-echo -e " * Terminal PRoot: Ketik \033[1;32muc\033[0m atau \033[1;32mubuntu-cli\033[0m"
-echo -e " * Antigravity:    Ketik \033[1;32magy\033[0m untuk jalankan AI Assistant (Turbo Mode)"
-echo -e " * Fitur Jaringan: \033[1;33mwifi-scan\033[0m | \033[1;33mwifi-info\033[0m"
-echo -e " * Info & About:   \033[1;34mhttps://github.com/triwahyu45/UbRoid_TriWahyu45\033[0m"
+echo -e " \033[1;38;2;0;255;200m── PANDUAN MASUK UBUNTU ──────────────────────────────\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mDesktop Co-existence\033[0m : Ketik \033[1;32mubuntu\033[0m atau \033[1;32mu\033[0m (Android tetap aktif)"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mPure Dedicated OS\033[0m    : Ketik \033[1;32muos\033[0m atau \033[1;32mubuntu-os\033[0m (100% RAM & CPU)"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mTerminal Shell PRoot\033[0m : Ketik \033[1;32mubuntu-cli\033[0m atau \033[1;32muc\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mGanti Mode Tampilan\033[0m  : \033[1;35mtouch-mode\033[0m (Mobile HP) | \033[1;36mdesktop-mode\033[0m (Monitor)"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mAntigravity AI\033[0m       : Ketik \033[1;32magy\033[0m (Turbo Coding Assistant)"
+echo ""
+echo -e " \033[1;38;2;0;255;200m── PANDUAN KELUAR UBUNTU ─────────────────────────────\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mKeluar Desktop GUI\033[0m   : Tekan \033[1;33mCtrl + C\033[0m (di Termux) atau ketik \033[1;31mstop-ubuntu\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mKeluar Terminal CLI\033[0m  : Ketik \033[1;33mexit\033[0m atau tekan \033[1;33mCtrl + D\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mPaksa Tutup / Stop\033[0m   : Ketik \033[1;31mstop-ubuntu\033[0m (pulihkan mode Android)"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mPanduan Lengkap\033[0m      : Ketik \033[1;36mshortcuts\033[0m atau \033[1;36mguide\033[0m"
+echo ""
+echo -e " \033[1;38;2;0;255;200m── PERINTAH LAINNYA ──────────────────────────────────\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mFitur Jaringan\033[0m       : \033[1;33mwifi-scan\033[0m | \033[1;33mwifi-info\033[0m"
+echo -e "  \033[1;38;2;0;255;136m*\033[0m \033[1;37mInfo & Repositori\033[0m    : \033[1;34mhttps://github.com/triwahyu45/UbRoid_TriWahyu45\033[0m"
+echo -e "\033[1;38;5;208m──────────────────────────────────────────────────────\033[0m"
 echo ""
