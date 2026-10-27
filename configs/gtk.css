@@ -1,275 +1,81 @@
-/* ==============================================================================
- * UbRoid - Ubuntu Touch Mobile Edition (Lomiri & Suru Design Language)
- * Inspired by official UBports Ubuntu Touch (https://www.ubuntu-touch.io/)
- * Optimized for Xiaomi POCO F6 & Modern Touchscreen Smartphones
- * ============================================================================== */
-
+/* Global Crisp Dark GTK3 Theme */
 * {
-    font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: 500;
-    -gtk-icon-style: regular;
+    font-weight: 600;
 }
 
-/* ==============================================================================
- * 1. Lomiri Top Status & Indicator Bar (Panel 1)
- * ============================================================================== */
-.xfce4-panel.background {
-    background-color: rgba(20, 11, 21, 0.94);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-#XfcePanelWindow.top {
-    background-color: rgba(18, 10, 19, 0.95);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-}
-
-#XfcePanelWindow.top button {
-    border-radius: 8px;
-    padding: 3px 8px;
-    margin: 3px 2px;
-    min-height: 34px;
-    border: none;
-    background: transparent;
-    color: #e6e6e6;
-    transition: all 0.15s ease-in-out;
-}
-
-#XfcePanelWindow.top button:hover,
-#XfcePanelWindow.top button:active {
-    background-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-}
-
-/* Clock Display (Center Indicator) */
-#XfcePanelWindow.top #clock-button,
-#XfcePanelWindow.top .xfce4-panel-clock {
-    font-weight: 700;
-    font-size: 11pt;
-    color: #ffffff;
-    letter-spacing: 0.5px;
-}
-
-/* ==============================================================================
- * 2. Lomiri Signature Left Vertical Launcher (Panel 2)
- * ============================================================================== */
-#XfcePanelWindow.left {
-    background-color: rgba(22, 12, 23, 0.94);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 3px 0 16px rgba(0, 0, 0, 0.5);
-}
-
-/* Suru Squircle Launcher Items */
-#XfcePanelWindow.left button {
-    border-radius: 14px;
-    padding: 6px;
-    margin: 5px 6px;
-    min-width: 52px;
-    min-height: 52px;
-    background-color: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-#XfcePanelWindow.left button:hover {
-    background-color: rgba(233, 84, 32, 0.28);
-    border-color: rgba(233, 84, 32, 0.7);
-    box-shadow: 0 4px 12px rgba(233, 84, 32, 0.35);
-}
-
-#XfcePanelWindow.left button:active,
-#XfcePanelWindow.left button:checked {
-    background-color: rgba(233, 84, 32, 0.5);
-    border: 1.5px solid #E95420;
-    box-shadow: 0 2px 14px rgba(233, 84, 32, 0.6);
-}
-
-/* Running App Indicator: Orange Left Pip */
-#XfcePanelWindow.left button.active-app,
-#XfcePanelWindow.left button:focus {
-    border-left: 3.5px solid #E95420;
-}
-
-/* ==============================================================================
- * 3. Suru Headerbars, Titlebars & Window Frames
- * ============================================================================== */
 headerbar,
 .titlebar {
-    min-height: 46px;
-    padding: 3px 12px;
-    background: linear-gradient(to bottom, #2d132a 0%, #1e0d1d 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    color: #ffffff;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
+    min-height: 24px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+headerbar button.titlebutton,
+.titlebar button.titlebutton {
+    min-height: 20px;
+    min-width: 20px;
+    padding: 0;
 }
 
-headerbar .title,
-.titlebar .title {
+/* Thick touch scrollbars */
+scrollbar {
+    min-width: 18px;
+}
+scrollbar slider {
+    min-width: 14px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.35);
+}
+scrollbar slider:hover,
+scrollbar slider:active {
+    background-color: #00f0ff;
+}
+
+/* Floating Rounded Dock */
+.ubroid-dock,
+window.ubroid-dock,
+.xfce4-panel.ubroid-dock {
+    border-radius: 10px;
+    background-color: rgba(24, 24, 24, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    padding: 2px 6px;
+}
+
+.ubroid-dock button {
+    border-radius: 6px;
+}
+
+.ubroid-dock button:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Desktop Icon Labels - Bold, Sharp & Drop Shadowed */
+XfdesktopIconView.view,
+.xfdesktop-icon-view {
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 8.5pt;
     font-weight: 700;
-    font-size: 12pt;
     color: #ffffff;
+    text-shadow: 1px 1px 2px #000000, 0px 0px 3px #000000;
+}
+XfdesktopIconView.view:active,
+.xfdesktop-icon-view:active {
+    background-color: rgba(0, 240, 255, 0.25);
+    border-radius: 6px;
 }
 
-headerbar .subtitle,
-.titlebar .subtitle {
-    font-size: 9.5pt;
-    color: rgba(255, 255, 255, 0.65);
-}
-
-/* Suru Window Control Buttons - Lomiri Mobile Clean (No Minimize/Maximize) */
-headerbar button.titlebutton.minimize,
-headerbar button.titlebutton.maximize,
-.titlebar button.titlebutton.minimize,
-.titlebar button.titlebutton.maximize,
-windowcontrols button.minimize,
-windowcontrols button.maximize,
-button.titlebutton.minimize,
-button.titlebutton.maximize {
-    display: none;
-    opacity: 0;
+/* Arrow hiding rule commented out for test */
+/*
+#launcher-arrow,
+button.launcher-arrow,
+xfce-arrow-button,
+.xfce4-panel xfce-arrow-button,
+.xfce4-panel button.arrow {
     min-width: 0;
     min-height: 0;
     padding: 0;
     margin: 0;
+    border-style: none;
+    background-color: transparent;
+    opacity: 0;
 }
-
-headerbar button.titlebutton,
-.titlebar button.titlebutton {
-    min-height: 32px;
-    min-width: 32px;
-    padding: 2px;
-    margin: 2px 4px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.15s ease-in-out;
-}
-
-headerbar button.titlebutton:hover,
-.titlebar button.titlebutton:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-headerbar button.titlebutton.close:hover,
-.titlebar button.titlebutton.close:hover,
-windowcontrols button.close:hover {
-    background-color: #df382c;
-    border-color: #df382c;
-    color: #ffffff;
-}
-
-/* ==============================================================================
- * 4. Extra Thick Touch-Friendly Scrollbars (26px)
- * ============================================================================== */
-scrollbar {
-    min-width: 26px;
-    min-height: 26px;
-    background-color: rgba(0, 0, 0, 0.15);
-}
-
-scrollbar slider {
-    min-width: 22px;
-    min-height: 22px;
-    margin: 2px;
-    border-radius: 11px;
-    background-color: rgba(233, 84, 32, 0.75); /* Authentic Ubuntu Orange */
-    transition: background-color 0.15s ease;
-}
-
-scrollbar slider:hover,
-scrollbar slider:active {
-    background-color: #E95420;
-    box-shadow: 0 0 6px rgba(233, 84, 32, 0.5);
-}
-
-/* ==============================================================================
- * 5. Touch Targets for Buttons & Form Inputs
- * ============================================================================== */
-button {
-    min-height: 42px;
-    min-width: 48px;
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-size: 11.5pt;
-    font-weight: 600;
-    transition: all 0.15s ease-in-out;
-}
-
-/* Ubuntu Primary Action Button */
-button.suggested-action {
-    background: linear-gradient(to bottom, #E95420 0%, #c43d13 100%);
-    color: #ffffff;
-    border: 1px solid #b3360e;
-    box-shadow: 0 2px 6px rgba(233, 84, 32, 0.4);
-}
-
-button.suggested-action:hover,
-button.suggested-action:active {
-    background: #E95420;
-    box-shadow: 0 4px 12px rgba(233, 84, 32, 0.6);
-}
-
-/* Large Finger-Friendly Text Inputs */
-entry,
-textview {
-    min-height: 42px;
-    padding: 8px 14px;
-    font-size: 12pt;
-    border-radius: 10px;
-    background-color: rgba(0, 0, 0, 0.3);
-    border: 1.5px solid rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-    transition: border-color 0.15s ease;
-}
-
-entry:focus,
-textview:focus {
-    border-color: #E95420;
-    box-shadow: 0 0 0 2px rgba(233, 84, 32, 0.35);
-}
-
-/* ==============================================================================
- * 6. Popover & Context Menus (Rounded Glass Look)
- * ============================================================================== */
-menu,
-.menu,
-popover {
-    border-radius: 14px;
-    padding: 8px;
-    background-color: rgba(28, 14, 29, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-}
-
-menuitem {
-    min-height: 40px;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 11.5pt;
-    color: #eeeeee;
-}
-
-menuitem:hover,
-menuitem:active {
-    background-color: #E95420;
-    color: #ffffff;
-}
-
-/* ==============================================================================
- * 7. Single-Tap Desktop Icons
- * ============================================================================== */
-XfdesktopIconView.view,
-.xfdesktop-icon-view {
-    font-family: 'Ubuntu', sans-serif;
-    font-size: 11pt;
-    font-weight: 700;
-    color: #ffffff;
-    text-shadow: 1px 1px 3px #000000, 0px 0px 6px #000000;
-}
-
-XfdesktopIconView.view:active,
-.xfdesktop-icon-view:active {
-    background-color: rgba(233, 84, 32, 0.45);
-    border-radius: 14px;
-}
+*/

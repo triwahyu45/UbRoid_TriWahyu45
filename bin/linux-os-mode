@@ -150,15 +150,6 @@ if [ "$MODE" = "enter" ]; then
         com.termux/com.termux.app.TermuxService >/dev/null 2>&1 || true
 
     # 2. Configure Termux-X11 for Dedicated Fullscreen OS Mode + Native Direct Touch
-    TARGET_ORIENTATION="portrait"
-    TARGET_SCALE=220
-    UBROID_MODE="touch"
-    [ -f /etc/ubroid/mode ] && UBROID_MODE=$(cat /etc/ubroid/mode 2>/dev/null | tr -d '[:space:]')
-    if [ "$UBROID_MODE" = "desktop" ]; then
-        TARGET_ORIENTATION="landscape"
-        TARGET_SCALE=160
-    fi
-
     /system/bin/am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
         --es fullscreen true \
         --es hideCutout true \
@@ -170,14 +161,14 @@ if [ "$MODE" = "enter" ]; then
         --es preferScancodes true \
         --es showAdditionalKbd false \
         --es displayResolutionMode scaled \
-        --es displayScale $TARGET_SCALE \
+        --es displayScale 225 \
         --es displayFilteringMode bilinear \
-        --es forceOrientation "$TARGET_ORIENTATION" \
+        --es forceOrientation landscape \
         --es touchMode "Direct touch" \
-        --es swipeUpAction "no action" \
-        --es backButtonAction "no action" \
-        --es swipeDownAction "no action" \
-        --es notificationButton0Action "no action" \
+        --es swipeUpAction "toggle soft keyboard" \
+        --es backButtonAction "toggle soft keyboard" \
+        --es swipeDownAction "toggle additional key bar" \
+        --es notificationButton0Action "toggle soft keyboard" \
         --es volumeUpAction "no action" \
         --es volumeDownAction "no action" \
         --es mediaKeysAction "send media action" >/dev/null 2>&1 || true
@@ -186,11 +177,11 @@ if [ "$MODE" = "enter" ]; then
     dev=$(ensure_adb_device)
     if [ -n "$dev" ]; then
         # Baca whitelist
-        WHITELIST_REGEX="^(com\.tailscale\.ipn|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor|com\.miui\.home|com\.mi\.android\.globallauncher|com\.android\.settings)$"
+        WHITELIST_REGEX="^(com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor)$"
         if [ -f "$WHITELIST_CONF" ]; then
             CUSTOM_WL=$(grep -v '^[[:space:]]*#' "$WHITELIST_CONF" | grep -v '^[[:space:]]*$' | tr '\n' '|' | sed 's/|$//')
             if [ -n "$CUSTOM_WL" ]; then
-                WHITELIST_REGEX="^(${CUSTOM_WL}|com\.tailscale\.ipn|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor|com\.miui\.home|com\.mi\.android\.globallauncher|com\.android\.settings)$"
+                WHITELIST_REGEX="^(${CUSTOM_WL}|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor)$"
             fi
         fi
 
@@ -198,9 +189,6 @@ if [ "$MODE" = "enter" ]; then
         ALL_3RD=$(adb -s "$dev" shell "pm list packages -3 2>/dev/null | sed 's/package://'")
         TO_SUSPEND=""
         for pkg in $ALL_3RD; do
-            if [ "$pkg" = "com.tailscale.ipn" ]; then
-                continue
-            fi
             if ! echo "$pkg" | grep -Eq "$WHITELIST_REGEX"; then
                 TO_SUSPEND="$TO_SUSPEND $pkg"
             fi
@@ -225,7 +213,6 @@ if [ "$MODE" = "enter" ]; then
 
         # 4. Strict Android UI, Anti-Phantom-Killer & Bloatware Restriction
         adb -s "$dev" shell "
-            dumpsys deviceidle whitelist +com.tailscale.ipn >/dev/null 2>&1 || true;
             dumpsys deviceidle whitelist +com.termux >/dev/null 2>&1 || true;
             dumpsys deviceidle whitelist +com.termux.x11 >/dev/null 2>&1 || true;
             cmd appops set com.termux RUN_IN_BACKGROUND allow 2>/dev/null || true;

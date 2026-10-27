@@ -8,45 +8,15 @@
 export PATH="/root/.local/bin:$PATH"
 
 # 1. Cek apakah binary Antigravity CLI sudah terpasang
-if [ ! -f /root/.local/bin/agy.real ]; then
-    if [ -f /root/.local/bin/agy ] && [ ! -L /root/.local/bin/agy ]; then
-        mv /root/.local/bin/agy /root/.local/bin/agy.real
-    else
-        echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis via official installer...\033[0m"
-        curl -fsSL https://antigravity.google/cli/install.sh | bash
-        if [ -f /root/.local/bin/agy ] && [ ! -L /root/.local/bin/agy ]; then
-            mv /root/.local/bin/agy /root/.local/bin/agy.real
-        fi
-    fi
-    if [ ! -e /root/.local/bin/agy ] && [ -f /usr/local/bin/agy ]; then
-        ln -sf /usr/local/bin/agy /root/.local/bin/agy
-    fi
+if [ ! -f /root/.local/bin/agy.real ] && [ ! -f /root/.local/bin/agy ]; then
+    echo -e "\033[1;36m[*] Antigravity CLI belum terdeteksi. Memasang secara otomatis via official installer...\033[0m"
+    curl -fsSL https://antigravity.google/cli/install.sh | bash
 fi
 
-# 2. Pastikan DNS resolver Ubuntu memiliki nameserver anti-blokir kampus (Tailscale MagicDNS & multi-tier)
-if ! grep -q "100.100.100.100" /etc/resolv.conf 2>/dev/null; then
-    sed -i '1s/^/nameserver 100.100.100.100\nnameserver 10.11.12.57\nnameserver 10.100.1.3\n/' /etc/resolv.conf 2>/dev/null || true
-fi
-
-# 3. Pastikan file konfigurasi Turbo Mode siap
+# 2. Pastikan file konfigurasi Turbo Mode siap
 SETTINGS_FILE="/root/.gemini/antigravity-cli/settings.json"
-mkdir -p "/root/.gemini/antigravity-cli"
-
-# Sinkronisasi dua arah kredensial Google Antigravity dengan Android Storage
-for sync_dir in "/root/Android_Storage/Download/.gemini" "/sdcard/Download/.gemini" "/storage/emulated/0/Download/.gemini"; do
-    if [ -d "$sync_dir" ]; then
-        cp -f "$sync_dir/"* /root/.gemini/ 2>/dev/null || true
-        break
-    fi
-done
-
-# Cadangkan kredensial aktif ke Android Storage agar persisten
-if [ -f /root/.gemini/oauth_creds.json ]; then
-    mkdir -p /sdcard/Download/.gemini 2>/dev/null || true
-    cp -f /root/.gemini/* /sdcard/Download/.gemini/ 2>/dev/null || true
-fi
-
 if [ ! -f "$SETTINGS_FILE" ]; then
+    mkdir -p "/root/.gemini/antigravity-cli"
     cat << 'EOF' > "$SETTINGS_FILE"
 {
   "agentMode": "auto",

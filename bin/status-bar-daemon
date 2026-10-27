@@ -5,7 +5,7 @@ import os
 
 def get_cmd(cmd):
     try:
-        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=1.2).decode().strip()
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=2).decode().strip()
     except Exception:
         return ""
 
@@ -41,16 +41,15 @@ def make_battery_svg(level, charging):
 def update_status():
     home = os.path.expanduser("~")
 
-    # Single combined lightweight check (Battery + Wi-Fi) with 1s timeout
-    combined_raw = get_cmd("adb -s 127.0.0.1:5555 shell 'dumpsys battery 2>/dev/null; cmd wifi status 2>/dev/null'")
-    
+    # -------------------------------------------------------------
+    # 1. Update Battery Info
+    # -------------------------------------------------------------
+    binfo = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys battery")
     level = 94
     charging = False
     temp_c = "33°C"
     volt_v = "4.2V"
-    ssid = "Wi-Fi Aktif"
-
-    for line in combined_raw.splitlines():
+    for line in binfo.splitlines():
         line = line.strip()
         if line.startswith("level:"):
             try:
@@ -69,10 +68,6 @@ def update_status():
                 volt_v = f"{int(line.split(':')[1].strip()) / 1000:.2f}V"
             except Exception:
                 pass
-        elif "SSID:" in line:
-            parts = line.split("SSID:")
-            if len(parts) > 1:
-                ssid = parts[1].strip().strip('"')
 
     bolt = "⚡ " if charging else ""
     status_label = "Mengisi Daya" if charging else "Baterai"
@@ -88,7 +83,7 @@ def update_status():
 Version=1.0
 Type=Application
 Name=Status Baterai
-Comment={bolt}Baterai: {level}% ({status_label}) | Suhu: {temp_c} | Voltase: {volt_v}
+Comment={bolt}Baterai: {level}% ({status_label}) | Suhu: {temp_c} | Voltase: {volt_v} (Klik untuk info detail)
 Exec=/usr/local/bin/dialog-battery
 Icon=/tmp/battery_live.svg
 Terminal=false
@@ -97,35 +92,117 @@ Categories=Utility;
 """
     update_file_if_changed(bat_desktop, bat_content)
 
-    # Update Wi-Fi launcher
+    # -------------------------------------------------------------
+    # 2. Update Wi-Fi (launcher-41)
+    # -------------------------------------------------------------
+    wifi_raw = get_cmd('adb -s 127.0.0.1:5555 shell dumpsys wifi | grep -m1 "mWifiInfo"')
+    ssid = "Terhubung"
+    if 'SSID: "' in wifi_raw:
+        ssid = wifi_raw.split('SSID: "')[1].split('"')[0]
+    
+    rssi_val = -50
+    rssi_str = "-50 dBm"
+    if "RSSI: " in wifi_raw:
+        try:
+            val_part = wifi_raw.split("RSSI: ")[1].split(",")[0].strip()
+            rssi_val = int(val_part)
+            rssi_str = f"{rssi_val} dBm"
+        except Exception:
+            pass
+
+    if rssi_val >= -55:
+        wifi_icon = "network-wireless-signal-excellent-symbolic"
+    elif rssi_val >= -68:
+        wifi_icon = "network-wireless-signal-good-symbolic"
+    elif rssi_val >= -80:
+        wifi_icon = "network-wireless-signal-ok-symbolic"
+    else:
+        wifi_icon = "network-wireless-signal-weak-symbolic"
+
+    ip_addr = "192.168.1.100"
+
     wifi_desktop = f"{home}/.config/xfce4/panel/launcher-41/wifi.desktop"
     wifi_content = f"""[Desktop Entry]
 Version=1.0
 Type=Application
 Name=Status Wi-Fi
-Comment=Wi-Fi: {ssid}
+Comment=Wi-Fi: Terhubung ke {ssid} ({rssi_str}) | IP: {ip_addr} (Klik untuk opsi Wi-Fi)
 Exec=/usr/local/bin/dialog-wifi
-Icon=network-wireless-signal-excellent-symbolic
+Icon={wifi_icon}
 Terminal=false
 StartupNotify=false
 Categories=Network;
 """
     update_file_if_changed(wifi_desktop, wifi_content)
 
-    # Static Bluetooth (lightweight, no continuous dumpsys polling)
+    # -------------------------------------------------------------
+    # 3. Update Bluetooth (launcher-42)
+    # -------------------------------------------------------------
+    bt_raw = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys bluetooth_manager | grep -m1 'state: ON'")
+    bt_is_on = ("state: ON" in bt_raw)
+    bt_name = "Android Device"
+    bt_status = "Aktif (ON)" if bt_is_on else "Nonaktif"
+    bt_icon = "bluetooth-active-symbolic" if bt_is_on else "bluetooth-disabled-symbolic"
+
     bt_desktop = f"{home}/.config/xfce4/panel/launcher-42/bluetooth.desktop"
-    bt_content = """[Desktop Entry]
+    bt_content = f"""[Desktop Entry]
 Version=1.0
 Type=Application
 Name=Status Bluetooth
-Comment=Bluetooth
+Comment=Bluetooth: {bt_status} | Perangkat: {bt_name} (Klik untuk pengaturan Bluetooth)
 Exec=/usr/local/bin/dialog-bluetooth
-Icon=bluetooth-active-symbolic
+Icon={bt_icon}
 Terminal=false
 StartupNotify=false
 Categories=HardwareSettings;
 """
     update_file_if_changed(bt_desktop, bt_content)
+
+    # -------------------------------------------------------------
+    # 4. Update Volume (launcher-43)
+    # -------------------------------------------------------------
+    vol_raw = get_cmd("pactl get-sink-volume @DEFAULT_SINK@")
+    vol_int = 99
+    if "%" in vol_raw:
+        try:
+            part = vol_raw.split("%")[0].split("/")[-1].strip()
+            vol_int = int(part)
+        except Exception:
+            pass
+
+    mute_raw = get_cmd("pactl get-sink-mute @DEFAULT_SINK@")
+    is_muted = ("yes" in mute_raw)
+
+    if is_muted or vol_int == 0:
+        vol_icon = "audio-volume-muted-symbolic"
+    elif vol_int <= 33:
+        vol_icon = "audio-volume-low-symbolic"
+    elif vol_int <= 66:
+        vol_icon = "audio-volume-medium-symbolic"
+    else:
+        vol_icon = "audio-volume-high-symbolic"
+
+    vol_desktop = f"{home}/.config/xfce4/panel/launcher-43/volume.desktop"
+    vol_content = f"""[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kontrol Volume
+Comment=Volume: {vol_int}% {'(Mute)' if is_muted else ''} (Klik untuk ubah volume)
+Exec=/usr/local/bin/dialog-volume
+Icon={vol_icon}
+Terminal=false
+StartupNotify=false
+Categories=AudioVideo;
+"""
+    update_file_if_changed(vol_desktop, vol_content)
+
+    # -------------------------------------------------------------
+    # 5. Guardian: Ensure xfdesktop background is always alive
+    # -------------------------------------------------------------
+    try:
+        subprocess.check_output("pgrep -x xfdesktop", shell=True)
+    except Exception:
+        subprocess.Popen("DISPLAY=:0 nohup xfdesktop >/dev/null 2>&1 &", shell=True)
 
 if __name__ == "__main__":
     while True:
@@ -133,4 +210,4 @@ if __name__ == "__main__":
             update_status()
         except Exception:
             pass
-        time.sleep(30)
+        time.sleep(10)

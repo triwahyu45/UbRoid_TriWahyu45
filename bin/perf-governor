@@ -1,3 +1,79 @@
 #!/bin/bash
-# Disabled to protect PRoot ptrace process limits on Android 14/HyperOS
-exit 0
+unset LD_PRELOAD
+# ==============================================================================
+# Auto Performance Governor & Multi-Core Affinity Enforcer
+# Ensures all critical rendering and compute processes use all 8 CPU cores
+# and maintain real-time priority levels without thermal throttling.
+# ==============================================================================
+
+while true; do
+    # 1. Termux-X11 display server: Core 6 & 7 (Cortex-A76 2.2GHz) priority + -5 nice
+    for p in $(pgrep -f "termux-x11"); do
+        taskset -p c0 "$p" >/dev/null 2>&1 || taskset -p ff "$p" >/dev/null 2>&1
+        renice -n -5 -p "$p" >/dev/null 2>&1
+    done
+
+    # 2. XFWM4 Window Manager (Compositor): Big Cores + -5 nice
+    for p in $(pgrep -x "xfwm4"); do
+        taskset -p c0 "$p" >/dev/null 2>&1 || taskset -p ff "$p" >/dev/null 2>&1
+        renice -n -5 -p "$p" >/dev/null 2>&1
+    done
+
+    # 3. PRoot translation layer: all 8 cores + priority -3
+    for p in $(pgrep -x "proot"); do
+        taskset -p ff "$p" >/dev/null 2>&1
+        renice -n -3 -p "$p" >/dev/null 2>&1
+    done
+
+    # 4. PulseAudio real-time audio bridge: priority -10
+    for p in $(pgrep -x "pulseaudio"); do
+        renice -n -10 -p "$p" >/dev/null 2>&1
+    done
+
+    # 5. Firefox Web Browser & content processes: all 8 cores + priority -2
+    for p in $(pgrep -f "firefox"); do
+        taskset -p ff "$p" >/dev/null 2>&1
+        renice -n -2 -p "$p" >/dev/null 2>&1
+    done
+
+    # 6. Re-assert Android Maximum Clock & Anti-Throttling via ADB loopback
+    adb -s 127.0.0.1:5555 shell "
+        cmd power set-fixed-performance-mode-enabled true 2>/dev/null || true
+        cmd thermalservice override-status 0 2>/dev/null || true
+        settings put system min_refresh_rate 90.0 2>/dev/null || true
+        settings put system peak_refresh_rate 90.0 2>/dev/null || true
+        dumpsys deviceidle whitelist +com.termux 2>/dev/null || true
+        dumpsys deviceidle whitelist +com.termux.x11 2>/dev/null || true
+    " >/dev/null 2>&1 || true
+
+    # 7. Proactive RAM Guardian (Prevents Android Low Memory Killer from killing Termux/PRoot)
+    avail_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null)
+    if [ -n "$avail_kb" ]; then
+        if [ "$avail_kb" -lt 200000 ]; then
+            # Critical RAM threshold (< 200MB): Emergency memory trim
+            sync
+            echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+            adb -s 127.0.0.1:5555 shell "
+                pm trim-caches 4000M 2>/dev/null || true;
+                cmd activity send-trim-memory com.google.android.inputmethod.latin COMPLETE 2>/dev/null || true;
+                cmd activity send-trim-memory com.google.android.gms COMPLETE 2>/dev/null || true;
+                cmd activity send-trim-memory com.miui.home COMPLETE 2>/dev/null || true;
+                cmd activity send-trim-memory com.android.systemui COMPLETE 2>/dev/null || true;
+                cmd activity send-trim-memory com.miui.securitycenter.remote COMPLETE 2>/dev/null || true;
+                cmd activity kill-all 2>/dev/null || true;
+                am kill-all 2>/dev/null || true;
+            " >/dev/null 2>&1 || true
+        elif [ "$avail_kb" -lt 380000 ]; then
+            # Soft RAM threshold (< 380MB): Soft cache purge
+            sync
+            adb -s 127.0.0.1:5555 shell "
+                pm trim-caches 2000M 2>/dev/null || true;
+                cmd activity send-trim-memory com.google.android.inputmethod.latin RUNNING_CRITICAL 2>/dev/null || true;
+                cmd activity send-trim-memory com.google.android.gms RUNNING_CRITICAL 2>/dev/null || true;
+                cmd activity send-trim-memory com.miui.home RUNNING_CRITICAL 2>/dev/null || true;
+            " >/dev/null 2>&1 || true
+        fi
+    fi
+
+    sleep 15
+done

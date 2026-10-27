@@ -104,9 +104,9 @@ if [ "$IS_TERMUX" = false ]; then
     echo -e "${CYAN}[*] Terdeteksi berjalan di dalam container Ubuntu PRoot.${NC}"
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     if [ -f "$SCRIPT_DIR/install.sh" ]; then
-        exec bash "$SCRIPT_DIR/install.sh"
+        exec bash "$SCRIPT_DIR/install.sh" "$@"
     elif [ -f "/root/UbRoid_TriWahyu45/install.sh" ]; then
-        exec bash "/root/UbRoid_TriWahyu45/install.sh"
+        exec bash "/root/UbRoid_TriWahyu45/install.sh" "$@"
     else
         echo -e "${RED}[!] File install.sh tidak ditemukan!${NC}"
         exit 1
@@ -116,6 +116,64 @@ fi
 # ------------------------------------------------------------------------------
 # KASUS 2: DIJALANKAN DARI TERMUX (MASTER INSTALLER)
 # ------------------------------------------------------------------------------
+
+# Mode Selection: Desktop (Default) vs Ubuntu Touch Mobile (Poco F6)
+INSTALL_MODE=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --mode)
+            INSTALL_MODE="$2"
+            shift 2
+            ;;
+        --mode=*)
+            INSTALL_MODE="${1#*=}"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$INSTALL_MODE" ]; then
+    echo -e "${PURPLE}==============================================================================${NC}"
+    echo -e "${CYAN}📱 PILIH MODE TAMPILAN UBROID (UBUNTU 24.04 LTS)${NC}"
+    echo -e "${PURPLE}==============================================================================${NC}"
+    echo -e "  ${YELLOW}[1]${NC} 🖥️  \033[1mUbuntu Desktop Edition\033[0m (Default)"
+    echo -e "       - Mode Desktop klasik XFCE dengan dock horizontal di bawah."
+    echo -e "       - Ideal untuk Tablet, Monitor Eksternal, Keyboard & Mouse fisik.\n"
+    echo -e "  ${YELLOW}[2]${NC} 📱 \033[1mUbuntu Touch Mobile Edition\033[0m (Rekomendasi Poco F6 / Layar HP)"
+    echo -e "       - Tampilan mobile ala Ubuntu Touch (Lomiri) dengan launcher vertikal di sisi kiri."
+    echo -e "       - Tombol & ikon besar ramah sentuhan (touchscreen friendly) & single-tap."
+    echo -e "       - Integrasi On-Screen Keyboard (Gboard & Onboard auto-popup di kolom teks)."
+    echo -e "       - Dilengkapi Python Mobile Studio (cocok untuk Mini PC & koding di HP)."
+    echo -e "${PURPLE}==============================================================================${NC}"
+
+    INSTALL_MODE="desktop"
+    echo -e "Pilih mode tampilan dalam 5 detik (Default: [1] Desktop):"
+    for ((i=5; i>=1; i--)); do
+        echo -ne "\r⏳ Memilih [1] Desktop otomatis dalam \033[1;33m${i}s\033[0m (Tekan \033[1;32m2\033[0m untuk Touch): "
+        if read -t 1 -n 1 user_input; then
+            echo ""
+            if [ "$user_input" = "2" ]; then
+                INSTALL_MODE="touch"
+                echo -e "${GREEN}✓ Mode Dipilih: Ubuntu Touch Mobile Edition!${NC}\n"
+            else
+                INSTALL_MODE="desktop"
+                echo -e "${CYAN}✓ Mode Dipilih: Ubuntu Desktop Edition!${NC}\n"
+            fi
+            break
+        fi
+    done
+    if [ -z "$user_input" ]; then
+        echo -e "\n${YELLOW}⏱️ Waktu habis. Otomatis memilih mode: Ubuntu Desktop Edition (Default)${NC}\n"
+        INSTALL_MODE="desktop"
+    fi
+fi
+
+if [ "$INSTALL_MODE" != "touch" ]; then
+    INSTALL_MODE="desktop"
+fi
 
 # 0. Pastikan izin penyimpanan & kebersihan login terminal
 if [ ! -d "$HOME/storage" ] && [ ! -d "/sdcard/Download" ]; then
@@ -127,7 +185,7 @@ touch "$HOME/.hushlogin"
 
 echo -e "${CYAN}[1/7] Menyiapkan environment Termux & dependensi dasar...${NC}"
 pkg update -y
-pkg install -y proot-distro x11-repo pulseaudio wget git tar bc python
+pkg install -y proot-distro x11-repo termux-x11-nightly pulseaudio wget git tar bc python
 
 # Pastikan permission external app diizinkan untuk launcher APK
 mkdir -p "$HOME/.termux"
@@ -215,6 +273,12 @@ echo -e "${CYAN}[5/7] Mengonfigurasi script peluncur ~/launch_ubuntu.sh (Dynamic
 cp "$REPO_DIR/scripts/launch_ubuntu.sh" "$HOME/launch_ubuntu.sh"
 chmod +x "$HOME/launch_ubuntu.sh"
 
+# Siapkan shortcut Termux Widget jika pengguna memakai widget
+mkdir -p "$HOME/.shortcuts/tasks"
+cp "$HOME/launch_ubuntu.sh" "$HOME/.shortcuts/Ubuntu" 2>/dev/null || true
+cp "$HOME/launch_ubuntu.sh" "$HOME/.shortcuts/tasks/Ubuntu" 2>/dev/null || true
+chmod +x "$HOME/.shortcuts/Ubuntu" "$HOME/.shortcuts/tasks/Ubuntu" 2>/dev/null || true
+
 # Sesuaikan target container di launch_ubuntu.sh jika berbeda
 if [ "$UBUNTU_CONTAINER" != "ubuntu" ]; then
     sed -i "s/UBUNTU_CONTAINER=\"ubuntu\"/UBUNTU_CONTAINER=\"$UBUNTU_CONTAINER\"/g" "$HOME/launch_ubuntu.sh"
@@ -228,14 +292,13 @@ mkdir -p "$TMPDIR/.X11-unix"
 
 # Siapkan DNS multi-tier (Android Network DNS + Gateway + Fallback Public DNS)
 DNS_LIST=()
+# Prioritaskan Tailscale MagicDNS dan DNS internal eduroam UNY / Android
 for prop in net.dns1 net.dns2 net.dns3 net.dns4 net.wlan0.dns1 net.wlan0.dns2 net.rmnet_data0.dns1; do
     d=$(getprop "$prop" 2>/dev/null)
     [ -n "$d" ] && DNS_LIST+=("$d")
 done
 GW=$(ip route show 2>/dev/null | awk '/default/ {print $3}' | head -n1)
 [ -n "$GW" ] && DNS_LIST+=("$GW")
-# Prioritaskan Tailscale MagicDNS dan DNS internal eduroam/Android
-DNS_LIST+=("100.100.100.100")
 for d in $(/system/bin/dumpsys connectivity 2>/dev/null | grep -o 'DnsAddresses: \[ [^]]* \]' | tr -d '[]/' | tr ',' ' '); do
     [ "$d" != "DnsAddresses:" ] && DNS_LIST+=("$d")
 done
@@ -268,7 +331,7 @@ if [ -n "$STORAGE_TARGET" ]; then
     PROOT_BINDS+=(--bind "$STORAGE_TARGET:/root/Android_Storage")
 fi
 
-proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- bash /root/UbRoid_TriWahyu45/install.sh
+proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- bash /root/UbRoid_TriWahyu45/install.sh --mode "$INSTALL_MODE"
 
 # 7. Salin APK ke folder Download Android agar mudah dipasang pengguna
 echo -e "${CYAN}[7/7] Menyalin APK pendukung ke folder Download Android...${NC}"

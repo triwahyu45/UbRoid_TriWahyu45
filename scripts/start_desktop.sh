@@ -13,16 +13,11 @@ export MALLOC_ARENA_MAX=2
 export MALLOC_TRIM_THRESHOLD_=131072
 export MALLOC_MMAP_THRESHOLD_=131072
 
-if [ ! -f /etc/resolv.conf ] || ! grep -q "100.100.100.100" /etc/resolv.conf 2>/dev/null; then
-    cat << "RESOLV" > /etc/resolv.conf
-nameserver 100.100.100.100
-nameserver 10.11.12.57
-nameserver 10.100.1.3
+cat << "RESOLV" > /etc/resolv.conf
 nameserver 1.1.1.1
 nameserver 8.8.8.8
-options timeout:2 attempts:2
+options timeout:1 attempts:2 single-request-reopen
 RESOLV
-fi
 
 # Prevent gpg-agent / ssh-agent / gnome-keyring / portal bloat in PRoot (saves ~10 process slots)
 chmod -x /etc/X11/Xsession.d/90gpg-agent 2>/dev/null || true
@@ -30,12 +25,9 @@ pkill -9 -f "[g]pg-agent" 2>/dev/null || true
 pkill -9 -f "[s]sh-agent" 2>/dev/null || true
 pkill -9 -f "[g]nome-keyring" 2>/dev/null || true
 
-# Enter Dedicated Linux OS Mode only if requested (from APK or --dedicated flag)
-# CLI mode ('ubuntu' or 'u') defaults to Lightweight Co-existence Mode (keeps Android multitasking & notifications active)
-if [ "$UBROID_DEDICATED_OS" = "1" ]; then
-    chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
-    /usr/local/bin/linux-os-mode enter 2>/dev/null || true
-fi
+# Enter Dedicated Linux OS Mode & start PulseAudio Android bridge
+chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
+/usr/local/bin/linux-os-mode enter
 
 # Initialize user D-Bus session bus
 eval $(dbus-launch --sh-syntax)
@@ -82,80 +74,9 @@ cleanup_on_exit() {
     pkill -f "/usr/local/bin/perf-governor" 2>/dev/null || true
     kill "$RAM_GUARDIAN_PID" 2>/dev/null || true
     pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
-    pkill -9 -x onboard 2>/dev/null || true
-    if [ "$UBROID_DEDICATED_OS" = "1" ]; then
-        /usr/local/bin/linux-os-mode exit 2>/dev/null || true
-    fi
+    /usr/local/bin/linux-os-mode exit 2>/dev/null || true
 }
 trap cleanup_on_exit EXIT INT TERM HUP
-
-# Anti-Rat Wallpaper Enforcement (Eliminate XFCE teal mouse fallback completely)
-if [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && [ ! -f "/usr/share/backgrounds/ubuntu-touch-default.png" ]; then
-    mkdir -p /usr/share/backgrounds 2>/dev/null || true
-    cp -f "/sdcard/Download/ubuntu-touch-default.png" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
-fi
-
-UBUNTU_WP="/usr/share/backgrounds/ubuntu-touch-default.png"
-if [ ! -f "$UBUNTU_WP" ]; then
-    UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
-fi
-if [ -f "$UBUNTU_WP" ]; then
-    mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
-    for xf in /usr/share/backgrounds/xfce/*.png; do
-        [ -e "$xf" ] && cp -f "$UBUNTU_WP" "$xf" 2>/dev/null || true
-    done
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
-    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
-fi
-
-# Ensure all desktop launchers are marked trusted in GIO/XFCE
-chmod +x /root/Desktop/*.desktop 2>/dev/null || true
-for f in /root/Desktop/*.desktop; do
-    [ -f "$f" ] && gio set "$f" metadata::trusted true 2>/dev/null || true
-done
-
-# Sinkronisasi file script penting langsung ke Termux & PRoot
-mkdir -p /etc/ubroid 2>/dev/null || true
-echo "touch" > /etc/ubroid/mode 2>/dev/null || true
-
-if [ -f "/sdcard/Download/linux-os-mode" ]; then
-    cp -f "/sdcard/Download/linux-os-mode" /usr/local/bin/linux-os-mode 2>/dev/null || true
-    chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
-fi
-
-if [ -d "/root/termux_home" ] && [ -f "/sdcard/Download/launch_ubuntu.sh" ]; then
-    cp -f "/sdcard/Download/launch_ubuntu.sh" "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
-    chmod +x "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
-fi
-
-# Anti-Pop Out Keyboard: Matikan total onboard & auto-popup
-pkill -9 -x onboard 2>/dev/null || true
-pkill -9 -f "onboard" 2>/dev/null || true
-gsettings set org.onboard auto-show false 2>/dev/null || true
-dconf write /org/onboard/auto-show false 2>/dev/null || true
-
-# Optimasi Mobile UI Ubuntu Touch (Maximized windows khas Android/Lomiri)
-xfconf-query -c xfwm4 -p /general/placement_mode -s "maximized" 2>/dev/null || true
-xfconf-query -c xfwm4 -p /general/borderless_maximize -s true 2>/dev/null || true
-xfconf-query -c xfwm4 -p /general/title_alignment -s "center" 2>/dev/null || true
-xfconf-query -c xfwm4 -p /general/button_layout -s "|C" 2>/dev/null || true
-
-# Asynchronously enforce Ubuntu wallpaper on all monitors once XFCE starts
-(
-    sleep 1.2
-    for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image'); do
-        xfconf-query -c xfce4-desktop -p "$prop" -s "$UBUNTU_WP" 2>/dev/null || true
-    done
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorscreen/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitordefault/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
-    for m in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style'); do
-        xfconf-query -c xfce4-desktop -p "$m" -s 5 2>/dev/null || true
-    done
-) &
 
 export LD_PRELOAD=/usr/local/lib/libnogap.so
 startxfce4

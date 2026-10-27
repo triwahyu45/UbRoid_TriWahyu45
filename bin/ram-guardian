@@ -1,3 +1,70 @@
 #!/bin/bash
-# Disabled to protect PRoot ptrace process limits on Android 14/HyperOS
-exit 0
+unset LD_PRELOAD
+# ==============================================================================
+# RAM Guardian - Proactive Low-Memory Killer (LMK) Prevention Daemon
+# Monitors free/available RAM and proactively purges caches and background
+# bloat before Android's kernel LMK terminates Termux or PRoot.
+# ==============================================================================
+
+LOG_FILE="/tmp/ram-guardian.log"
+THRESHOLD_LOW_KB=350000      # 350 MB: Trigger soft trim
+THRESHOLD_CRITICAL_KB=180000 # 180 MB: Trigger aggressive trim
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+check_and_trim() {
+    local avail_kb
+    avail_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null)
+    
+    if [ -z "$avail_kb" ]; then
+        return
+    fi
+
+    if [ "$avail_kb" -lt "$THRESHOLD_CRITICAL_KB" ]; then
+        log "CRITICAL: Available RAM is ${avail_kb}kB (< ${THRESHOLD_CRITICAL_KB}kB). Triggering emergency trim."
+        # Drop system caches inside PRoot & Android
+        sync
+        echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+
+        # Android emergency trim
+        adb -s 127.0.0.1:5555 shell "
+            pm trim-caches 4000M 2>/dev/null || true;
+            cmd activity send-trim-memory com.google.android.inputmethod.latin COMPLETE 2>/dev/null || true;
+            cmd activity send-trim-memory com.google.android.gms COMPLETE 2>/dev/null || true;
+            cmd activity send-trim-memory com.miui.home COMPLETE 2>/dev/null || true;
+            cmd activity send-trim-memory com.android.systemui COMPLETE 2>/dev/null || true;
+            cmd activity send-trim-memory com.miui.securitycenter.remote COMPLETE 2>/dev/null || true;
+            cmd activity kill-all 2>/dev/null || true;
+            am kill-all 2>/dev/null || true;
+        " >/dev/null 2>&1 || true
+
+    elif [ "$avail_kb" -lt "$THRESHOLD_LOW_KB" ]; then
+        log "WARNING: Available RAM is ${avail_kb}kB (< ${THRESHOLD_LOW_KB}kB). Triggering proactive soft trim."
+        sync
+        adb -s 127.0.0.1:5555 shell "
+            pm trim-caches 2000M 2>/dev/null || true;
+            cmd activity send-trim-memory com.google.android.inputmethod.latin RUNNING_CRITICAL 2>/dev/null || true;
+            cmd activity send-trim-memory com.google.android.gms RUNNING_CRITICAL 2>/dev/null || true;
+            cmd activity send-trim-memory com.miui.home RUNNING_CRITICAL 2>/dev/null || true;
+            cmd activity send-trim-memory com.miui.securitycenter.remote RUNNING_CRITICAL 2>/dev/null || true;
+        " >/dev/null 2>&1 || true
+    fi
+}
+
+if [ "$1" = "--test" ] || [ "$1" = "--once" ]; then
+    avail_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null)
+    echo "Current MemAvailable: ${avail_kb} kB"
+    echo "Testing ADB trim command..."
+    adb -s 127.0.0.1:5555 shell "pm trim-caches 2000M 2>/dev/null; echo 'Trim command executed successfully'"
+    echo "RAM Guardian test complete."
+    exit 0
+fi
+
+log "RAM Guardian daemon started."
+
+while true; do
+    check_and_trim
+    sleep 10
+done
