@@ -9,6 +9,9 @@ export PATH=/data/data/com.termux/files/usr/bin:$PATH
 export TMPDIR=/data/data/com.termux/files/usr/tmp
 mkdir -p "$TMPDIR"
 
+# Kunci port Wireless ADB 5555 agar selalu standby untuk PC/Tailscale
+/system/bin/setprop service.adb.tcp.port 5555 2>/dev/null || true
+
 # 1. Deteksi container Ubuntu (ubuntu atau ubuntu:24.04)
 UBUNTU_CONTAINER="ubuntu"
 if ! proot-distro list 2>/dev/null | grep -q "^ubuntu\b.*installed"; then

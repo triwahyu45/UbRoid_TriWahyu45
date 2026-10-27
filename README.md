@@ -265,7 +265,26 @@ Untuk melihat spesifikasi sistem, model perangkat yang terdeteksi, memori, dan r
 - Buka aplikasi **Tentang UbRoid** dari Launchpad aplikasi, atau
 - Ketik perintah `about` atau `dialog-about` di terminal Ubuntu.
 
-### 6. 🔬 Hasil Eksperimen ADB & Dedicated Linux OS Mode (Kenapa Aplikasi Android Jadi Abu-abu / Greyscale?)
+### 6. Koneksi Wireless ADB Otomatis & Permanen (Tanpa Pairing Berulang)
+Agar Anda atau PC dapat terhubung ke POCO F6 kapan saja melalui Wireless ADB via Tailscale (100.116.82.70:5555) tanpa port acak dan tanpa perlu pairing ulang:
+
+1. **Penguncian Port Statis 5555**:
+   Sistem secara otomatis mengunci port ADB ke standar **Port 5555** permanen (service.adb.tcp.port 5555).
+2. **Whitelist Doze & Background Killer HyperOS**:
+   Paket **Tailscale** (com.tailscale.ipn), **Termux**, dan **Termux-X11** telah didaftarkan ke whitelist baterai Android sehingga koneksi VPN dan terminal tidak dimatikan paksa saat layar HP mati.
+3. **1-Klik Sambung dari PC / Laptop**:
+   Di komputer Windows Anda, cukup jalankan script praktis ini kapan saja:
+   `powershell
+   .\scripts\connect-poco.cmd
+   `
+   Script akan otomatis menyambungkan ADB ke POCO F6, mengunci port 5555, dan menampilkan status koneksi baterai secara instan!
+4. **Perintah Mandiri di Termux**:
+   Kapan saja Anda ingin memastikan port 5555 standby dari Termux, cukup ketik:
+   `ash
+   keep-adb
+   `
+
+### 7. 🔬 Hasil Eksperimen ADB & Dedicated Linux OS Mode (Kenapa Aplikasi Android Jadi Abu-abu / Greyscale?)
 
 Salah satu fitur paling mutakhir pada UbRoid adalah script **`linux-os-mode`** yang memanfaatkan koneksi **ADB Local Loopback (127.0.0.1:5555 / Wireless Debugging)** untuk mengubah perangkat Android menjadi host workstation Linux murni.
 

@@ -58,6 +58,12 @@ switch-mode() {
 alias touch-mode="switch-mode touch"
 alias desktop-mode="switch-mode desktop"
 
+# Wireless ADB Static Port Keeper (Port 5555)
+keep-adb() {
+    setprop service.adb.tcp.port 5555 2>/dev/null || true
+    echo "✓ Port Wireless ADB 5555 terkunci standby."
+}
+
 alias wifi-scan="termux-wifi-scaninfo"
 alias wifi-info="termux-wifi-connectioninfo"
 
