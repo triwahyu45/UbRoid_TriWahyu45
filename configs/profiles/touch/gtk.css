@@ -10,31 +10,31 @@
 /* Touch-Friendly Mobile Headerbar & Titlebars */
 headerbar,
 .titlebar {
-    min-height: 38px;
-    padding: 2px 8px;
+    min-height: 44px;
+    padding: 4px 10px;
     background: #1e131d;
     color: #ffffff;
 }
 
 headerbar button.titlebutton,
 .titlebar button.titlebutton {
-    min-height: 30px;
-    min-width: 30px;
-    padding: 2px;
-    border-radius: 6px;
+    min-height: 36px;
+    min-width: 36px;
+    padding: 4px;
+    border-radius: 8px;
 }
 
 /* Extra Thick Touch-Friendly Scrollbars for Mobile Fingers */
 scrollbar {
-    min-width: 22px;
-    min-height: 22px;
+    min-width: 26px;
+    min-height: 26px;
 }
 
 scrollbar slider {
-    min-width: 18px;
-    min-height: 18px;
-    border-radius: 9px;
-    background-color: rgba(233, 84, 32, 0.6); /* Ubuntu Orange */
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 11px;
+    background-color: rgba(233, 84, 32, 0.7); /* Ubuntu Orange */
 }
 
 scrollbar slider:hover,
@@ -49,22 +49,30 @@ scrollbar slider:active {
 }
 
 .xfce4-panel button {
-    border-radius: 10px;
-    padding: 4px;
+    border-radius: 12px;
+    padding: 6px;
+    min-height: 48px;
+    min-width: 48px;
     transition: all 0.15s ease-in-out;
 }
 
 .xfce4-panel button:hover,
 .xfce4-panel button:active {
-    background-color: rgba(233, 84, 32, 0.35);
+    background-color: rgba(233, 84, 32, 0.4);
     border: 1px solid #E95420;
 }
 
 /* Mobile Touch Targets for Entry / Text Input */
 entry, textview {
-    min-height: 36px;
-    padding: 6px 10px;
-    font-size: 11pt;
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 12pt;
+    border-radius: 8px;
+}
+
+button {
+    min-height: 38px;
+    min-width: 44px;
     border-radius: 8px;
 }
 
@@ -72,7 +80,7 @@ entry, textview {
 XfdesktopIconView.view,
 .xfdesktop-icon-view {
     font-family: 'Ubuntu', sans-serif;
-    font-size: 10.5pt;
+    font-size: 11pt;
     font-weight: 700;
     color: #ffffff;
     text-shadow: 1px 1px 2px #000000, 0px 0px 4px #000000;
@@ -80,6 +88,6 @@ XfdesktopIconView.view,
 
 XfdesktopIconView.view:active,
 .xfdesktop-icon-view:active {
-    background-color: rgba(233, 84, 32, 0.4);
-    border-radius: 10px;
+    background-color: rgba(233, 84, 32, 0.45);
+    border-radius: 12px;
 }

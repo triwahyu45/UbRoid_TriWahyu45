@@ -10,8 +10,8 @@
       <property name="position" type="string" value="p=6;x=0;y=0"/>
       <property name="length" type="uint" value="100"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="22"/>
-      <property name="size" type="uint" value="32"/>
+      <property name="icon-size" type="uint" value="28"/>
+      <property name="size" type="uint" value="42"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="21"/>
@@ -32,8 +32,8 @@
       <property name="position" type="string" value="p=1;x=0;y=0"/>
       <property name="length" type="uint" value="100"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="40"/>
-      <property name="size" type="uint" value="56"/>
+      <property name="icon-size" type="uint" value="48"/>
+      <property name="size" type="uint" value="68"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="21"/>

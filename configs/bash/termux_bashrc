@@ -17,10 +17,17 @@ _get_ubroid_container() {
 }
 
 # 1-Tap Launcher Functions
+# Mode CLI: Ringan & Co-existence dengan Android (notifikasi, WA, telp tetap aktif)
 ubuntu() {
     bash ~/launch_ubuntu.sh "$@"
 }
 alias u="ubuntu"
+
+# Mode Dedicated Linux OS: Murni meninggalkan Android (ADB suspend app 3rd-party, 100% RAM & CPU)
+ubuntu-os() {
+    bash ~/launch_ubuntu.sh --dedicated "$@"
+}
+alias uos="ubuntu-os"
 
 ubuntu-cli() {
     local c
@@ -64,7 +71,9 @@ echo -e "\033[1;37mWelcome to Ubuntu 24.04 LTS (GNU/Linux aarch64) - $DEV_NAME\0
 echo ""
 echo -e " * UbRoid:         \033[1;38;2;233;84;32mAuthentic Ubuntu Desktop Environment for Android\033[0m"
 echo -e " * DetronicsID:    \033[1;32mEmbedded & Robotics Linux Environment\033[0m"
-echo -e " * Masuk Desktop:  Ketik \033[1;32mubuntu\033[0m atau \033[1;32mu\033[0m lalu tekan Enter"
+echo -e " * Mode CLI (Cepat): Ketik \033[1;32mubuntu\033[0m atau \033[1;32mu\033[0m (Co-existence, notifikasi Android aktif)"
+echo -e " * Mode Pure OS:   Ketik \033[1;32muos\033[0m atau \033[1;32mubuntu-os\033[0m (Tinggalkan Android, 100% RAM & CPU)"
+echo -e " * Ganti Tampilan: Ketik \033[1;35mtouch-mode\033[0m (Mobile HP) | \033[1;36mdesktop-mode\033[0m (Monitor)"
 echo -e " * Terminal PRoot: Ketik \033[1;32muc\033[0m atau \033[1;32mubuntu-cli\033[0m"
 echo -e " * Antigravity:    Ketik \033[1;32magy\033[0m untuk jalankan AI Assistant (Turbo Mode)"
 echo -e " * Fitur Jaringan: \033[1;33mwifi-scan\033[0m | \033[1;33mwifi-info\033[0m"

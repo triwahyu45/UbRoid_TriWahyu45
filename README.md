@@ -141,8 +141,24 @@ UbRoid telah terintegrasi penuh dengan **Google Antigravity AI CLI** (`agy`) unt
 - **Anti-Blokir DNS Kampus (eduroam UNY)**: Dilengkapi resolver DNS multi-tier (Tailscale MagicDNS `100.100.100.100` + DNS kampus lokal) sehingga koneksi token Google aman tanpa timeout.
 - **Auto-Sync Kredensial**: Otomatis menyimpan dan membaca file login dari `/sdcard/Download/.gemini/` sehingga Anda tidak perlu login ulang saat membuka sesi baru.
 
+### Langkah 4: Memilih Mode Menjalankan Ubuntu (CLI vs APK Launcher)
+
+UbRoid membedakan cara menjalankan Linux sesuai kebutuhan Anda:
+
+| Fitur | ⚡ Mode Termux CLI (`ubuntu` / `u`) | 📱 Mode Android APK / Dedicated OS (`uos`) |
+| :--- | :--- | :--- |
+| **Metode Buka** | Ketik `ubuntu` atau `u` di Termux | Klik icon **Ubuntu Launcher APK** di Home Screen atau ketik `ubuntu-os` / `uos` |
+| **Konsep** | **Co-existence & Lightweight** (Berdampingan) | **Dedicated Linux OS** (Murni Meninggalkan Android) |
+| **Status Android** | Android tetap aktif normal | Android dibekukan sementara (*suspended*) |
+| **Notifikasi & WA** | ✅ Masuk secara real-time seperti biasa | 🔕 Do Not Disturb (DND) aktif, banner disembunyikan |
+| **Garis Navigasi** | Standar Android | 🚫 Disembunyikan total (*Full Immersive Linux*) |
+| **Alokasi RAM & CPU** | Berbagi dinamis dengan sistem Android | 🚀 **100% dialokasikan** untuk Ubuntu (Snapdragon 8s Gen 3) |
+| **Tujuan Penggunaan** | Koding cepat, riset python, sambil chat/kerja | Pengalaman utuh Linux PC / Ubuntu Phone tanpa gangguan |
+
+---
+
 ### Langkah 5: Berpindah Mode Tampilan (Desktop ↔ Ubuntu Touch Mobile)
-Jika Anda menggunakan smartphone berlayar ringkas seperti **Xiaomi POCO F6**, antarmuka **Ubuntu Touch Mobile Edition** jauh lebih nyaman, ringan, dan ramah jempol daripada tampilan Desktop klasik.
+Jika Anda menggunakan smartphone berlayar ringkas seperti **Xiaomi POCO F6**, antarmuka **Ubuntu Touch Mobile Edition** jauh lebih nyaman, proporsional, dan ramah jempol daripada tampilan Desktop klasik.
 
 Anda **TIDAK PERLU menginstal ulang** jika saat instalasi pertama kali terlanjur memilih mode Desktop! Cukup jalankan **1 perintah otomatis ini di Termux**:
 
@@ -157,14 +173,16 @@ Perintah di atas akan langsung mengubah konfigurasi sistem ke **Ubuntu Touch Mob
 #### Cara Beralih Mode dari Dalam Desktop Ubuntu (1-Klik)
 - Di dalam sesi Ubuntu yang sedang berjalan, Anda juga dapat mengklik icon **Ganti Mode Tampilan (Switch UI Mode)** di desktop atau mengetik `switch-mode touch` di terminal. Tata letak akan otomatis diperbarui tanpa merestart HP atau display server.
 
-#### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP:
-1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal di sisi kiri layar yang sangat mudah dijangkau jempol satu tangan saat HP dipegang secara horizontal (*landscape*).
-2. **Touch-Friendly UI**: Scrollbar tebal 22px (mudah digulir dengan jari tanpa bantuan mouse fisik), baris judul jendela lebih besar, dan icon 54px yang jelas.
-3. **Single-Tap Navigation**: Aplikasi dan folder langsung terbuka cukup dengan **1 ketukan jari** (tanpa perlu repot double-tap di layar sentuh).
-4. **Dual Keyboard Support**:
+#### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP (POCO F6):
+1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal 68px di sisi kiri layar dengan icon 48px yang sangat mudah dijangkau jempol satu tangan saat HP dipegang secara horizontal (*landscape*).
+2. **Skala Layar Proporsional (170 DPI)**: Ukuran font, tombol, dan headerbar diperbesar secara proporsional (~36% lebih besar) sehingga teks terbaca sangat jelas di layar 1.5K AMOLED POCO F6 tanpa membuat mata lelah.
+3. **Wallpaper Otentik Ubuntu Touch (Bebas Wallpaper Tikus)**: Menghilangkan wallpaper biru default tikus XFCE dan menggantinya dengan latar belakang aubergine warm mascot resmi Ubuntu.
+4. **Touch-Friendly UI & Scrollbar 26px**: Scrollbar tebal 26px dengan slider pill oranye Ubuntu yang nyaman digeser dengan jari tanpa mouse fisik, serta target tombol sentuh minimal 44px.
+5. **Single-Tap Navigation**: Aplikasi dan folder langsung terbuka cukup dengan **1 ketukan jari** (tanpa perlu repot double-tap di layar sentuh).
+6. **Dual Keyboard Support**:
    - Usap layar (*swipe up*) ke atas dari bezel bawah untuk memunculkan keyboard bawaan Android (**Gboard**).
    - Atau gunakan keyboard virtual sentuh **Onboard** yang otomatis *pop-up* saat kolom input teks disentuh.
-5. **Python Mobile Studio & Mini PC Mode**: Shortcut `python-mobile` langsung tersemat di launcher kiri, membuka workspace coding `/root/Python_Workspace` secara instan.
+7. **Python Mobile Studio & Mini PC Mode**: Shortcut `python-mobile` langsung tersemat di launcher kiri, membuka workspace coding `/root/Python_Workspace` secara instan.
 
 ---
 

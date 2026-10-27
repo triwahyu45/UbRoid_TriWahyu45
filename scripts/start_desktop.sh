@@ -30,9 +30,12 @@ pkill -9 -f "[g]pg-agent" 2>/dev/null || true
 pkill -9 -f "[s]sh-agent" 2>/dev/null || true
 pkill -9 -f "[g]nome-keyring" 2>/dev/null || true
 
-# Enter Dedicated Linux OS Mode & start PulseAudio Android bridge
-chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
-/usr/local/bin/linux-os-mode enter
+# Enter Dedicated Linux OS Mode only if requested (from APK or --dedicated flag)
+# CLI mode ('ubuntu' or 'u') defaults to Lightweight Co-existence Mode (keeps Android multitasking & notifications active)
+if [ "$UBROID_DEDICATED_OS" = "1" ]; then
+    chmod +x /usr/local/bin/linux-os-mode 2>/dev/null || true
+    /usr/local/bin/linux-os-mode enter 2>/dev/null || true
+fi
 
 # Initialize user D-Bus session bus
 eval $(dbus-launch --sh-syntax)
@@ -80,9 +83,26 @@ cleanup_on_exit() {
     kill "$RAM_GUARDIAN_PID" 2>/dev/null || true
     pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
     pkill -9 -x onboard 2>/dev/null || true
-    /usr/local/bin/linux-os-mode exit 2>/dev/null || true
+    if [ "$UBROID_DEDICATED_OS" = "1" ]; then
+        /usr/local/bin/linux-os-mode exit 2>/dev/null || true
+    fi
 }
 trap cleanup_on_exit EXIT INT TERM HUP
+
+# Anti-Rat Wallpaper Enforcement (Eliminate XFCE teal mouse fallback completely)
+UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
+if [ ! -f "$UBUNTU_WP" ]; then
+    UBUNTU_WP="/usr/share/backgrounds/noble-numbat.png"
+fi
+if [ -f "$UBUNTU_WP" ]; then
+    mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
+    for xf in /usr/share/backgrounds/xfce/*.png; do
+        [ -e "$xf" ] && cp -f "$UBUNTU_WP" "$xf" 2>/dev/null || true
+    done
+    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
+    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
+    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
+fi
 
 # Ensure all desktop launchers are marked trusted in GIO/XFCE
 chmod +x /root/Desktop/*.desktop 2>/dev/null || true
@@ -98,6 +118,20 @@ if [ "$UBROID_MODE" = "touch" ]; then
         nohup onboard >/dev/null 2>&1 &
     fi
 fi
+
+# Asynchronously enforce Ubuntu wallpaper on all monitors once XFCE starts
+(
+    sleep 1.2
+    for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image'); do
+        xfconf-query -c xfce4-desktop -p "$prop" -s "$UBUNTU_WP" 2>/dev/null || true
+    done
+    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorscreen/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitordefault/workspace0/last-image -s "$UBUNTU_WP" 2>/dev/null || true
+    for m in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style'); do
+        xfconf-query -c xfce4-desktop -p "$m" -s 5 2>/dev/null || true
+    done
+) &
 
 export LD_PRELOAD=/usr/local/lib/libnogap.so
 startxfce4

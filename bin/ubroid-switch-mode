@@ -35,6 +35,21 @@ if [ ! -d "$TARGET_DIR" ]; then
     exit 1
 fi
 
+# Terapkan wallpaper resmi Ubuntu (Anti-Rat Wallpaper)
+UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
+if [ ! -f "$UBUNTU_WP" ]; then
+    UBUNTU_WP="/usr/share/backgrounds/noble-numbat.png"
+fi
+if [ -f "$UBUNTU_WP" ]; then
+    mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
+    for xf in /usr/share/backgrounds/xfce/*.png; do
+        [ -e "$xf" ] && cp -f "$UBUNTU_WP" "$xf" 2>/dev/null || true
+    done
+    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
+    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
+    cp -f "$UBUNTU_WP" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
+fi
+
 # Terapkan konfigurasi XML XFCE
 mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml /root/.config/gtk-3.0
 cp "$TARGET_DIR/"*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
@@ -70,6 +85,14 @@ if [ -x /usr/local/bin/restart_panel.sh ]; then
 else
     pkill -9 -f xfce4-panel 2>/dev/null || true
     nohup xfce4-panel >/dev/null 2>&1 &
+fi
+
+# Terapkan wallpaper ke sesi desktop yang sedang berjalan
+if [ -n "$DISPLAY" ]; then
+    for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image'); do
+        xfconf-query -c xfce4-desktop -p "$prop" -s "$UBUNTU_WP" 2>/dev/null || true
+    done
+    pkill -HUP xfdesktop 2>/dev/null || true
 fi
 
 # Kirim notifikasi desktop

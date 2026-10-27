@@ -60,6 +60,13 @@ proot-distro login "$c" --bind /sdcard:/sdcard -- bash -c '
 echo "✓ Mode Ubuntu Desktop aktif permanen. Jalankan 'ubuntu' untuk masuk."
 EOF
     chmod +x "$PREFIX_BIN/desktop-mode"
+
+    cat << 'EOF' > "$PREFIX_BIN/ubuntu-os"
+#!/data/data/com.termux/files/usr/bin/bash
+bash ~/launch_ubuntu.sh --dedicated "$@"
+EOF
+    chmod +x "$PREFIX_BIN/ubuntu-os"
+    ln -sf "$PREFIX_BIN/ubuntu-os" "$PREFIX_BIN/uos" 2>/dev/null || true
 fi
 
 # 3. Update atau sinkronisasi repository UbRoid di Termux
@@ -73,7 +80,7 @@ else
 fi
 
 # 4. Terapkan konfigurasi profil touch di dalam container Ubuntu
-echo -e "${CYAN}[2/4] Menerapkan UI ramah sentuhan (Lomiri Vertical Launcher, Onboard, 22px scrollbar)...${NC}"
+echo -e "${CYAN}[2/4] Menerapkan UI ramah sentuhan (Lomiri 68px, 170 DPI, Onboard, 26px scrollbar, Anti-Rat Wallpaper)...${NC}"
 proot-distro login "$UBUNTU_CONTAINER" --bind /sdcard:/sdcard --bind "$REPO_DIR:/root/UbRoid_TriWahyu45" -- bash -c '
     set -e
     SRC="/root/UbRoid_TriWahyu45"
@@ -89,6 +96,27 @@ proot-distro login "$UBUNTU_CONTAINER" --bind /sdcard:/sdcard --bind "$REPO_DIR:
         cp "$SRC/configs/profiles/touch/gtk.css" /root/.config/gtk-3.0/gtk.css 2>/dev/null || true
         rm -rf /root/.config/xfce4/panel/launcher-*
         cp -r "$SRC/configs/profiles/touch/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
+    fi
+
+    # Pasang wallpaper resmi Ubuntu & hilangkan wallpaper tikus XFCE selamanya
+    WP_SRC="$SRC/assets/wallpapers/warty-final-ubuntu.png"
+    if [ -f "$WP_SRC" ]; then
+        mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
+        cp -f "$WP_SRC" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
+        cp -f "$WP_SRC" /usr/share/backgrounds/warty-1280x800.png 2>/dev/null || true
+        cp -f "$WP_SRC" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
+        for xf in /usr/share/backgrounds/xfce/*.png; do
+            [ -e "$xf" ] && cp -f "$WP_SRC" "$xf" 2>/dev/null || true
+        done
+        cp -f "$WP_SRC" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
+        cp -f "$WP_SRC" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
+        cp -f "$WP_SRC" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
+    fi
+
+    # Perbarui start_desktop.sh di dalam container
+    if [ -f "$SRC/scripts/start_desktop.sh" ]; then
+        cp "$SRC/scripts/start_desktop.sh" /root/start_desktop.sh 2>/dev/null || true
+        chmod +x /root/start_desktop.sh 2>/dev/null || true
     fi
 
     # Pasang script executables pendukung
@@ -142,10 +170,15 @@ echo -e "${GREEN}===============================================================
 echo -e "Fitur yang kini aktif secara permanen:"
 echo -e " 1. 📱 ${YELLOW}Lomiri Vertical Launcher${NC} di sebelah kiri layar (ramah jempol)."
 echo -e " 2. 👆 ${YELLOW}Single-Tap Navigation${NC} (cukup 1 ketukan jari untuk membuka aplikasi/file)."
-echo -e " 3. 📜 ${YELLOW}Touch Scrollbar 22px${NC} (mudah digeser tanpa mouse fisik)."
-echo -e " 4. ⌨️ ${YELLOW}Dual Keyboard Support${NC} (Gboard via swipe-up & Onboard auto-popup)."
-echo -e " 5. 🐍 ${YELLOW}Python Mobile Studio${NC} tersemat di launcher kiri."
+echo -e " 3. 🔍 ${YELLOW}Skala UI 170 DPI${NC} (teks & ikon proporsional, pas di layar HP Poco F6)."
+echo -e " 4. 🎨 ${YELLOW}Wallpaper Resmi Ubuntu Touch${NC} (aubergine warm, bebas wallpaper tikus)."
+echo -e " 5. 📜 ${YELLOW}Touch Scrollbar 26px${NC} (mudah digeser nyaman dengan jari)."
+echo -e " 6. ⌨️ ${YELLOW}Dual Keyboard Support${NC} (Gboard via swipe-up & Onboard auto-popup)."
+echo -e " 7. 🐍 ${YELLOW}Python Mobile Studio${NC} tersemat di launcher kiri."
 echo -e "\nKapan saja Anda ingin berganti mode dari Termux, cukup ketik:"
 echo -e " - ${CYAN}touch-mode${NC}   : Kembali ke Ubuntu Touch Mobile"
 echo -e " - ${CYAN}desktop-mode${NC} : Beralih ke Ubuntu Desktop klasik"
-echo -e "\nKetik ${GREEN}ubuntu${NC} sekarang untuk menikmati Ubuntu Touch di POCO F6!\n"
+echo -e "\nCara Menjalankan Ubuntu:"
+echo -e " - ${GREEN}ubuntu${NC}      : Mode CLI Cepat (Ringan, tetap multitasking dengan Android)"
+echo -e " - ${YELLOW}ubuntu-os${NC}   : Mode Dedicated OS (Tinggalkan Android, 100% RAM & CPU)"
+echo -e " - Buka dari ${PURPLE}APK Ubuntu Launcher${NC} di HomeScreen untuk Dedicated OS 1-ketuk!\n"

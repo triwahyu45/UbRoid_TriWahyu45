@@ -17,27 +17,48 @@ if ! proot-distro list 2>/dev/null | grep -q "^ubuntu\b.*installed"; then
     fi
 fi
 
+# Mode Selection:
+# - Default CLI ('ubuntu' / 'u'): Co-existence / Lightweight Mode (Android apps & notifications remain active)
+# - APK / Dedicated ('ubuntu --dedicated' / 'ubuntu --os'): Dedicated Linux OS Mode (leaves Android, suspends apps, DND on)
+UBROID_DEDICATED_OS=0
+for arg in "$@"; do
+    case "$arg" in
+        --dedicated|--os|--leave-android|--apk|-d)
+            UBROID_DEDICATED_OS=1
+            ;;
+        --coexist|--light|-c)
+            UBROID_DEDICATED_OS=0
+            ;;
+    esac
+done
+if [ "$UBROID_LAUNCH_SOURCE" = "apk" ] || [ "$UBROID_LAUNCHER_APK" = "1" ]; then
+    UBROID_DEDICATED_OS=1
+fi
+export UBROID_DEDICATED_OS
+
 restore_android_mode() {
-    # 1. Kembalikan garis navigasi Android, notifikasi & layanan Google
-    if command -v adb >/dev/null 2>&1; then
-        adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
-        dev=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1; exit}')
-        if [ -n "$dev" ]; then
-            adb -s "$dev" shell "
-                settings put global hide_gesture_line 0;
-                settings put global policy_control null;
-                settings put global heads_up_notifications_enabled 1;
-                cmd notification set_dnd off;
-                device_config put activity_manager max_cached_processes 32;
-                settings put secure voice_interaction_service com.google.android.googlequicksearchbox/com.google.android.voiceinteraction.GsaVoiceInteractionService;
-                for p in \$(pm list packages -3 2>/dev/null | sed 's/package://'); do
-                    pm unsuspend --user 0 \"\$p\" 2>/dev/null || true
-                    am set-standby-bucket \"\$p\" active 2>/dev/null || true
-                done
-            " >/dev/null 2>&1 || true
+    # 1. Kembalikan mode Android hanya jika sebelumnya masuk ke mode Dedicated OS
+    if [ "$UBROID_DEDICATED_OS" = "1" ]; then
+        if command -v adb >/dev/null 2>&1; then
+            adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+            dev=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1; exit}')
+            if [ -n "$dev" ]; then
+                adb -s "$dev" shell "
+                    settings put global hide_gesture_line 0;
+                    settings put global policy_control null;
+                    settings put global heads_up_notifications_enabled 1;
+                    cmd notification set_dnd off;
+                    device_config put activity_manager max_cached_processes 32;
+                    settings put secure voice_interaction_service com.google.android.googlequicksearchbox/com.google.android.voiceinteraction.GsaVoiceInteractionService;
+                    for p in \$(pm list packages -3 2>/dev/null | sed 's/package://'); do
+                        pm unsuspend --user 0 \"\$p\" 2>/dev/null || true
+                        am set-standby-bucket \"\$p\" active 2>/dev/null || true
+                    done
+                " >/dev/null 2>&1 || true
+            fi
         fi
+        /system/bin/sh -c "settings put global hide_gesture_line 0; settings put global policy_control null; settings put global heads_up_notifications_enabled 1; cmd notification set_dnd off" >/dev/null 2>&1 || true
     fi
-    /system/bin/sh -c "settings put global hide_gesture_line 0; settings put global policy_control null; settings put global heads_up_notifications_enabled 1; cmd notification set_dnd off" >/dev/null 2>&1 || true
 
     # 2. Matikan X11, PulseAudio, dan daemon Linux
     /system/bin/am force-stop com.termux.x11 2>/dev/null
@@ -168,4 +189,4 @@ if [ -n "$STORAGE_TARGET" ]; then
 fi
 
 # 11. Jalankan Desktop XFCE Ubuntu dengan Dynamic Storage Binding
-proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- bash /root/start_desktop.sh
+proot-distro login "$UBUNTU_CONTAINER" "${PROOT_BINDS[@]}" -- env UBROID_DEDICATED_OS="$UBROID_DEDICATED_OS" bash /root/start_desktop.sh
