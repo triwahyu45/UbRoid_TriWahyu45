@@ -65,23 +65,14 @@ xfconf-query -c xfwm4 -p /general/snap_width -s 48 2>/dev/null || true
 # /usr/local/bin/window-bounds-limiter &
 
 
-# Start Auto Performance Governor & Multi-Core Affinity Enforcer
+# Prevent unnecessary applets from crashing PRoot process table
+chmod -x /etc/xdg/autostart/nm-applet.desktop /etc/xdg/autostart/print-applet.desktop 2>/dev/null || true
+pkill -9 -f "nm-applet" 2>/dev/null || true
+pkill -9 -f "system-config-printer" 2>/dev/null || true
 pkill -f "/usr/local/bin/perf-governor" 2>/dev/null || true
-/usr/local/bin/perf-governor &
-PERF_GOV_PID=$!
-
-# Start Proactive RAM Guardian Daemon (Anti-LMK / Anti-Freeze)
 pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
-/usr/local/bin/ram-guardian &
-RAM_GUARDIAN_PID=$!
 
 cleanup_on_exit() {
-    kill "$BOUNDS_LIMITER_PID" 2>/dev/null || true
-    pkill -f "/usr/local/bin/window-bounds-limiter" 2>/dev/null || true
-    kill "$PERF_GOV_PID" 2>/dev/null || true
-    pkill -f "/usr/local/bin/perf-governor" 2>/dev/null || true
-    kill "$RAM_GUARDIAN_PID" 2>/dev/null || true
-    pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
     pkill -9 -x onboard 2>/dev/null || true
     if [ "$UBROID_DEDICATED_OS" = "1" ]; then
         /usr/local/bin/linux-os-mode exit 2>/dev/null || true
