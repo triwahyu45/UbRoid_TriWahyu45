@@ -54,7 +54,7 @@ class ADBCameraCapture:
 
         print(f"[*] Menghubungkan ke Kamera {'Belakang' if camera_id==0 else 'Depan'} POCO F6 via ADB...")
         # 0. Bersihkan sesi lama jika ada di Android & container
-        subprocess.call(["adb", "-s", "127.0.0.1:5555", "shell", "pkill -9 -f scrcpy"], stderr=subprocess.DEVNULL)
+        subprocess.call(["adb", "-s", "127.0.0.1:5555", "shell", "pkill -f scrcpy-server.jar 2>/dev/null || true"], stderr=subprocess.DEVNULL)
         subprocess.call(["pkill", "-9", "-f", "ffmpeg"], stderr=subprocess.DEVNULL)
         
         # 1. Pastikan scrcpy-server ada di Android /data/local/tmp
@@ -68,12 +68,23 @@ class ADBCameraCapture:
         # 3. Jalankan server kamera native
         srv_cmd = f'adb -s 127.0.0.1:5555 shell "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 3.1 video_source=camera camera_id={camera_id} camera_size={width}x{height} max_fps={fps} tunnel_forward=true control=false audio=false cleanup=false raw_stream=true"'
         self.srv_proc = subprocess.Popen(srv_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(1.2)
+        time.sleep(1.0)
 
-        # 4. Connect socket
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('127.0.0.1', 28200))
-        self.sock.sendall(b'\x00') # Handshake
+        # 4. Hubungkan socket ke scrcpy-server
+        self.sock = None
+        for _ in range(20):
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(('127.0.0.1', 28200))
+                s.sendall(b'\x00') # Handshake
+                self.sock = s
+                break
+            except Exception:
+                time.sleep(0.2)
+
+        if not self.sock:
+            print("[-] Gagal menyambung ke socket scrcpy-server.")
+            return
 
         # 5. Pipeline FFmpeg decoder (H.264 -> Raw BGR24)
         ff_cmd = [
@@ -91,8 +102,8 @@ class ADBCameraCapture:
         self.t_grab = threading.Thread(target=self._frame_grabber, daemon=True)
         self.t_grab.start()
 
-        # Tunggu frame pertama siap
-        for _ in range(80):
+        # Tunggu frame pertama siap (ISP Android 16 butuh ~2-5 detik inisialisasi)
+        for _ in range(120):
             if self.latest_frame is not None:
                 break
             time.sleep(0.1)
@@ -101,7 +112,7 @@ class ADBCameraCapture:
             print("[+] Kamera Belakang terhubung aktif (Zero Latency Real-Time)!")
             self.ret = True
         else:
-            print("[-] Gagal mendapatkan frame kamera setelah 8 detik.")
+            print("[-] Gagal mendapatkan frame kamera setelah 12 detik.")
 
     def _socket_pump(self):
         try:
@@ -110,6 +121,7 @@ class ADBCameraCapture:
                 if not data:
                     break
                 self.ff_proc.stdin.write(data)
+                self.ff_proc.stdin.flush()
         except Exception:
             pass
 
