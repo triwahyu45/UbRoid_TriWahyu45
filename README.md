@@ -22,16 +22,29 @@
 ## 🌟 Fitur Utama (Key Highlights)
 
 - 📱 **Dual UI Mode (Ubuntu Desktop vs Ubuntu Touch Mobile)**:
-  - 🖥️ **Ubuntu Desktop Edition (Default)**: Dock horizontal melayang di bawah, ideal untuk tablet besar, monitor eksternal, dan penggunaan keyboard fisik.
-  - 📱 **Ubuntu Touch Mobile Edition**: Terinspirasi dari antarmuka mobile **Ubuntu Touch (Lomiri)** dengan **launcher vertikal di sisi kiri**, ikon besar (48px) ramah sentuhan, navigasi single-tap, dan jendela aplikasi otomatis terfokus. Sangat ideal untuk layar smartphone seperti **POCO F6**!
+  - 🖥️ **Ubuntu Desktop Edition**: Dock horizontal melayang di bawah, orientasi Landscape, ideal untuk tablet besar, monitor eksternal, dan penggunaan keyboard-mouse fisik.
+  - 📱 **Ubuntu Touch Mobile Edition (Khusus POCO F6 / Smartphone)**: Terinspirasi langsung dari antarmuka mobile **[Ubuntu Touch (Lomiri)](https://www.ubuntu-touch.io/)** dengan **launcher vertikal di sisi kiri (68px Suru squircle)**, orientasi terkunci **PORTRAIT (vertikal)** ramah jempol, navigasi single-tap, touch scrollbar tebal 26px, skala 170 DPI proporsional, dan wallpaper resmi aubergine warm UBports (bebas dari wallpaper tikus XFCE). Sangat ideal untuk layar smartphone seperti **Xiaomi POCO F6**!
+- 🚀 **Dual Launch Experience (APK Launcher vs Termux CLI)**:
+  - ⚡ **Buka via APK Launcher (`Ubuntu_Launcher.apk`) — Dedicated OS Mode (Meninggalkan Android)**: Sekali tap icon Ubuntu di homescreen Android, sistem otomatis membekukan (*suspend*) aplikasi Android pihak ketiga di background via ADB, membebaskan 1.5 GB s/d 2.5 GB RAM, menyembunyikan garis gesture Android, dan mengaktifkan DND sehingga HP Anda 100% beralih menjadi Mini PC Ubuntu murni. Saat sesi ditutup, Android pulih normal seketika.
+  - 🪶 **Buka via Termux CLI (`ubuntu` / `u`) — Lightweight Co-existence Mode**: Membuka antarmuka desktop/touch secara cepat dan ringan tanpa membekukan Android, sehingga Anda tetap dapat menerima notifikasi WhatsApp, panggilan telepon, dan multitasking bersama aplikasi Android lainnya.
+- 🔄 **1-Command Permanent Mode Switcher**:
+  - `touch-mode` (atau `switch-touch`): Beralih ke **Ubuntu Touch Mobile Edition** secara permanen.
+  - `desktop-mode` (atau `switch-desktop`): Beralih ke **Ubuntu Desktop Edition** secara permanen.
+- 🎙️ **Akses Hardware Penuh (Mini PC Replacement)**:
+  - 🎤 **Audio Input / Microphone Capture**: Jembatan input mikrofon Android via PulseAudio OpenSL ES (`--load="module-sles-source"`), siap untuk recording, meeting, dan speech AI.
+  - 📷 **Kamera V4L2 Qualcomm Snapdragon**: Node kamera ISP Snapdragon (`/dev/video*`) dibinding langsung ke dalam container Ubuntu.
+  - 🗄️ **Penyimpanan Tak Terbatas**: Akses penuh ke seluruh internal storage `/sdcard`, `/storage/emulated/0`, dan `/root/Android_Storage`.
+  - 🛡️ **Izin Android Komprehensif**: Kamera, Mikrofon, Full Storage (All Files), Lokasi, System Alert Window, dan Background AppOps telah diizinkan permanen.
+- 🔌 **Permanent Wireless ADB Connectivity**:
+  - Port statis `5555` dikunci permanen (`setprop service.adb.tcp.port 5555`).
+  - Dilengkapi script 1-klik PC `scripts/connect-poco.ps1` dan `scripts/connect-poco.cmd` yang menghubungkan PC ke HP secara instan lewat jaringan Tailscale (`100.116.82.70:5555`) tanpa perlu pairing ulang atau kode verifikasi lagi.
 - ⏳ **Pemilihan Mode Otomatis 5 Detik**: Saat instalasi, pengguna diberikan pilihan interaktif antara Desktop atau Ubuntu Touch. Jika tidak ada input selama 5 detik, sistem otomatis memilih **Ubuntu Desktop**.
-- 🔄 **1-Tap Mode Switcher (`ubroid-switch-mode`)**: Bebas berganti antara mode Desktop dan Ubuntu Touch kapan saja langsung dari icon desktop, panel launcher, atau perintah terminal `switch-mode` tanpa perlu instal ulang.
 - ⌨️ **Pengalaman Mengetik Fleksibel (Gboard & Onboard Auto-Popup)**:
   - **Android Gboard**: Cukup usap ke atas (*swipe up*) dari sisi bawah layar HP atau tekan tombol Back untuk langsung memunculkan keyboard bawaan Android (Gboard).
   - **Ubuntu Touch Onboard**: Keyboard virtual sentuh otomatis muncul (*auto-popup*) saat kolom teks/terminal disentuh, dan otomatis melipat saat selesai.
   - Tombol pintas keyboard virtual 1-tap di panel launcher dan status bar atas.
 - 🐍 **Python Mobile Studio & Mini PC Mode**: Dilengkapi folder kerja `/root/Python_Workspace`, script pembuka interaktif, dan shortcut desktop `python-mobile` yang langsung membuka REPL Python 3.12 untuk mengubah HP Anda menjadi mini PC coding yang portabel!
-- 🎨 **Tampilan Otentik Ubuntu Desktop**: Wallpaper resmi **Ubuntu Noble Numbat** ungu mascot (`warty-final-ubuntu.png`), tema Yaru-dark, dan font Ubuntu yang tajam.
+- 🎨 **Tampilan Otentik Ubuntu**: Wallpaper resmi **Ubuntu Touch (UBports Lomiri)** ungu aubergine warm untuk smartphone & **Noble Numbat** ungu mascot untuk mode desktop, tema Yaru-dark, dan font Ubuntu yang tajam.
 - 🚀 **Dock Bawah Melayang & Live Tasklist**: Dock autohide melayang (mengambang di atas navigation gesture bar Android) dengan pemisah vertikal elegan, pinned apps, dan **indikator tab jendela aktif live** (seperti Terminator, Browser, File Manager) lengkap dengan highlight garis oranye Ubuntu.
 - ⚡ **Status Bar Atas Lengkap & Jam Presisi di Tengah**: Panel atas 36px dengan jam otomatis presisi di tengah layar (dynamic spacer) serta 8 icon utilitas lengkap di sebelah kanan:
   1. 🪟 **Snap Layout Helper**: Pilihan tata letak split-screen & kuadran cepat.

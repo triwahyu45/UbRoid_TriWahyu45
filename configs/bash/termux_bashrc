@@ -64,6 +64,53 @@ keep-adb() {
     echo "✓ Port Wireless ADB 5555 terkunci standby."
 }
 
+# --- UbRoid APK Launcher Trigger Detection & Background Daemon ---
+_handle_ubroid_trigger() {
+    local trg=""
+    if [ -f "/sdcard/.ubroid_launch_trigger" ]; then
+        trg=$(cat "/sdcard/.ubroid_launch_trigger" 2>/dev/null)
+        rm -f "/sdcard/.ubroid_launch_trigger" "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null
+    elif [ -f "/sdcard/Download/.ubroid_launch_trigger" ]; then
+        trg=$(cat "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null)
+        rm -f "/sdcard/.ubroid_launch_trigger" "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null
+    fi
+
+    if [ -n "$trg" ]; then
+        if [ "$trg" = "apk_full_os" ]; then
+            echo "🚀 Meluncurkan Ubuntu Dedicated OS Mode dari APK Launcher..."
+            bash ~/launch_ubuntu.sh --dedicated
+        else
+            echo "🚀 Meluncurkan Ubuntu dari APK Launcher..."
+            bash ~/launch_ubuntu.sh
+        fi
+    fi
+}
+
+# Check trigger saat login
+_handle_ubroid_trigger
+
+# Daemon Background Watcher agar launcher APK tetap bekerja saat Termux standby
+if ! pgrep -f "ubroid_watcher" >/dev/null 2>&1; then
+    (
+        exec -a ubroid_watcher bash -c '
+            while true; do
+                if [ -f "/sdcard/.ubroid_launch_trigger" ] || [ -f "/sdcard/Download/.ubroid_launch_trigger" ]; then
+                    trg=""
+                    [ -f "/sdcard/.ubroid_launch_trigger" ] && trg=$(cat "/sdcard/.ubroid_launch_trigger" 2>/dev/null)
+                    [ -z "$trg" ] && [ -f "/sdcard/Download/.ubroid_launch_trigger" ] && trg=$(cat "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null)
+                    rm -f "/sdcard/.ubroid_launch_trigger" "/sdcard/Download/.ubroid_launch_trigger" 2>/dev/null
+                    if [ "$trg" = "apk_full_os" ]; then
+                        bash /data/data/com.termux/files/home/launch_ubuntu.sh --dedicated >/dev/null 2>&1
+                    else
+                        bash /data/data/com.termux/files/home/launch_ubuntu.sh >/dev/null 2>&1
+                    fi
+                fi
+                sleep 0.5
+            done
+        '
+    ) >/dev/null 2>&1 &
+fi
+
 alias wifi-scan="termux-wifi-scaninfo"
 alias wifi-info="termux-wifi-connectioninfo"
 
