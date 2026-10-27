@@ -132,7 +132,7 @@ done
 
 # Optimalisasi Skala Tampilan Khusus Smartphone Portrait (POCO F6)
 if [ "$TARGET_ORIENTATION" = "portrait" ]; then
-    SCALE=220
+    SCALE=200
 fi
 
 # Pastikan com.termux.x11 di-restart agar orientasi portrait terkunci segar
@@ -203,12 +203,16 @@ PROOT_BINDS=()
 [ -d "/data/data/com.termux/files/home" ] && PROOT_BINDS+=(--bind "/data/data/com.termux/files/home:/root/termux_home")
 [ -f "$TMPDIR/resolv.conf" ] && PROOT_BINDS+=(--bind "$TMPDIR/resolv.conf:/etc/resolv.conf")
 
-# Override start_desktop & wallpaper dari /sdcard/Download jika tersedia
+# Override start_desktop & wallpaper & profil touch dari /sdcard/Download jika tersedia
 [ -f "/sdcard/Download/linux-os-mode" ] && PROOT_BINDS+=(--bind "/sdcard/Download/linux-os-mode:/usr/local/bin/linux-os-mode")
 [ -f "/sdcard/Download/start_desktop.sh" ] && PROOT_BINDS+=(--bind "/sdcard/Download/start_desktop.sh:/root/start_desktop.sh")
 [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubuntu-touch-default.png:/usr/share/backgrounds/ubuntu-touch-default.png")
 [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubuntu-touch-default.png:/usr/share/backgrounds/warty-final-ubuntu.png")
 [ -f "/sdcard/Download/xfce4-desktop.xml" ] && PROOT_BINDS+=(--bind "/sdcard/Download/xfce4-desktop.xml:/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml")
+[ -f "/sdcard/Download/ubroid_touch/xfce4-panel.xml" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubroid_touch/xfce4-panel.xml:/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml")
+[ -f "/sdcard/Download/ubroid_touch/xsettings.xml" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubroid_touch/xsettings.xml:/root/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml")
+[ -f "/sdcard/Download/ubroid_touch/xfwm4.xml" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubroid_touch/xfwm4.xml:/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml")
+[ -f "/sdcard/Download/ubroid_touch/gtk.css" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubroid_touch/gtk.css:/root/.config/gtk-3.0/gtk.css")
 
 # Deteksi Penyimpanan Android yang Benar-Benar Ada di HP
 STORAGE_TARGET=""

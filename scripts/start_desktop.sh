@@ -37,6 +37,15 @@ if [ "$UBROID_DEDICATED_OS" = "1" ]; then
     /usr/local/bin/linux-os-mode enter 2>/dev/null || true
 fi
 
+# Pre-seed konfigurasi profil touch sebelum DBus / xfconfd aktif
+pkill -9 -x xfconfd 2>/dev/null || true
+if [ -d "/sdcard/Download/ubroid_touch" ]; then
+    mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml /root/.config/gtk-3.0 2>/dev/null || true
+    cp -f /sdcard/Download/ubroid_touch/*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+    cp -f /sdcard/Download/ubroid_touch/*.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+    cp -f /sdcard/Download/ubroid_touch/gtk.css /root/.config/gtk-3.0/gtk.css 2>/dev/null || true
+fi
+
 # Initialize user D-Bus session bus
 eval $(dbus-launch --sh-syntax)
 export DBUS_SESSION_BUS_ADDRESS
@@ -46,6 +55,18 @@ dbus-update-activation-environment --all 2>/dev/null || true
 xrdb -merge /root/.Xresources 2>/dev/null || true
 xsetroot -cursor_name left_ptr 2>/dev/null || true
 rm -rf /root/.cache/sessions/* 2>/dev/null || true
+
+# Safe Inset Bezel & Floating Rounded Dock via xfconf-query
+xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 88 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 34 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 18 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
+
+xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 52 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 32 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
 
 # Lightweight Compositing: Enable ARGB transparency for clean rounded dock corners
 # while disabling expensive frame/dock shadows, blur, and move opacity to eliminate drag lag
@@ -116,6 +137,23 @@ if [ -d "/root/termux_home" ] && [ -f "/sdcard/Download/launch_ubuntu.sh" ]; the
     chmod +x "/root/termux_home/launch_ubuntu.sh" 2>/dev/null || true
 fi
 
+# Sinkronisasi profil touch terbaru jika ada di /sdcard/Download/ubroid_touch
+if [ -d "/sdcard/Download/ubroid_touch" ]; then
+    mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml /root/.config/gtk-3.0 /root/.config/xfce4/panel 2>/dev/null || true
+    cp -f /sdcard/Download/ubroid_touch/*.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+    cp -f /sdcard/Download/ubroid_touch/*.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
+    cp -f /sdcard/Download/ubroid_touch/gtk.css /root/.config/gtk-3.0/gtk.css 2>/dev/null || true
+    cp -rf /sdcard/Download/ubroid_touch/panel_launchers/* /root/.config/xfce4/panel/ 2>/dev/null || true
+fi
+
+# Pastikan DPI tajam dan proporsional untuk smartphone (125 DPI, Ubuntu 10)
+xfconf-query -c xsettings -p /Xft/DPI -s 125 2>/dev/null || true
+xfconf-query -c xsettings -p /Xfce/LastCustomDPI -s 125 2>/dev/null || true
+xfconf-query -c xsettings -p /Gtk/FontName -s "Ubuntu 10" 2>/dev/null || true
+xfconf-query -c xsettings -p /Gtk/MonospaceFontName -s "Ubuntu Mono 10" 2>/dev/null || true
+xfconf-query -c xsettings -p /Gtk/CursorThemeSize -s 28 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/title_font -s "Ubuntu Bold 10" 2>/dev/null || true
+
 # Anti-Pop Out Keyboard: Matikan total onboard & auto-popup
 pkill -9 -x onboard 2>/dev/null || true
 pkill -9 -f "onboard" 2>/dev/null || true
@@ -141,6 +179,18 @@ xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
     for m in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style'); do
         xfconf-query -c xfce4-desktop -p "$m" -s 5 2>/dev/null || true
     done
+
+    # Safe Inset Bezel & Floating Rounded Dock via xfconf-query
+    xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 88 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 34 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 18 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
+
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 52 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 32 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
+    xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
 ) &
 
 export LD_PRELOAD=/usr/local/lib/libnogap.so

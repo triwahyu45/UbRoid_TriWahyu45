@@ -14,26 +14,26 @@
     <property name="EnableInputFeedbackSounds" type="bool" value="false"/>
   </property>
   <property name="Xft" type="empty">
-    <property name="DPI" type="int" value="170"/>
+    <property name="DPI" type="int" value="125"/>
     <property name="Antialias" type="int" value="1"/>
     <property name="Hinting" type="int" value="1"/>
     <property name="HintStyle" type="string" value="hintmedium"/>
     <property name="RGBA" type="string" value="rgb"/>
   </property>
   <property name="Gtk" type="empty">
-    <property name="FontName" type="string" value="Ubuntu 12"/>
-    <property name="MonospaceFontName" type="string" value="Ubuntu Mono 12"/>
+    <property name="FontName" type="string" value="Ubuntu 10"/>
+    <property name="MonospaceFontName" type="string" value="Ubuntu Mono 10"/>
     <property name="CursorThemeName" type="string" value="Yaru"/>
-    <property name="CursorThemeSize" type="int" value="40"/>
+    <property name="CursorThemeSize" type="int" value="28"/>
     <property name="ButtonImages" type="bool" value="true"/>
     <property name="MenuImages" type="bool" value="true"/>
     <property name="ToolbarStyle" type="string" value="icons"/>
-    <property name="ToolbarIconSize" type="int" value="3"/>
-    <property name="IconSizes" type="string" value="gtk-menu=32,32:gtk-button=36,36:gtk-small-toolbar=32,32:gtk-large-toolbar=42,42:gtk-dnd=42,42:gtk-dialog=48,48"/>
+    <property name="ToolbarIconSize" type="int" value="2"/>
+    <property name="IconSizes" type="string" value="gtk-menu=22,22:gtk-button=26,26:gtk-small-toolbar=22,22:gtk-large-toolbar=30,30:gtk-dnd=30,30:gtk-dialog=36,36"/>
     <property name="DecorationLayout" type="string" value="menu:minimize,maximize,close"/>
     <property name="EnableAnimations" type="bool" value="false"/>
   </property>
   <property name="Xfce" type="empty">
-    <property name="LastCustomDPI" type="int" value="170"/>
+    <property name="LastCustomDPI" type="int" value="125"/>
   </property>
 </channel>

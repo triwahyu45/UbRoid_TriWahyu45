@@ -8,17 +8,16 @@
     <property name="dark-mode" type="bool" value="true"/>
     <property name="panel-1" type="empty">
       <property name="position" type="string" value="p=6;x=0;y=0"/>
-      <property name="length" type="uint" value="100"/>
+      <property name="length" type="uint" value="88"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="28"/>
-      <property name="size" type="uint" value="42"/>
+      <property name="icon-size" type="uint" value="18"/>
+      <property name="size" type="uint" value="34"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="21"/>
         <value type="int" value="2"/>
         <value type="int" value="3"/>
         <value type="int" value="4"/>
-        <value type="int" value="25"/>
         <value type="int" value="41"/>
         <value type="int" value="42"/>
         <value type="int" value="43"/>
@@ -30,23 +29,19 @@
       <property name="mode" type="uint" value="0"/>
       <property name="autohide-behavior" type="uint" value="0"/>
       <property name="position" type="string" value="p=10;x=0;y=0"/>
-      <property name="length" type="uint" value="100"/>
+      <property name="length" type="uint" value="86"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="48"/>
-      <property name="size" type="uint" value="68"/>
+      <property name="icon-size" type="uint" value="32"/>
+      <property name="size" type="uint" value="52"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
-        <value type="int" value="21"/>
+        <value type="int" value="13"/>
         <value type="int" value="11"/>
         <value type="int" value="12"/>
         <value type="int" value="20"/>
         <value type="int" value="50"/>
         <value type="int" value="16"/>
-        <value type="int" value="25"/>
-        <value type="int" value="51"/>
-        <value type="int" value="53"/>
-        <value type="int" value="18"/>
-        <value type="int" value="52"/>
+        <value type="int" value="15"/>
         <value type="int" value="7"/>
       </property>
       <property name="length-adjust" type="bool" value="false"/>
@@ -87,6 +82,16 @@
     <property name="plugin-12" type="string" value="launcher">
       <property name="items" type="array">
         <value type="string" value="files.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-13" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="software.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-15" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="software-properties.desktop"/>
       </property>
     </property>
     <property name="plugin-16" type="string" value="launcher">
