@@ -2,7 +2,7 @@
 # ==============================================================================
 # UbRoid - Pure OpenCV Pop-Out Launcher
 # Menjalankan script Python OpenCV murni dalam Jendela Mengambang HyperOS
-# TANPA DESKTOP UBUNTU (Tanpa Dock, Tanpa Taskbar, Tanpa Wallpaper)
+# ZERO BLACK BORDER & ULTRA-LOW LATENCY
 # ==============================================================================
 
 SCRIPT="${1:-/root/lane_detector.py}"
@@ -24,18 +24,17 @@ fi
 mkdir -p /tmp/.X11-unix 2>/dev/null || true
 ln -sf /data/data/com.termux/files/usr/tmp/.X11-unix/X0 /tmp/.X11-unix/X0 2>/dev/null || true
 
-# 4. Atur preferensi Termux-X11 agar murni seukuran jendela OpenCV (640x480)
-if [ -x "/system/bin/am" ]; then
-    /system/bin/am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
-      --es displayResolutionMode exact \
-      --es displayScale 100 \
-      --es fullscreen false \
-      --es hideCutout true 2>/dev/null || true
-fi
-
-# 5. Buka Termux-X11 langsung ke mode Jendela Mengambang (Floating Window HyperOS)
+# 4. Atur preferensi Termux-X11: scaled mode + displayStretchEnabled agar pas dengan ukuran Jendela Mengambang (Zero Black Borders)
 if command -v adb >/dev/null 2>&1; then
-    adb -s 127.0.0.1:5555 shell am start -n com.termux.x11/com.termux.x11.MainActivity --windowingMode 5 >/dev/null 2>&1 || true
+    adb -s 127.0.0.1:5555 shell "am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
+      --es displayResolutionMode scaled \
+      --ez displayStretchEnabled true \
+      --es displayScale 100 \
+      --ez fullscreen true \
+      --ez hideCutout true" >/dev/null 2>&1 || true
+
+    # 5. Buka Termux-X11 langsung ke mode Jendela Mengambang (Floating Window HyperOS)
+    adb -s 127.0.0.1:5555 shell "am start -n com.termux.x11/com.termux.x11.MainActivity --windowingMode 5" >/dev/null 2>&1 || true
 fi
 
 # 6. Eksekusi script Python OpenCV dengan DISPLAY=:0
