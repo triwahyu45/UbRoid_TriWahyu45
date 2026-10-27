@@ -1,18 +1,55 @@
 #!/bin/bash
+# ==============================================================================
+# UbRoid - Virtual Keyboard Toggle (Onboard & Android Gboard)
+# Repository: https://github.com/triwahyu45/UbRoid_TriWahyu45
+# Author: Tri Wahyu Handoyo (triwahyu45)
+# ==============================================================================
+
 unset LD_PRELOAD
 export DISPLAY=:0
-# Prefer Onboard (Linux Native Touch Keyboard) for reliable touch typing in X11
-if command -v onboard >/dev/null 2>&1; then
-    if pgrep -f "/usr/bin/onboard" >/dev/null; then
-        dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible 2>/dev/null || {
-            killall onboard 2>/dev/null
-        }
-    else
-        nohup onboard >/dev/null 2>&1 &
+
+PREF_FILE="/etc/ubroid/keyboard_pref"
+KEYBOARD_PREF="gboard"
+[ -f "$PREF_FILE" ] && KEYBOARD_PREF=$(cat "$PREF_FILE" 2>/dev/null | tr -d '[:space:]')
+
+toggle_onboard() {
+    if command -v onboard >/dev/null 2>&1; then
+        if pgrep -x onboard >/dev/null; then
+            dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible 2>/dev/null || {
+                killall onboard 2>/dev/null
+            }
+        else
+            nohup onboard >/dev/null 2>&1 &
+        fi
+        return 0
     fi
-else
-    # Fallback to Android Soft Keyboard in Termux-X11
-    /system/bin/am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 \
-      --es what "swipeUp" >/dev/null 2>&1 &
-fi
+    return 1
+}
+
+toggle_gboard() {
+    # 1. Pemicu Termux-X11 native soft keyboard via broadcast
+    if [ -x "/system/bin/am" ]; then
+        /system/bin/am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 \
+          --es what "swipeUp" >/dev/null 2>&1
+        return 0
+    fi
+
+    # 2. Pemicu via ADB wrapper jika am direct tidak tersedia
+    if command -v adb >/dev/null 2>&1; then
+        adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
+        adb -s 127.0.0.1:5555 shell "am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 --es what 'swipeUp'" >/dev/null 2>&1 || {
+            adb shell "am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 --es what 'swipeUp'" >/dev/null 2>&1 || true
+        }
+    fi
+}
+
+case "$KEYBOARD_PREF" in
+    "onboard")
+        toggle_onboard
+        ;;
+    "gboard"|*)
+        toggle_gboard
+        ;;
+esac
+
 exit 0

@@ -12,7 +12,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 gi.require_version('Gio', '2.0')
-from gi.repository import Gtk, Gdk, Gio, GLib, Pango
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import Gtk, Gdk, Gio, GLib, Pango, GdkPixbuf
 
 # Ensure DISPLAY is set
 if 'DISPLAY' not in os.environ:
@@ -434,13 +435,17 @@ class LomiriAppDrawer(Gtk.Window):
         lbl.set_justify(Gtk.Justification.CENTER)
         box.pack_start(lbl, False, False, 0)
 
-        # Click event wrapper
+        # Click event wrapper (Touch & Mouse friendly with proper return True)
         ev = Gtk.EventBox()
         ev.set_visible_window(False)
         ev.add(box)
-        ev.connect("button-press-event", lambda w, e: self.launch_app(item))
+        ev.connect("button-press-event", self.on_app_card_clicked, item)
         ev.show_all()
         return ev
+
+    def on_app_card_clicked(self, widget, event, item):
+        self.launch_app(item)
+        return True
 
     def get_icon_image(self, icon_str, icon_theme, size):
         try:

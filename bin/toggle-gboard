@@ -2,8 +2,10 @@
 # UbRoid - Force Toggle Android Gboard
 if [ -x "/system/bin/am" ]; then
     /system/bin/am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 \
-      --es what "swipeUp" >/dev/null 2>&1 || true
+      --es what "swipeUp" >/dev/null 2>&1
+    exit 0
 fi
+
 if command -v adb >/dev/null 2>&1; then
     adb connect 127.0.0.1:5555 >/dev/null 2>&1 || true
     adb -s 127.0.0.1:5555 shell "am broadcast --user 0 -a com.termux.x11.ACTION_CUSTOM -p com.termux.x11 --es what 'swipeUp'" >/dev/null 2>&1 || {

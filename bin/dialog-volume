@@ -22,7 +22,7 @@ class VolumeDialog(Gtk.Window):
         self.set_keep_above(True)
 
         self.connect("key-press-event", lambda w, e: self.close_win() if e.keyval == Gdk.KEY_Escape else False)
-        self.connect("focus-out-event", lambda w, e: self.close_win())
+        # self.connect("focus-out-event", lambda w, e: self.close_win())
 
         css = b'''
         window {
