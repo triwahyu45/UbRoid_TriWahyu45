@@ -258,6 +258,12 @@ echo -e "${CYAN}[5/7] Mengonfigurasi script peluncur ~/launch_ubuntu.sh (Dynamic
 cp "$REPO_DIR/scripts/launch_ubuntu.sh" "$HOME/launch_ubuntu.sh"
 chmod +x "$HOME/launch_ubuntu.sh"
 
+# Siapkan shortcut Termux Widget jika pengguna memakai widget
+mkdir -p "$HOME/.shortcuts/tasks"
+cp "$HOME/launch_ubuntu.sh" "$HOME/.shortcuts/Ubuntu" 2>/dev/null || true
+cp "$HOME/launch_ubuntu.sh" "$HOME/.shortcuts/tasks/Ubuntu" 2>/dev/null || true
+chmod +x "$HOME/.shortcuts/Ubuntu" "$HOME/.shortcuts/tasks/Ubuntu" 2>/dev/null || true
+
 # Sesuaikan target container di launch_ubuntu.sh jika berbeda
 if [ "$UBUNTU_CONTAINER" != "ubuntu" ]; then
     sed -i "s/UBUNTU_CONTAINER=\"ubuntu\"/UBUNTU_CONTAINER=\"$UBUNTU_CONTAINER\"/g" "$HOME/launch_ubuntu.sh"

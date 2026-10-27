@@ -227,7 +227,11 @@ update-alternatives --set gnome-www-browser /usr/bin/firefox 2>/dev/null || true
 echo "[3/10] Memasang wallpaper dan tema icon Ubuntu..."
 mkdir -p /usr/share/backgrounds /usr/share/backgrounds/xfce
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
-cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
+if [ -f "$SCRIPT_DIR/assets/wallpapers/ubuntu-touch-default.png" ]; then
+    cp "$SCRIPT_DIR/assets/wallpapers/ubuntu-touch-default.png" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
+else
+    cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
+fi
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/warty-1280x800.png 2>/dev/null || true
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/jammy-jellyfish.png 2>/dev/null || true

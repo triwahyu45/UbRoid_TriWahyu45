@@ -94,6 +94,11 @@ UbRoid_TriWahyu45/
 
 ## 🚀 Cara Instalasi Cepat (Otomatis 1 Baris)
 
+> [!IMPORTANT]
+> **Penting Mengenai Versi Termux:**
+> Pastikan Anda menggunakan Termux versi **F-Droid atau GitHub** (file APK siap pasang [`termux-app.apk`](apks/termux-app.apk) sudah kami sediakan di dalam folder `apks/`).
+> **JANGAN gunakan Termux dari Google Play Store**, karena versi Play Store sudah usang (*deprecated*) dan fiturnya dibatasi oleh Google sehingga shortcut peluncur 1-tap (`Ubuntu_Launcher.apk`) tidak dapat memanggil perintah otomatis.
+
 > [!TIP]
 > **Cara Cepat Menyalin:** Di GitHub, arahkan kursor atau tap pada kotak hitam di bawah, lalu klik icon **📋 (Copy)** di pojok kanan atas kotak perintah untuk menyalin secara instan.
 
