@@ -150,6 +150,15 @@ if [ "$MODE" = "enter" ]; then
         com.termux/com.termux.app.TermuxService >/dev/null 2>&1 || true
 
     # 2. Configure Termux-X11 for Dedicated Fullscreen OS Mode + Native Direct Touch
+    TARGET_ORIENTATION="portrait"
+    TARGET_SCALE=220
+    UBROID_MODE="touch"
+    [ -f /etc/ubroid/mode ] && UBROID_MODE=$(cat /etc/ubroid/mode 2>/dev/null | tr -d '[:space:]')
+    if [ "$UBROID_MODE" = "desktop" ]; then
+        TARGET_ORIENTATION="landscape"
+        TARGET_SCALE=160
+    fi
+
     /system/bin/am broadcast --user 0 -a com.termux.x11.CHANGE_PREFERENCE -p com.termux.x11 \
         --es fullscreen true \
         --es hideCutout true \
@@ -161,9 +170,9 @@ if [ "$MODE" = "enter" ]; then
         --es preferScancodes true \
         --es showAdditionalKbd false \
         --es displayResolutionMode scaled \
-        --es displayScale 225 \
+        --es displayScale $TARGET_SCALE \
         --es displayFilteringMode bilinear \
-        --es forceOrientation landscape \
+        --es forceOrientation "$TARGET_ORIENTATION" \
         --es touchMode "Direct touch" \
         --es swipeUpAction "toggle soft keyboard" \
         --es backButtonAction "toggle soft keyboard" \
@@ -177,7 +186,7 @@ if [ "$MODE" = "enter" ]; then
     dev=$(ensure_adb_device)
     if [ -n "$dev" ]; then
         # Baca whitelist
-        WHITELIST_REGEX="^(com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor)$"
+        WHITELIST_REGEX="^(com\.tailscale\.ipn|com\.termux|com\.termux\.x11|com\.termux\.api|com\.triwahyu\.ubuntu|com\.android\.systemui|com\.android\.phone|com\.android\.bluetooth|com\.android\.deskclock|com\.google\.android\.inputmethod\.latin|com\.miui\.screenrecorder|com\.android\.soundrecorder|com\.miui\.mediaeditor|com\.miui\.home|com\.mi\.android\.globallauncher|com\.android\.settings)$"
         if [ -f "$WHITELIST_CONF" ]; then
             CUSTOM_WL=$(grep -v '^[[:space:]]*#' "$WHITELIST_CONF" | grep -v '^[[:space:]]*$' | tr '\n' '|' | sed 's/|$//')
             if [ -n "$CUSTOM_WL" ]; then
@@ -213,6 +222,7 @@ if [ "$MODE" = "enter" ]; then
 
         # 4. Strict Android UI, Anti-Phantom-Killer & Bloatware Restriction
         adb -s "$dev" shell "
+            dumpsys deviceidle whitelist +com.tailscale.ipn >/dev/null 2>&1 || true;
             dumpsys deviceidle whitelist +com.termux >/dev/null 2>&1 || true;
             dumpsys deviceidle whitelist +com.termux.x11 >/dev/null 2>&1 || true;
             cmd appops set com.termux RUN_IN_BACKGROUND allow 2>/dev/null || true;

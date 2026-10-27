@@ -209,6 +209,7 @@ PROOT_BINDS=()
 [ -f "$TMPDIR/resolv.conf" ] && PROOT_BINDS+=(--bind "$TMPDIR/resolv.conf:/etc/resolv.conf")
 
 # Override start_desktop & wallpaper dari /sdcard/Download jika tersedia
+[ -f "/sdcard/Download/linux-os-mode" ] && PROOT_BINDS+=(--bind "/sdcard/Download/linux-os-mode:/usr/local/bin/linux-os-mode")
 [ -f "/sdcard/Download/start_desktop.sh" ] && PROOT_BINDS+=(--bind "/sdcard/Download/start_desktop.sh:/root/start_desktop.sh")
 [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubuntu-touch-default.png:/usr/share/backgrounds/ubuntu-touch-default.png")
 [ -f "/sdcard/Download/ubuntu-touch-default.png" ] && PROOT_BINDS+=(--bind "/sdcard/Download/ubuntu-touch-default.png:/usr/share/backgrounds/warty-final-ubuntu.png")
