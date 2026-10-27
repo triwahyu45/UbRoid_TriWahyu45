@@ -98,10 +98,12 @@ proot-distro login "$UBUNTU_CONTAINER" --bind /sdcard:/sdcard --bind "$REPO_DIR:
         cp -r "$SRC/configs/profiles/touch/panel_launchers/"* /root/.config/xfce4/panel/ 2>/dev/null || true
     fi
 
-    # Pasang wallpaper resmi Ubuntu & hilangkan wallpaper tikus XFCE selamanya
-    WP_SRC="$SRC/assets/wallpapers/warty-final-ubuntu.png"
+    # Pasang wallpaper resmi Ubuntu Touch & hilangkan wallpaper tikus XFCE selamanya
+    WP_SRC="$SRC/assets/wallpapers/ubuntu-touch-default.png"
+    [ ! -f "$WP_SRC" ] && WP_SRC="$SRC/assets/wallpapers/warty-final-ubuntu.png"
     if [ -f "$WP_SRC" ]; then
         mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
+        cp -f "$WP_SRC" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
         cp -f "$WP_SRC" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
         cp -f "$WP_SRC" /usr/share/backgrounds/warty-1280x800.png 2>/dev/null || true
         cp -f "$WP_SRC" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true

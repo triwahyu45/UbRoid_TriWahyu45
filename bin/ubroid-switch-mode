@@ -35,10 +35,10 @@ if [ ! -d "$TARGET_DIR" ]; then
     exit 1
 fi
 
-# Terapkan wallpaper resmi Ubuntu (Anti-Rat Wallpaper)
-UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
+# Terapkan wallpaper resmi Ubuntu Touch (Anti-Rat Wallpaper)
+UBUNTU_WP="/usr/share/backgrounds/ubuntu-touch-default.png"
 if [ ! -f "$UBUNTU_WP" ]; then
-    UBUNTU_WP="/usr/share/backgrounds/noble-numbat.png"
+    UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
 fi
 if [ -f "$UBUNTU_WP" ]; then
     mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true

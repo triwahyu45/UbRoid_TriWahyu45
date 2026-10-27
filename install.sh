@@ -225,11 +225,18 @@ update-alternatives --set gnome-www-browser /usr/bin/firefox 2>/dev/null || true
 
 # 3. Pasang wallpaper & icon resmi
 echo "[3/10] Memasang wallpaper dan tema icon Ubuntu..."
-mkdir -p /usr/share/backgrounds
+mkdir -p /usr/share/backgrounds /usr/share/backgrounds/xfce
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/warty-final-ubuntu.png 2>/dev/null || true
+cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/ubuntu-touch-default.png 2>/dev/null || true
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/warty-1280x800.png 2>/dev/null || true
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/noble-numbat.png 2>/dev/null || true
 cp "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/jammy-jellyfish.png 2>/dev/null || true
+for xf in /usr/share/backgrounds/xfce/*.png; do
+    [ -e "$xf" ] && cp -f "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" "$xf" 2>/dev/null || true
+done
+cp -f "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/xfce/xfce-teal.png 2>/dev/null || true
+cp -f "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/xfce/xfce-blue.png 2>/dev/null || true
+cp -f "$SCRIPT_DIR/assets/wallpapers/warty-final-ubuntu.png" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
 
 mkdir -p /usr/share/icons/hicolor/scalable/apps /usr/share/icons/Yaru/scalable/apps
 cp "$SCRIPT_DIR"/assets/icons/*.svg /usr/share/icons/hicolor/scalable/apps/ 2>/dev/null || true

@@ -173,11 +173,11 @@ Perintah di atas akan langsung mengubah konfigurasi sistem ke **Ubuntu Touch Mob
 #### Cara Beralih Mode dari Dalam Desktop Ubuntu (1-Klik)
 - Di dalam sesi Ubuntu yang sedang berjalan, Anda juga dapat mengklik icon **Ganti Mode Tampilan (Switch UI Mode)** di desktop atau mengetik `switch-mode touch` di terminal. Tata letak akan otomatis diperbarui tanpa merestart HP atau display server.
 
-#### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP (POCO F6):
-1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal 68px di sisi kiri layar dengan icon 48px yang sangat mudah dijangkau jempol satu tangan saat HP dipegang secara horizontal (*landscape*).
+#### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP (POCO F6, Terinspirasi dari [Ubuntu Touch Lomiri](https://www.ubuntu-touch.io/)):
+1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal 68px di sisi kiri layar dengan container squircle dan icon 48px yang sangat mudah dijangkau jempol saat HP dipegang secara horizontal (*landscape*).
 2. **Skala Layar Proporsional (170 DPI)**: Ukuran font, tombol, dan headerbar diperbesar secara proporsional (~36% lebih besar) sehingga teks terbaca sangat jelas di layar 1.5K AMOLED POCO F6 tanpa membuat mata lelah.
-3. **Wallpaper Otentik Ubuntu Touch (Bebas Wallpaper Tikus)**: Menghilangkan wallpaper biru default tikus XFCE dan menggantinya dengan latar belakang aubergine warm mascot resmi Ubuntu.
-4. **Touch-Friendly UI & Scrollbar 26px**: Scrollbar tebal 26px dengan slider pill oranye Ubuntu yang nyaman digeser dengan jari tanpa mouse fisik, serta target tombol sentuh minimal 44px.
+3. **Wallpaper Otentik 4K Ubuntu Touch (UBports Lomiri)**: Menggunakan wallpaper resmi 4K Ubuntu Touch (`ubuntu-touch-default.png` dari UBports) dengan gradasi aubergine & orange origami khas Suru, bebas dari wallpaper tikus XFCE selamanya.
+4. **Desain Suru & Touch Scrollbar 26px**: Scrollbar tebal 26px dengan slider pill oranye Ubuntu yang nyaman digeser dengan jari tanpa mouse fisik, serta target tombol sentuh minimal 44px dengan sudut membulat (*rounded corners*).
 5. **Single-Tap Navigation**: Aplikasi dan folder langsung terbuka cukup dengan **1 ketukan jari** (tanpa perlu repot double-tap di layar sentuh).
 6. **Dual Keyboard Support**:
    - Usap layar (*swipe up*) ke atas dari bezel bawah untuk memunculkan keyboard bawaan Android (**Gboard**).

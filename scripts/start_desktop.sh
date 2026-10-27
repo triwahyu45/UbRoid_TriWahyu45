@@ -90,9 +90,9 @@ cleanup_on_exit() {
 trap cleanup_on_exit EXIT INT TERM HUP
 
 # Anti-Rat Wallpaper Enforcement (Eliminate XFCE teal mouse fallback completely)
-UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
+UBUNTU_WP="/usr/share/backgrounds/ubuntu-touch-default.png"
 if [ ! -f "$UBUNTU_WP" ]; then
-    UBUNTU_WP="/usr/share/backgrounds/noble-numbat.png"
+    UBUNTU_WP="/usr/share/backgrounds/warty-final-ubuntu.png"
 fi
 if [ -f "$UBUNTU_WP" ]; then
     mkdir -p /usr/share/backgrounds/xfce 2>/dev/null || true
