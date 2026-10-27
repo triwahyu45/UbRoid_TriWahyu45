@@ -36,6 +36,16 @@ agy() {
     proot-distro login "$c" --bind /sdcard:/sdcard -- agy "$@"
 }
 
+# 1-Command Permanent Mode Switcher (Ubuntu Touch Mobile <-> Ubuntu Desktop)
+switch-mode() {
+    local target="${1:-touch}"
+    local c
+    c=$(_get_ubroid_container)
+    proot-distro login "$c" --bind /sdcard:/sdcard -- /usr/local/bin/ubroid-switch-mode "$target"
+}
+alias touch-mode="switch-mode touch"
+alias desktop-mode="switch-mode desktop"
+
 alias wifi-scan="termux-wifi-scaninfo"
 alias wifi-info="termux-wifi-connectioninfo"
 

@@ -144,26 +144,18 @@ UbRoid telah terintegrasi penuh dengan **Google Antigravity AI CLI** (`agy`) unt
 ### Langkah 5: Berpindah Mode Tampilan (Desktop ↔ Ubuntu Touch Mobile)
 Jika Anda menggunakan smartphone berlayar ringkas seperti **Xiaomi POCO F6**, antarmuka **Ubuntu Touch Mobile Edition** jauh lebih nyaman, ringan, dan ramah jempol daripada tampilan Desktop klasik.
 
-Anda **TIDAK PERLU menginstal ulang** jika saat instalasi pertama kali terlanjur memilih mode Desktop! Anda dapat berpindah mode kapan saja secara instan:
+Anda **TIDAK PERLU menginstal ulang** jika saat instalasi pertama kali terlanjur memilih mode Desktop! Cukup jalankan **1 perintah otomatis ini di Termux**:
 
-#### Cara 1: Lewat Terminal (Paling Cepat & Praktis)
-- **Beralih ke Ubuntu Touch Mobile**:
-  - Jika Anda sedang di **Termux**:
-    ```bash
-    proot-distro login ubuntu -- switch-mode touch
-    ```
-  - Jika Anda sedang di dalam **Terminal Ubuntu**:
-    ```bash
-    switch-mode touch
-    ```
-- **Kembali ke Ubuntu Desktop**:
-  ```bash
-  switch-mode desktop
-  ```
+```bash
+curl -sL https://raw.githubusercontent.com/triwahyu45/UbRoid_TriWahyu45/main/scripts/switch-touch.sh | bash
+```
 
-#### Cara 2: Lewat Icon Aplikasi (1-Klik)
-- Di dalam sesi Ubuntu, klik icon **Ganti Mode Tampilan (Switch UI Mode)** di Desktop atau menu aplikasi.
-- Sistem akan otomatis memuat ulang tata letak panel tanpa mematikan sesi display server Anda.
+Perintah di atas akan langsung mengubah konfigurasi sistem ke **Ubuntu Touch Mobile Edition secara permanen** dan memasang perintah mandiri di Termux:
+- Ketik **`touch-mode`** di Termux kapan saja untuk beralih ke mode **Ubuntu Touch Mobile**.
+- Ketik **`desktop-mode`** di Termux untuk beralih kembali ke mode **Ubuntu Desktop** klasik.
+
+#### Cara Beralih Mode dari Dalam Desktop Ubuntu (1-Klik)
+- Di dalam sesi Ubuntu yang sedang berjalan, Anda juga dapat mengklik icon **Ganti Mode Tampilan (Switch UI Mode)** di desktop atau mengetik `switch-mode touch` di terminal. Tata letak akan otomatis diperbarui tanpa merestart HP atau display server.
 
 #### 📱 Keunggulan Ubuntu Touch Mobile Edition di Layar HP:
 1. **Vertical Left Launcher (Gaya Lomiri Ubuntu Touch)**: Launcher vertikal di sisi kiri layar yang sangat mudah dijangkau jempol satu tangan saat HP dipegang secara horizontal (*landscape*).

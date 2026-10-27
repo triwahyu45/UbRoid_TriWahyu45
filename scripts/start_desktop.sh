@@ -13,11 +13,16 @@ export MALLOC_ARENA_MAX=2
 export MALLOC_TRIM_THRESHOLD_=131072
 export MALLOC_MMAP_THRESHOLD_=131072
 
-cat << "RESOLV" > /etc/resolv.conf
+if [ ! -f /etc/resolv.conf ] || ! grep -q "100.100.100.100" /etc/resolv.conf 2>/dev/null; then
+    cat << "RESOLV" > /etc/resolv.conf
+nameserver 100.100.100.100
+nameserver 10.11.12.57
+nameserver 10.100.1.3
 nameserver 1.1.1.1
 nameserver 8.8.8.8
-options timeout:1 attempts:2 single-request-reopen
+options timeout:2 attempts:2
 RESOLV
+fi
 
 # Prevent gpg-agent / ssh-agent / gnome-keyring / portal bloat in PRoot (saves ~10 process slots)
 chmod -x /etc/X11/Xsession.d/90gpg-agent 2>/dev/null || true
