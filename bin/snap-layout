@@ -395,7 +395,8 @@ class SnapLayoutPopup(Gtk.Window):
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] not in ("--popup", "--popup-top"):
-        apply_layout(sys.argv[1])
+        target_windows = [sys.argv[2]] if len(sys.argv) > 2 else None
+        apply_layout(sys.argv[1], target_windows)
         return
 
     existing = run_cmd("pgrep -f '/usr/local/bin/snap-layout --popup'").splitlines()

@@ -1,0 +1,4 @@
+#!/bin/bash
+export GIO_USE_VFS=local
+export GVFS_DISABLE_FUSE=1
+exec /usr/bin/thunar "$@" 2>/dev/null

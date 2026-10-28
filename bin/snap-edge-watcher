@@ -88,39 +88,54 @@ class SnapEdgeWatcher:
 
                     tier1 = sh // 3
                     tier2 = (sh * 2) // 3
-                    ref_y = wy + 20
 
-                    # 1. Top Edge Drag (wy near top)
-                    if wy <= 54:
+                    # Get pointer coordinate if available for natural touch tier selection
+                    px, py = -1, -1
+                    try:
+                        seat = Gdk.Display.get_default().get_default_seat()
+                        if seat:
+                            ptr = seat.get_pointer()
+                            if ptr:
+                                res = ptr.get_position()
+                                px = int(res[-2])
+                                py = int(res[-1])
+                    except Exception:
+                        pass
+
+                    ref_y = py if py > 0 else (wy + 20)
+                    wid_hex = hex(xid)
+
+                    # 1. Top Edge Drag (wy near top or touch at status bar)
+                    if wy <= 60 or (0 <= py <= 55):
                         if (sw * 0.25) <= wx <= (sw * 0.75):
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "maximize"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "maximize", wid_hex])
                         else:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "top-half"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "top-half", wid_hex])
                         self.cooldown_until = now + 1.2
 
                     # 2. Bottom Edge Drag (bottom edge near dock)
-                    elif (wy + wh) >= (sh - 95):
-                        subprocess.Popen(["/usr/local/bin/snap-layout", "bottom-half"])
+                    elif (wy + wh) >= (sh - 95) or (py >= sh - 80):
+                        subprocess.Popen(["/usr/local/bin/snap-layout", "bottom-half", wid_hex])
                         self.cooldown_until = now + 1.2
 
                     # 3. Right Edge Drag
-                    elif (wx + ww) >= (sw - 35):
+                    elif (wx + ww) >= (sw - 50) or (px >= sw - 45):
                         if ref_y < tier1:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-top"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-top", wid_hex])
                         elif ref_y < tier2:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-middle"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-middle", wid_hex])
                         else:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-bottom"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-bottom", wid_hex])
                         self.cooldown_until = now + 1.2
 
                     # 4. Left Edge Drag
-                    elif wx <= 35:
+                    elif wx <= 50 or (0 <= px <= 45):
                         if ref_y < tier1:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-top"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-top", wid_hex])
                         elif ref_y < tier2:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-middle"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-middle", wid_hex])
                         else:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-bottom"])
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-bottom", wid_hex])
                         self.cooldown_until = now + 1.2
 
             self.last_xid = xid
