@@ -1,0 +1,588 @@
+#!/usr/bin/env python3
+"""
+UbRoid Smart Touch Dock
+Modern Mobile Dock for Ubuntu Touch / Android (POCO F6)
+Features:
+- Pinned favorite apps & running app tracking
+- Real-time active indicators (1 dot for single window, 2 dots for multi-window)
+- Active window illumination highlight
+- Interactive hover/tap live preview popup cards (Windows/macOS style)
+- Bottom EWMH Struts to prevent windows from crashing into the dock
+- 100% Native GTK3 & Wnck, 120Hz smooth, perfectly centered
+"""
+
+import os
+import sys
+import time
+import subprocess
+import gi
+
+os.environ.setdefault("DISPLAY", ":0")
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkX11", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
+gi.require_version("Wnck", "3.0")
+from gi.repository import Gtk, Gdk, GdkX11, GdkPixbuf, Wnck, GLib, Pango
+
+CSS = b"""
+* {
+    font-family: 'Ubuntu', -apple-system, sans-serif;
+    font-weight: 700;
+}
+
+window.smart-dock {
+    background-color: transparent;
+}
+
+.dock-container {
+    background-color: rgba(32, 14, 36, 0.96);
+    border: 1.5px solid rgba(255, 255, 255, 0.24);
+    border-radius: 28px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75);
+    padding: 6px 12px;
+}
+
+.app-btn {
+    background-color: transparent;
+    border: none;
+    border-radius: 18px;
+    padding: 4px;
+    margin: 0 3px;
+    transition: all 0.15s ease-out;
+}
+
+.app-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.app-btn.active-focus {
+    background-color: rgba(233, 84, 32, 0.28);
+    border: 1px solid rgba(233, 84, 32, 0.6);
+}
+
+.dot-single {
+    background-color: #E95420;
+    border-radius: 50%;
+    min-width: 5px;
+    min-height: 5px;
+    margin-top: 2px;
+    box-shadow: 0 0 6px #E95420;
+}
+
+.dot-multi {
+    background-color: #E95420;
+    border-radius: 3px;
+    min-width: 14px;
+    min-height: 4px;
+    margin-top: 2px;
+    box-shadow: 0 0 6px #E95420;
+}
+
+.dot-empty {
+    min-height: 5px;
+    margin-top: 2px;
+}
+
+/* Hover Preview Card Popup */
+window.preview-popup {
+    background-color: transparent;
+}
+
+.preview-container {
+    background-color: rgba(22, 10, 24, 0.98);
+    border: 1.5px solid rgba(255, 255, 255, 0.24);
+    border-radius: 20px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.85);
+    padding: 10px 12px;
+}
+
+.preview-card {
+    background-color: rgba(45, 20, 50, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 8px;
+    margin: 0 4px;
+    transition: all 0.15s ease;
+}
+
+.preview-card:hover {
+    background-color: rgba(233, 84, 32, 0.3);
+    border-color: #E95420;
+}
+
+.preview-title {
+    font-size: 8.5pt;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.preview-close {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    min-width: 22px;
+    min-height: 22px;
+    font-size: 8pt;
+    font-weight: bold;
+    padding: 0;
+}
+
+.preview-close:hover {
+    background-color: #df382c;
+}
+"""
+
+PINNED_APPS = [
+    {
+        "id": "launchpad",
+        "name": "Launchpad",
+        "icon": "/usr/share/icons/Yaru/48x48/apps/software-store.png",
+        "exec": "/usr/local/bin/macos-launchpad",
+        "pattern": "macos-launchpad|app-drawer",
+    },
+    {
+        "id": "firefox",
+        "name": "Firefox",
+        "icon": "firefox",
+        "exec": "firefox",
+        "pattern": "firefox|navigator",
+    },
+    {
+        "id": "thunar",
+        "name": "Files",
+        "icon": "/usr/share/icons/Yaru/48x48/apps/nautilus.png",
+        "exec": "thunar",
+        "pattern": "thunar",
+    },
+    {
+        "id": "terminator",
+        "name": "Terminator",
+        "icon": "/usr/share/icons/hicolor/scalable/apps/terminator.svg",
+        "exec": "terminator",
+        "pattern": "terminator|x-terminal-emulator",
+    },
+    {
+        "id": "python",
+        "name": "Python Studio",
+        "icon": "/usr/share/icons/hicolor/scalable/apps/python.svg",
+        "exec": 'terminator -T "Python 3 Mobile Studio" --working-directory=/root/Python_Workspace -e "/usr/local/bin/python-mobile"',
+        "pattern": "python 3 mobile studio",
+    },
+    {
+        "id": "mousepad",
+        "name": "Text Editor",
+        "icon": "/usr/share/icons/Yaru/48x48/apps/accessories-text-editor.png",
+        "exec": "mousepad",
+        "pattern": "mousepad",
+    },
+    {
+        "id": "settings",
+        "name": "Settings",
+        "icon": "/usr/share/icons/Yaru/48x48/apps/gnome-control-center.png",
+        "exec": "xfce4-settings-manager",
+        "pattern": "xfce4-settings-manager",
+    },
+]
+
+
+class WindowPreviewPopup(Gtk.Window):
+    def __init__(self, dock_window):
+        super().__init__(type=Gtk.WindowType.POPUP)
+        self.dock = dock_window
+        self.set_role("dock-preview")
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+        self.get_style_context().add_class("preview-popup")
+
+        self.hide_timer = None
+        self.current_app_id = None
+
+        self.preview_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.preview_box.get_style_context().add_class("preview-container")
+        self.add(self.preview_box)
+
+        self.connect("enter-notify-event", self.on_mouse_enter)
+        self.connect("leave-notify-event", self.on_mouse_leave)
+
+    def on_mouse_enter(self, widget, event):
+        if self.hide_timer:
+            GLib.source_remove(self.hide_timer)
+            self.hide_timer = None
+
+    def on_mouse_leave(self, widget, event):
+        self.schedule_hide()
+
+    def schedule_hide(self):
+        if self.hide_timer:
+            GLib.source_remove(self.hide_timer)
+        self.hide_timer = GLib.timeout_add(250, self.do_hide)
+
+    def do_hide(self):
+        # Verify pointer is really outside popup and dock
+        try:
+            seat = Gdk.Display.get_default().get_default_seat()
+            ptr = seat.get_pointer()
+            _, px, py = ptr.get_position()
+            alloc = self.get_allocation()
+            wx, wy = self.get_position()
+            if wx <= px <= (wx + alloc.width) and wy <= py <= (wy + alloc.height + 70):
+                # Still inside popup or dock area
+                return True
+        except Exception:
+            pass
+
+        self.hide()
+        self.current_app_id = None
+        self.hide_timer = None
+        return False
+
+    def show_previews_for(self, app_def, windows, anchor_x, anchor_y):
+        if self.hide_timer:
+            GLib.source_remove(self.hide_timer)
+            self.hide_timer = None
+
+        self.current_app_id = app_def["id"]
+
+        for child in self.preview_box.get_children():
+            self.preview_box.remove(child)
+
+        for w in windows[:4]:  # Show up to 4 preview cards
+            card_box = self.create_preview_card(w)
+            self.preview_box.pack_start(card_box, False, False, 0)
+
+        self.preview_box.show_all()
+        self.show()
+
+        # Position popup centered horizontally above the anchor
+        alloc = self.get_allocation()
+        popup_w = max(alloc.width, len(windows) * 160)
+        popup_h = max(alloc.height, 130)
+
+        screen = Gdk.Screen.get_default()
+        sw = screen.get_width() if screen else 808
+        px = max(10, min(sw - popup_w - 10, anchor_x - (popup_w // 2)))
+        py = max(50, anchor_y - popup_h - 10)
+
+        self.move(int(px), int(py))
+
+    def create_preview_card(self, wnck_win):
+        ev = Gtk.EventBox()
+        ev.set_visible_window(False)
+
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        card.get_style_context().add_class("preview-card")
+        card.set_size_request(150, 110)
+
+        # Header Row: Icon + Title + Close Button
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+
+        icon_pix = wnck_win.get_icon()
+        if icon_pix and hasattr(icon_pix, "scale_simple"):
+            img = Gtk.Image.new_from_pixbuf(icon_pix.scale_simple(18, 18, GdkPixbuf.InterpType.BILINEAR))
+        else:
+            img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
+        header.pack_start(img, False, False, 0)
+
+        title = wnck_win.get_name() or "Window"
+        lbl = Gtk.Label(label=title, xalign=0)
+        lbl.get_style_context().add_class("preview-title")
+        lbl.set_ellipsize(Pango.EllipsizeMode.END)
+        lbl.set_max_width_chars(14)
+        header.pack_start(lbl, True, True, 0)
+
+        btn_close = Gtk.Button(label="✕")
+        btn_close.get_style_context().add_class("preview-close")
+        btn_close.connect("clicked", lambda b: self.close_window(wnck_win))
+        header.pack_end(btn_close, False, False, 0)
+
+        card.pack_start(header, False, False, 0)
+
+        # Window Thumbnail
+        captured = None
+        try:
+            xid = wnck_win.get_xid()
+            gw = GdkX11.X11Window.foreign_new_for_display(Gdk.Display.get_default(), xid)
+            if gw and gw.get_width() > 10 and gw.get_height() > 10:
+                raw_pix = Gdk.pixbuf_get_from_window(gw, 0, 0, gw.get_width(), gw.get_height())
+                if raw_pix:
+                    target_w = 140
+                    ratio = target_w / float(raw_pix.get_width())
+                    target_h = int(raw_pix.get_height() * ratio)
+                    target_h = min(75, max(40, target_h))
+                    captured = raw_pix.scale_simple(target_w, target_h, GdkPixbuf.InterpType.BILINEAR)
+        except Exception:
+            captured = None
+
+        if captured:
+            img_preview = Gtk.Image.new_from_pixbuf(captured)
+            card.pack_start(img_preview, True, True, 0)
+        else:
+            fb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            fb.set_size_request(140, 60)
+            fb_lbl = Gtk.Label(label="Ketuk untuk beralih")
+            fb_lbl.get_style_context().add_class("preview-title")
+            fb.pack_start(fb_lbl, True, True, 0)
+            card.pack_start(fb, True, True, 0)
+
+        ev.add(card)
+        ev.connect("button-press-event", lambda w, e: self.activate_window(wnck_win))
+        return ev
+
+    def activate_window(self, wnck_win):
+        t = int(time.time())
+        try:
+            wnck_win.activate(t)
+        except Exception:
+            pass
+        self.do_hide()
+
+    def close_window(self, wnck_win):
+        t = int(time.time())
+        try:
+            wnck_win.close(t)
+        except Exception:
+            pass
+        self.do_hide()
+
+
+class SmartDock(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.set_title("UbRoid Smart Dock")
+        self.set_role("ubroid-smart-dock")
+        self.set_decorated(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_keep_above(True)
+        self.set_type_hint(Gdk.WindowTypeHint.DOCK)
+        self.get_style_context().add_class("smart-dock")
+
+        # Make window transparent for rounded corners
+        visual = self.get_screen().get_rgba_visual()
+        if visual and self.get_screen().is_composited():
+            self.set_visual(visual)
+
+        self.apply_css()
+
+        self.preview_popup = WindowPreviewPopup(self)
+
+        self.dock_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self.dock_box.get_style_context().add_class("dock-container")
+        self.add(self.dock_box)
+
+        self.app_buttons = {}
+        self.build_ui()
+
+        # Connect Wnck signals
+        self.wnck_screen = Wnck.Screen.get_default()
+        self.wnck_screen.connect("window-opened", lambda s, w: GLib.idle_add(self.update_indicators))
+        self.wnck_screen.connect("window-closed", lambda s, w: GLib.idle_add(self.update_indicators))
+        self.wnck_screen.connect("active-window-changed", lambda s, prev: GLib.idle_add(self.update_indicators))
+
+        self.connect("realize", self.on_realize)
+
+        GLib.timeout_add(1000, self.periodic_check)
+
+    def apply_css(self):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+    def build_ui(self):
+        for app in PINNED_APPS:
+            btn = Gtk.Button()
+            btn.get_style_context().add_class("app-btn")
+
+            col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+
+            # Icon
+            icon_path = app["icon"]
+            if icon_path.startswith("/") and os.path.exists(icon_path):
+                pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(icon_path, 44, 44, True)
+                img = Gtk.Image.new_from_pixbuf(pix)
+            else:
+                img = Gtk.Image.new_from_icon_name(icon_path, Gtk.IconSize.DIALOG)
+                img.set_pixel_size(44)
+            col.pack_start(img, False, False, 0)
+
+            # Indicator dot container
+            indicator_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            indicator_box.set_halign(Gtk.Align.CENTER)
+            dot = Gtk.Box()
+            dot.get_style_context().add_class("dot-empty")
+            indicator_box.pack_start(dot, True, True, 0)
+            col.pack_start(indicator_box, False, False, 0)
+
+            btn.add(col)
+
+            # Events
+            btn.connect("clicked", lambda b, a=app: self.on_app_clicked(a))
+            btn.connect("enter-notify-event", lambda b, e, a=app: self.on_app_hover(b, a))
+            btn.connect("leave-notify-event", lambda b, e: self.on_app_leave())
+
+            self.dock_box.pack_start(btn, False, False, 0)
+            self.app_buttons[app["id"]] = {
+                "btn": btn,
+                "dot": dot,
+                "app": app,
+                "matching_windows": [],
+            }
+
+    def on_realize(self, widget):
+        self.reposition_and_set_struts()
+        GLib.idle_add(self.update_indicators)
+
+    def reposition_and_set_struts(self):
+        screen = Gdk.Screen.get_default()
+        sw = screen.get_width() if screen else 808
+        sh = screen.get_height() if screen else 1725
+
+        self.show_all()
+        alloc = self.get_allocation()
+        dock_w = max(alloc.width, len(PINNED_APPS) * 58 + 24)
+        dock_h = 70
+
+        dock_x = (sw - dock_w) // 2
+        dock_y = sh - dock_h - 14
+
+        self.move(int(dock_x), int(dock_y))
+
+        # Set EWMH Struts: reserve bottom 84px so windows CANNOT cover the dock!
+        try:
+            xid = self.get_window().get_xid()
+            disp = Gdk.Display.get_default()
+            # _NET_WM_STRUT_PARTIAL = left, right, top, bottom, left_start_y, left_end_y, right_start_y, right_end_y, top_start_x, top_end_x, bottom_start_x, bottom_end_x
+            strut_cmd = f"xprop -id {xid} -f _NET_WM_STRUT_PARTIAL 32c -set _NET_WM_STRUT_PARTIAL 0,0,0,86,0,0,0,0,0,0,{int(dock_x)},{int(dock_x + dock_w)}"
+            subprocess.Popen(strut_cmd, shell=True)
+            subprocess.Popen(f"xprop -id {xid} -f _NET_WM_STRUT 32c -set _NET_WM_STRUT 0,0,0,86", shell=True)
+        except Exception:
+            pass
+
+    def periodic_check(self):
+        self.update_indicators()
+        return True
+
+    def get_windows_for_app(self, app_def):
+        pattern = app_def["pattern"].lower().split("|")
+        matches = []
+        for w in self.wnck_screen.get_windows():
+            wtype = w.get_window_type()
+            if wtype in (Wnck.WindowType.DESKTOP, Wnck.WindowType.DOCK):
+                continue
+            name = (w.get_name() or "").lower()
+            cg = (w.get_class_group_name() or "").lower()
+            ci = (w.get_class_instance_name() or "").lower()
+            app_obj = w.get_application()
+            app_name = (app_obj.get_name() if app_obj else "").lower()
+
+            target_str = f"{name} {cg} {ci} {app_name}"
+            for p in pattern:
+                if p in target_str:
+                    matches.append(w)
+                    break
+        return matches
+
+    def update_indicators(self):
+        self.wnck_screen.force_update()
+        active_win = self.wnck_screen.get_active_window()
+        active_xid = active_win.get_xid() if active_win else 0
+
+        for app_id, data in self.app_buttons.items():
+            # Count matching windows without retaining C pointers
+            matching_xids = [w.get_xid() for w in wins]
+            data["matching_xids"] = matching_xids
+            count = len(matching_xids)
+
+            btn = data["btn"]
+            dot = data["dot"]
+
+            # Update CSS class for active illumination
+            ctx = btn.get_style_context()
+            is_active = (active_xid in matching_xids)
+            if is_active:
+                ctx.add_class("active-focus")
+            else:
+                ctx.remove_class("active-focus")
+
+            # Update Dot Indicators (0 = hidden, 1 = single dot, 2+ = multi-dot pill)
+            dot_ctx = dot.get_style_context()
+            dot_ctx.remove_class("dot-empty")
+            dot_ctx.remove_class("dot-single")
+            dot_ctx.remove_class("dot-multi")
+
+            if count == 0:
+                dot_ctx.add_class("dot-empty")
+            elif count == 1:
+                dot_ctx.add_class("dot-single")
+            else:
+                dot_ctx.add_class("dot-multi")
+
+        return False
+
+    def on_app_clicked(self, app_def):
+        wins = self.get_windows_for_app(app_def)
+
+        if len(wins) == 0:
+            # Not running -> launch application
+            subprocess.Popen(app_def["exec"], shell=True)
+        elif len(wins) == 1:
+            # 1 window -> toggle minimize / activate
+            w = wins[0]
+            active_win = self.wnck_screen.get_active_window()
+            t = int(time.time())
+            if active_win and active_win.get_xid() == w.get_xid():
+                w.minimize()
+            else:
+                w.activate(t)
+        else:
+            # Multiple windows -> show hover preview cards immediately
+            data = self.app_buttons[app_def["id"]]
+            btn = data["btn"]
+            alloc = btn.get_allocation()
+            wx, wy = self.get_position()
+            anchor_x = wx + alloc.x + (alloc.width // 2)
+            anchor_y = wy
+            self.preview_popup.show_previews_for(app_def, wins, anchor_x, anchor_y)
+
+    def on_app_hover(self, btn, app_def):
+        wins = self.get_windows_for_app(app_def)
+        if len(wins) >= 1:
+            alloc = btn.get_allocation()
+            wx, wy = self.get_position()
+            anchor_x = wx + alloc.x + (alloc.width // 2)
+            anchor_y = wy
+            self.preview_popup.show_previews_for(app_def, wins, anchor_x, anchor_y)
+            anchor_x = wx + alloc.x + (alloc.width // 2)
+            anchor_y = wy
+            self.preview_popup.show_previews_for(app_def, wins, anchor_x, anchor_y)
+
+    def on_app_leave(self):
+        self.preview_popup.schedule_hide()
+
+
+def main():
+    # Kill any existing instance
+    curr_pid = os.getpid()
+    try:
+        out = subprocess.check_output(["pgrep", "-f", "ubroid-smart-dock"]).decode().split()
+        for p in out:
+            if int(p) != curr_pid:
+                os.kill(int(p), 15)
+    except Exception:
+        pass
+
+    dock = SmartDock()
+    dock.show_all()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

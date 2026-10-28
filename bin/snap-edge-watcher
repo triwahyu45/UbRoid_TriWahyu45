@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-Zero-Subprocess X11 Window Edge-Drag Watcher using pure in-memory GdkX11.
-Supports 3-tier vertical edge snapping (Left/Right Top, Middle, Bottom).
-No display.sync() blocking to maintain 120Hz smooth dragging.
+Zero-Subprocess X11 Window Edge-Drag Watcher using in-memory GdkX11.
+Features:
+- Instant touch release trigger (BUTTON1_MASK transition)
+- Protected by Gdk.error_trap_push/pop (immune to BadWindow errors)
+- 3-tier vertical snapping on Left and Right edges (Top, Middle, Bottom)
+- Top edge maximize / snap
+- Bottom edge snap
 """
 import os
-import subprocess
+import sys
 import time
+import subprocess
 
 os.environ.setdefault("DISPLAY", ":0")
 
@@ -19,29 +24,29 @@ class EdgeWatcher:
     def __init__(self):
         self.display = Gdk.Display.get_default()
         self.screen = Gdk.Screen.get_default()
+        self.root = self.screen.get_root_window() if self.screen else None
         self.last_xid = None
         self.last_geo = None
+        self.was_down = False
         self.dragging = False
-        self.last_move_time = 0.0
         self.cooldown_until = 0.0
-
-    def get_pointer_xy(self):
-        try:
-            seat = self.display.get_default_seat()
-            ptr = seat.get_pointer()
-            _, x, y = ptr.get_position()
-            return int(x), int(y)
-        except Exception:
-            return -1, -1
 
     def tick(self):
         now = time.time()
         if now < self.cooldown_until:
             return True
 
+        if not self.screen or not self.root:
+            return True
+
+        Gdk.error_trap_push()
         try:
+            _, px, py, mask = self.root.get_pointer()
+            is_down = bool(mask & Gdk.ModifierType.BUTTON1_MASK)
+
             win = self.screen.get_active_window()
             if not win:
+                self.was_down = is_down
                 self.dragging = False
                 self.last_xid = None
                 self.last_geo = None
@@ -54,6 +59,7 @@ class EdgeWatcher:
                 Gdk.WindowTypeHint.POPUP_MENU,
                 Gdk.WindowTypeHint.UTILITY,
             ):
+                self.was_down = is_down
                 return True
 
             xid = win.get_xid()
@@ -62,71 +68,81 @@ class EdgeWatcher:
             wh = win.get_height()
             geo = (wx, wy, ww, wh)
 
-            if xid == self.last_xid and self.last_geo is not None:
-                dx = abs(geo[0] - self.last_geo[0])
-                dy = abs(geo[1] - self.last_geo[1])
-                dw = abs(geo[2] - self.last_geo[2])
-                dh = abs(geo[3] - self.last_geo[3])
-
-                if (dx > 3 or dy > 3) and dw < 6 and dh < 6:
-                    self.dragging = True
-                    self.last_move_time = now
-                elif self.dragging and (now - self.last_move_time) >= 0.22:
+            # Movement while finger is held down
+            if is_down:
+                if xid == self.last_xid and self.last_geo is not None:
+                    dx = abs(geo[0] - self.last_geo[0])
+                    dy = abs(geo[1] - self.last_geo[1])
+                    dw = abs(geo[2] - self.last_geo[2])
+                    dh = abs(geo[3] - self.last_geo[3])
+                    # Window is moving but not resizing
+                    if (dx > 2 or dy > 2) and dw < 8 and dh < 8:
+                        self.dragging = True
+                self.last_xid = xid
+                self.last_geo = geo
+            elif self.was_down and not is_down:
+                # FINGER RELEASE DETECTED!
+                if self.dragging and self.last_geo is not None:
                     self.dragging = False
-                    px, py = self.get_pointer_xy()
                     sw = self.screen.get_width() if self.screen else 808
                     sh = self.screen.get_height() if self.screen else 1725
 
-                    # Vertical 3-tier boundary heights
+                    gx, gy, gw, gh = self.last_geo
                     tier1 = sh // 3
                     tier2 = (sh * 2) // 3
+                    ref_y = py if py > 0 else (gy + 20)
 
-                    # Reference Y coordinate for vertical positioning
-                    ref_y = py if py > 0 else (wy + 20)
+                    # Only snap non-fullscreen / non-maximized windows
+                    if gw < (sw - 20):
+                        # Top edge -> Maximize or Top-Half
+                        if py <= 58 or gy <= 50:
+                            if px > 0 and (sw * 0.25) <= px <= (sw * 0.75):
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "maximize"])
+                            else:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "top-half"])
+                            self.cooldown_until = now + 1.2
 
-                    # Top edge drag
-                    if (py <= 54 or wy <= 48) and ww < (sw - 20):
-                        if px > 0 and (sw * 0.30) <= px <= (sw * 0.70):
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "maximize"])
-                        else:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "top-half"])
-                        self.cooldown_until = now + 1.4
+                        # Bottom edge -> Bottom-Half
+                        elif py >= (sh - 120) or (gy + gh) >= (sh - 75):
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "bottom-half"])
+                            self.cooldown_until = now + 1.2
 
-                    # Bottom edge drag
-                    elif (py >= (sh - 110) or (wy + wh) >= (sh - 70)) and ww < (sw - 20):
-                        subprocess.Popen(["/usr/local/bin/snap-layout", "bottom-half"])
-                        self.cooldown_until = now + 1.4
+                        # Right edge -> 3-Tier Vertical Snap
+                        elif px >= (sw - 50) or (gx + gw) >= (sw - 25):
+                            if ref_y < tier1:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "right-top"])
+                            elif ref_y < tier2:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "right-middle"])
+                            else:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "right-bottom"])
+                            self.cooldown_until = now + 1.2
 
-                    # Right edge drag -> 3 Vertically Stacked Windows
-                    elif (px >= (sw - 45) or (wx + ww) >= (sw - 25)) and 50 <= ref_y <= (sh - 70) and ww < (sw - 20):
-                        if ref_y < tier1:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-top"])
-                        elif ref_y < tier2:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-middle"])
-                        else:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "right-bottom"])
-                        self.cooldown_until = now + 1.4
+                        # Left edge -> 3-Tier Vertical Snap
+                        elif px <= 50 or gx <= 25:
+                            if ref_y < tier1:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "left-top"])
+                            elif ref_y < tier2:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "left-middle"])
+                            else:
+                                subprocess.Popen(["/usr/local/bin/snap-layout", "left-bottom"])
+                            self.cooldown_until = now + 1.2
 
-                    # Left edge drag -> 3 Vertically Stacked Windows
-                    elif (px <= 45 or wx <= 25) and 50 <= ref_y <= (sh - 70) and ww < (sw - 20):
-                        if ref_y < tier1:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-top"])
-                        elif ref_y < tier2:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-middle"])
-                        else:
-                            subprocess.Popen(["/usr/local/bin/snap-layout", "left-bottom"])
-                        self.cooldown_until = now + 1.4
+                self.dragging = False
+                self.last_xid = None
+                self.last_geo = None
 
-            self.last_xid = xid
-            self.last_geo = geo
+            self.was_down = is_down
         except Exception:
             pass
+        finally:
+            Gdk.error_trap_pop_ignored()
+
         return True
 
 
 def main():
     watcher = EdgeWatcher()
-    GLib.timeout_add(180, watcher.tick)
+    GLib.timeout_add(80, watcher.tick)
     loop = GLib.MainLoop()
     loop.run()
 

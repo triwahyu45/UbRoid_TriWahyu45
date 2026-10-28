@@ -64,20 +64,25 @@
  * 2. Modern Android/iOS Floating Dock (Panel 2 at Bottom)
  * Safe Inset: pulled away from tempered glass bezels & curved corners
  * ============================================================================== */
-#XfcePanelWindow.bottom,
-.xfce4-panel.bottom,
-#XfcePanelWindow.bottom .xfce4-panel,
-.ubroid-dock,
-window.ubroid-dock,
-#XfcePanelWindow.ubroid-dock,
-.xfce4-panel.ubroid-dock,
+/* Bold all UI text cleanly */
+* {
+    font-weight: 700;
+}
+
+/* Floating Centered Dock Background */
+window#panel-2,
+window#panel-2.background,
 #panel-2,
-window#panel-2 {
-    background-color: rgba(22, 10, 24, 0.92);
-    border: 1.5px solid rgba(255, 255, 255, 0.22);
-    border-radius: 30px;
-    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.7);
-    padding: 2px 10px;
+#panel-2.background,
+#panel-2 > box,
+#panel-2 .panel,
+#panel-2 .horizontal {
+    background-color: #261228;
+    background-image: none;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    border-radius: 28px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75);
+    padding: 2px 8px;
 }
 
 /* Floating Dock App Squircle Buttons */

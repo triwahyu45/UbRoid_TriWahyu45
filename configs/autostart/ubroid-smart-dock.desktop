@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=UbRoid Smart Dock
+Comment=Modern Mobile Touch Dock with Active Indicators & Live Preview Cards
+Exec=/usr/local/bin/ubroid-smart-dock
+Terminal=false
+Categories=Utility;
+X-XFCE-Autostart-Override=true
