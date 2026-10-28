@@ -3,7 +3,7 @@
 UbRoid Smart Touch Dock
 Modern Mobile Dock for Ubuntu Touch / Android (POCO F6)
 Features:
-- Pinned favorite apps & running app tracking
+- Pinned favorite apps (Clean 6-app layout without Python/Mousepad)
 - Real-time active indicators:
   - 1 window: glowing orange dot underneath
   - 2+ windows: glowing orange dot + numerical badge (² / ³ / 2, 3...)
@@ -185,23 +185,9 @@ PINNED_APPS = [
     {
         "id": "vscode",
         "name": "Visual Studio Code",
-        "icon": "code",
-        "exec": "code --no-sandbox",
+        "icon": "/usr/share/code/resources/app/resources/linux/code.png",
+        "exec": "/usr/share/code/code --no-sandbox --user-data-dir /root/.config/Code",
         "pattern": "code|vscode",
-    },
-    {
-        "id": "python",
-        "name": "Python Studio",
-        "icon": "/usr/share/icons/hicolor/scalable/apps/python.svg",
-        "exec": 'terminator -T "Python 3 Mobile Studio" --working-directory=/root/Python_Workspace -e "/usr/local/bin/python-mobile"',
-        "pattern": "python 3 mobile studio",
-    },
-    {
-        "id": "mousepad",
-        "name": "Text Editor",
-        "icon": "/usr/share/icons/Yaru/48x48/apps/accessories-text-editor.png",
-        "exec": "mousepad",
-        "pattern": "mousepad",
     },
     {
         "id": "settings",
@@ -231,7 +217,6 @@ class WindowPreviewPopup(Gtk.Window):
         self.preview_box.get_style_context().add_class("preview-container")
         self.add(self.preview_box)
 
-        # Enable pointer events on the popup itself
         self.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
         self.connect("enter-notify-event", self.on_mouse_enter)
         self.connect("leave-notify-event", self.on_mouse_leave)
@@ -244,9 +229,9 @@ class WindowPreviewPopup(Gtk.Window):
 
     def on_mouse_leave(self, widget, event):
         self.is_pointer_over_popup = False
-        self.schedule_hide(150)
+        self.schedule_hide(120)
 
-    def schedule_hide(self, delay_ms=200):
+    def schedule_hide(self, delay_ms=120):
         if self.hide_timer:
             GLib.source_remove(self.hide_timer)
         self.hide_timer = GLib.timeout_add(delay_ms, self.do_hide)
@@ -289,8 +274,7 @@ class WindowPreviewPopup(Gtk.Window):
 
         self.move(int(px), int(py))
 
-        # Start periodic pointer guard to ensure instant auto-hide
-        GLib.timeout_add(150, self.check_pointer_watch)
+        GLib.timeout_add(100, self.check_pointer_watch)
 
     def check_pointer_watch(self):
         if not self.is_visible():
@@ -298,23 +282,27 @@ class WindowPreviewPopup(Gtk.Window):
         try:
             seat = Gdk.Display.get_default().get_default_seat()
             ptr = seat.get_pointer()
-            pos = ptr.get_position()
-            px, py = int(pos[1]), int(pos[2])
+            res = ptr.get_position()
+            # Handle both 2-item and 3-item return values
+            px = int(res[-2])
+            py = int(res[-1])
 
             alloc = self.get_allocation()
             wx, wy = self.get_position()
-            in_popup = (wx - 5) <= px <= (wx + alloc.width + 5) and (wy - 5) <= py <= (wy + alloc.height + 5)
+            in_popup = (wx - 4) <= px <= (wx + alloc.width + 4) and (wy - 4) <= py <= (wy + alloc.height + 4)
 
             dock_alloc = self.dock.get_allocation()
             dx, dy = self.dock.get_position()
-            in_dock = (dx - 5) <= px <= (dx + dock_alloc.width + 5) and (dy - 10) <= py <= (dy + dock_alloc.height + 10)
+            in_dock = (dx - 4) <= px <= (dx + dock_alloc.width + 4) and (dy - 4) <= py <= (dy + dock_alloc.height + 4)
 
             if not in_popup and not in_dock:
                 self.hide()
                 self.current_app_id = None
                 return False
         except Exception:
-            pass
+            self.hide()
+            self.current_app_id = None
+            return False
         return True
 
     def create_preview_card(self, wnck_win):
@@ -425,10 +413,15 @@ class SmartDock(Gtk.Window):
         self.wnck_screen = Wnck.Screen.get_default()
         self.wnck_screen.connect("window-opened", lambda s, w: GLib.idle_add(self.update_indicators))
         self.wnck_screen.connect("window-closed", lambda s, w: GLib.idle_add(self.update_indicators))
-        self.wnck_screen.connect("active-window-changed", lambda s, prev: GLib.idle_add(self.update_indicators))
+        self.wnck_screen.connect("active-window-changed", self.on_active_window_changed)
 
         self.connect("realize", self.on_realize)
         GLib.timeout_add(1000, self.periodic_check)
+
+    def on_active_window_changed(self, screen, prev_win):
+        # Auto-hide preview popup when user switches or clicks another window
+        self.preview_popup.do_hide()
+        GLib.idle_add(self.update_indicators)
 
     def apply_css(self):
         provider = Gtk.CssProvider()
@@ -446,7 +439,6 @@ class SmartDock(Gtk.Window):
 
             col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
 
-            # Icon in an Overlay to host Badge Count
             overlay = Gtk.Overlay()
 
             icon_path = app["icon"]
@@ -458,7 +450,6 @@ class SmartDock(Gtk.Window):
                 img.set_pixel_size(44)
             overlay.add(img)
 
-            # Top-Right Badge Label for Multi-Window (e.g. 2, 3...)
             badge_lbl = Gtk.Label(label="2")
             badge_lbl.get_style_context().add_class("badge-count")
             badge_lbl.set_halign(Gtk.Align.END)
@@ -469,7 +460,6 @@ class SmartDock(Gtk.Window):
 
             col.pack_start(overlay, False, False, 0)
 
-            # Indicator dot container
             indicator_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
             indicator_box.set_halign(Gtk.Align.CENTER)
             dot = Gtk.Box()
@@ -561,7 +551,6 @@ class SmartDock(Gtk.Window):
                 dot = data["dot"]
                 badge = data["badge"]
 
-                # Active window highlight
                 ctx = btn.get_style_context()
                 is_active = (active_xid in matching_xids)
                 if is_active:
@@ -569,7 +558,6 @@ class SmartDock(Gtk.Window):
                 else:
                     ctx.remove_class("active-focus")
 
-                # Dot Indicator
                 dot_ctx = dot.get_style_context()
                 dot_ctx.remove_class("dot-empty")
                 dot_ctx.remove_class("dot-single")
@@ -583,7 +571,6 @@ class SmartDock(Gtk.Window):
                     badge.hide()
                 else:
                     dot_ctx.add_class("dot-multi")
-                    # Show superscript badge (e.g. 2, 3...)
                     superscript_map = {2: "²", 3: "³", 4: "⁴", 5: "⁵"}
                     badge_text = superscript_map.get(count, str(count))
                     badge.set_text(badge_text)
@@ -625,7 +612,7 @@ class SmartDock(Gtk.Window):
             self.preview_popup.show_previews_for(app_def, wins, anchor_x, anchor_y)
 
     def on_app_leave(self):
-        self.preview_popup.schedule_hide(200)
+        self.preview_popup.schedule_hide(120)
 
 
 def main():
