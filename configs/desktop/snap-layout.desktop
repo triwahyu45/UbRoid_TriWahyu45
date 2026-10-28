@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Snap Windows
+Comment=Atur dan Bagi Jendela Multitasking
+Exec=/usr/local/bin/snap-layout --popup
+Icon=view-grid-symbolic
+Terminal=false
+StartupNotify=false
+Categories=Utility;

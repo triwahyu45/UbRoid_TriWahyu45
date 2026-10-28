@@ -159,7 +159,9 @@
       <property name="show-labels" type="bool" value="false"/>
       <property name="flat-buttons" type="bool" value="true"/>
       <property name="show-handle" type="bool" value="false"/>
-      <property name="grouping" type="uint" value="1"/>
+      <property name="grouping" type="uint" value="0"/>
+      <property name="window-previews" type="bool" value="true"/>
+      <property name="show-tooltips" type="bool" value="true"/>
       <property name="middle-click" type="uint" value="1"/>
       <property name="show-wireframes" type="bool" value="false"/>
       <property name="include-all-workspaces" type="bool" value="true"/>

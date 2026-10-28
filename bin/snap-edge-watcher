@@ -74,13 +74,16 @@ class EdgeWatcher:
                 elif self.dragging and (now - self.last_move_time) >= 0.25:
                     self.dragging = False
                     px, py = self.get_pointer_xy()
-                    if (py <= 48 or wy <= 42) and 300 <= px <= 1150 and ww < 1300:
+                    sw = self.screen.get_width() if self.screen else 808
+                    sh = self.screen.get_height() if self.screen else 1725
+
+                    if (py <= 52 or wy <= 46) and ww < (sw - 20):
                         subprocess.Popen(["/usr/local/bin/snap-layout", "--popup"])
                         self.cooldown_until = now + 2.0
-                    elif px >= 1432 and 100 <= py <= 820 and ww < 1300:
+                    elif px >= (sw - 35) and 60 <= py <= (sh - 80) and ww < (sw - 20):
                         subprocess.Popen(["/usr/local/bin/snap-layout", "right-half"])
                         self.cooldown_until = now + 1.5
-                    elif px <= 24 and 100 <= py <= 820 and ww < 1300:
+                    elif px <= 35 and 60 <= py <= (sh - 80) and ww < (sw - 20):
                         subprocess.Popen(["/usr/local/bin/snap-layout", "left-half"])
                         self.cooldown_until = now + 1.5
 

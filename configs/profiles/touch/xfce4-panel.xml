@@ -10,8 +10,8 @@
       <property name="position" type="string" value="p=6;x=0;y=0"/>
       <property name="length" type="uint" value="100"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="24"/>
-      <property name="size" type="uint" value="38"/>
+      <property name="icon-size" type="uint" value="28"/>
+      <property name="size" type="uint" value="42"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="21"/>
@@ -19,6 +19,7 @@
         <value type="int" value="41"/>
         <value type="int" value="2"/>
         <value type="int" value="40"/>
+        <value type="int" value="26"/>
         <value type="int" value="25"/>
         <value type="int" value="7"/>
       </property>
@@ -27,10 +28,10 @@
       <property name="mode" type="uint" value="0"/>
       <property name="autohide-behavior" type="uint" value="0"/>
       <property name="position" type="string" value="p=10;x=0;y=0"/>
-      <property name="length" type="uint" value="86"/>
+      <property name="length" type="uint" value="88"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="icon-size" type="uint" value="44"/>
-      <property name="size" type="uint" value="64"/>
+      <property name="icon-size" type="uint" value="52"/>
+      <property name="size" type="uint" value="74"/>
       <property name="background-style" type="uint" value="0"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="13"/>
@@ -46,6 +47,12 @@
     </property>
   </property>
   <property name="plugins" type="empty">
+    <property name="plugin-26" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="snap-layout.desktop"/>
+      </property>
+    </property>
+
     <property name="plugin-21" type="string" value="launcher">
       <property name="items" type="array">
         <value type="string" value="activities.desktop"/>

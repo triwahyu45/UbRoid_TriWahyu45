@@ -189,12 +189,12 @@ dconf write /org/onboard/auto-show false 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/placement_mode -s "maximized" 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/borderless_maximize -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/title_alignment -s "center" 2>/dev/null || true
-xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
+xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 2 2>/dev/null || true
 
 # Asynchronously enforce Ubuntu wallpaper on all monitors once XFCE starts
 (
     sleep 1.2
-    xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 2 2>/dev/null || true
     for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image'); do
         xfconf-query -c xfce4-desktop -p "$prop" -s "$UBUNTU_WP" 2>/dev/null || true
     done
@@ -223,6 +223,8 @@ xfconf-query -c xfce4-desktop -p /desktop-icons/style -s 0 2>/dev/null || true
     xfconf-query -c xsettings -p /Gtk/ToolbarIconSize -s 3 2>/dev/null || true
     xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
     echo "gboard" > /etc/ubroid/keyboard_pref 2>/dev/null || true
+    python3 /usr/local/bin/snap-edge-watcher </dev/null >/dev/null 2>&1 &
+    python3 /usr/local/bin/auto-gboard-daemon </dev/null >/dev/null 2>&1 &
 ) &
 
 export LD_PRELOAD=/usr/local/lib/libnogap.so

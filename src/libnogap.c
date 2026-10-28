@@ -17,6 +17,35 @@ void gtk_window_set_geometry_hints(GtkWindow *window, GtkWidget *geometry_widget
     if (real_func) real_func(window, geometry_widget, geometry, geom_mask);
 }
 
+/* Screen bounds clamp: guarantees no window exceeds physical screen width or height */
+void gtk_window_set_default_size(GtkWindow *window, gint width, gint height) {
+    static void (*real_func)(GtkWindow*, gint, gint) = NULL;
+    if (!real_func) real_func = dlsym(RTLD_NEXT, "gtk_window_set_default_size");
+
+    GdkScreen *scr = window ? gtk_window_get_screen(window) : NULL;
+    int sw = scr ? gdk_screen_get_width(scr) : 808;
+    int sh = scr ? gdk_screen_get_height(scr) : 1725;
+
+    if (width > sw - 16) width = sw - 16;
+    if (height > sh - 90) height = sh - 90;
+
+    if (real_func) real_func(window, width, height);
+}
+
+void gtk_window_resize(GtkWindow *window, gint width, gint height) {
+    static void (*real_func)(GtkWindow*, gint, gint) = NULL;
+    if (!real_func) real_func = dlsym(RTLD_NEXT, "gtk_window_resize");
+
+    GdkScreen *scr = window ? gtk_window_get_screen(window) : NULL;
+    int sw = scr ? gdk_screen_get_width(scr) : 808;
+    int sh = scr ? gdk_screen_get_height(scr) : 1725;
+
+    if (width > sw - 16) width = sw - 16;
+    if (height > sh - 90) height = sh - 90;
+
+    if (real_func) real_func(window, width, height);
+}
+
 /* Arrow suppression hooks to remove all dropdown triangles from launchers */
 static void hide_launcher_arrows(GtkWidget *widget) {
     if (!widget) return;
@@ -258,10 +287,13 @@ void gtk_window_move(GtkWindow *window, gint x, gint y) {
         GdkScreen *scr = gtk_window_get_screen(window);
         int screen_h = scr ? gdk_screen_get_height(scr) : 711;
 
-        if (y >= screen_h - 65 && y <= screen_h - 35) {
+        if (y >= screen_h - 110 && y <= screen_h - 20) {
             /* Lift bottom dock (panel-2) 16px above the bottom edge so it floats
              * above Android's navigation/gesture bar */
-            y = screen_h - 47 - 16;
+            GtkAllocation a;
+            gtk_widget_get_allocation(GTK_WIDGET(window), &a);
+            int ph = (a.height > 20) ? a.height : 74;
+            y = screen_h - ph - 16;
 
             GtkStyleContext *sc = gtk_widget_get_style_context(GTK_WIDGET(window));
             if (sc) gtk_style_context_add_class(sc, "ubroid-dock");

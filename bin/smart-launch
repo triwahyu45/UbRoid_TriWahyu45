@@ -1,6 +1,7 @@
 #!/bin/bash
 # Smart Dock Launcher for XFCE Panel
 # Switches to / restores existing window if running, or launches a new instance.
+# Automatically maximizes windows for the native Ubuntu Touch / Lomiri mobile experience.
 
 PATTERN="$1"
 shift
@@ -11,7 +12,7 @@ fi
 
 if command -v wmctrl >/dev/null 2>&1; then
     # Get all managed window IDs matching WM_CLASS pattern
-    mapfile -t WIDS < <(wmctrl -lx 2>/dev/null | awk -v pat="$PATTERN" 'tolower($3) ~ tolower(pat) {print $1}')
+    WIDS=($(wmctrl -lx 2>/dev/null | awk -v pat="$PATTERN" 'tolower($3) ~ tolower(pat) {print $1}'))
     if [ "${#WIDS[@]}" -gt 0 ]; then
         ACTIVE_HEX=$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | awk '{print $NF}')
         ACTIVE_DEC=$((ACTIVE_HEX)) 2>/dev/null || ACTIVE_DEC=0
@@ -33,10 +34,12 @@ if command -v wmctrl >/dev/null 2>&1; then
             else
                 # Multiple windows -> cycle to the next window
                 NEXT_INDEX=$(( (ACTIVE_INDEX + 1) % ${#WIDS[@]} ))
+                wmctrl -ir "${WIDS[$NEXT_INDEX]}" -b add,maximized_vert,maximized_horz 2>/dev/null || true
                 wmctrl -ia "${WIDS[$NEXT_INDEX]}" 2>/dev/null
             fi
         else
-            # Activate and raise the first matching window
+            # Activate, raise, and maximize matching window (Lomiri mobile phone experience)
+            wmctrl -ir "${WIDS[0]}" -b add,maximized_vert,maximized_horz 2>/dev/null || true
             wmctrl -ia "${WIDS[0]}" 2>/dev/null
         fi
         exit 0
@@ -44,4 +47,16 @@ if command -v wmctrl >/dev/null 2>&1; then
 fi
 
 # No existing window found -> launch application
-exec "$@" &
+"$@" &
+
+# Asynchronously maximize the newly mapped mobile window
+(
+    for i in $(seq 1 20); do
+        sleep 0.25
+        NEW_WIDS=($(wmctrl -lx 2>/dev/null | awk -v pat="$PATTERN" 'tolower($3) ~ tolower(pat) {print $1}'))
+        if [ "${#NEW_WIDS[@]}" -gt 0 ]; then
+            wmctrl -ir "${NEW_WIDS[0]}" -b add,maximized_vert,maximized_horz 2>/dev/null || true
+            break
+        fi
+    done
+) &

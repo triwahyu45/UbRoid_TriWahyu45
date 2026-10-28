@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Matikan Ubuntu
+Comment=Keluar dari Desktop Ubuntu dan Kembali ke Android
+Exec=/usr/local/bin/shutdown-ubuntu
+Icon=system-shutdown
+Terminal=false
+StartupNotify=false
+Categories=System;

@@ -12,9 +12,10 @@ import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
+gi.require_version('GdkX11', '3.0')
 gi.require_version('GdkPixbuf', '2.0')
 gi.require_version('Wnck', '3.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, Wnck, GLib, Pango
+from gi.repository import Gtk, Gdk, GdkX11, GdkPixbuf, Wnck, GLib, Pango
 
 if 'DISPLAY' not in os.environ:
     os.environ['DISPLAY'] = ':0'
@@ -96,6 +97,14 @@ window.lomiri-spread {
     background-color: rgba(233, 84, 32, 0.22);
     border-color: #E95420;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(233, 84, 32, 0.3);
+}
+
+.card-preview-box {
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 6px;
+    padding: 2px;
 }
 
 .card-icon {
@@ -272,8 +281,11 @@ class LomiriTaskSpread(Gtk.Window):
         ev = Gtk.EventBox()
         ev.set_visible_window(False)
 
-        card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         card.get_style_context().add_class("card-item")
+
+        # Header: Icon + Title + Close Button
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 
         # Window Icon
         icon_pix = wnck_win.get_icon()
@@ -281,22 +293,21 @@ class LomiriTaskSpread(Gtk.Window):
             icon_pix = wnck_win.get_mini_icon()
 
         if icon_pix:
-            # Scale to 48x48
-            scaled_pix = icon_pix.scale_simple(48, 48, GdkPixbuf.InterpType.BILINEAR) if hasattr(icon_pix, 'scale_simple') else icon_pix
+            scaled_pix = icon_pix.scale_simple(36, 36, GdkPixbuf.InterpType.BILINEAR) if hasattr(icon_pix, 'scale_simple') else icon_pix
             img = Gtk.Image.new_from_pixbuf(scaled_pix)
         else:
-            img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+            img = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.LARGE_TOOLBAR)
         img.get_style_context().add_class("card-icon")
-        card.pack_start(img, False, False, 0)
+        header.pack_start(img, False, False, 0)
 
         # Window Labels
-        text_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        text_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         
         title_str = wnck_win.get_name() or "Aplikasi"
         lbl_title = Gtk.Label(label=title_str, xalign=0)
         lbl_title.get_style_context().add_class("card-title")
         lbl_title.set_ellipsize(Pango.EllipsizeMode.END)
-        lbl_title.set_max_width_chars(32)
+        lbl_title.set_max_width_chars(34)
 
         app_obj = wnck_win.get_application()
         app_name = app_obj.get_name() if app_obj else "Linux App"
@@ -305,13 +316,57 @@ class LomiriTaskSpread(Gtk.Window):
 
         text_col.pack_start(lbl_title, False, False, 0)
         text_col.pack_start(lbl_app, False, False, 0)
-        card.pack_start(text_col, True, True, 0)
+        header.pack_start(text_col, True, True, 0)
 
         # Close button for this specific window
         btn_close_win = Gtk.Button(label="✕")
         btn_close_win.get_style_context().add_class("card-close")
         btn_close_win.connect("clicked", lambda b: self.close_single_window(wnck_win, card))
-        card.pack_end(btn_close_win, False, False, 0)
+        header.pack_end(btn_close_win, False, False, 0)
+
+        card.pack_start(header, False, False, 0)
+
+        # Live Window Screenshot Preview
+        preview_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        preview_box.get_style_context().add_class("card-preview-box")
+        preview_box.set_halign(Gtk.Align.CENTER)
+
+        captured_pix = None
+        try:
+            xid = wnck_win.get_xid()
+            gw = GdkX11.X11Window.foreign_new_for_display(Gdk.Display.get_default(), xid)
+            if gw and gw.get_width() > 10 and gw.get_height() > 10:
+                raw_pix = Gdk.pixbuf_get_from_window(gw, 0, 0, gw.get_width(), gw.get_height())
+                if raw_pix:
+                    target_w = 420
+                    ratio = target_w / float(raw_pix.get_width())
+                    target_h = int(raw_pix.get_height() * ratio)
+                    if target_h > 240:
+                        target_w = int(target_w * (240.0 / target_h))
+                        target_h = 240
+                    target_w = max(100, target_w)
+                    target_h = max(60, target_h)
+                    captured_pix = raw_pix.scale_simple(target_w, target_h, GdkPixbuf.InterpType.BILINEAR)
+        except Exception:
+            captured_pix = None
+
+        if captured_pix:
+            preview_img = Gtk.Image.new_from_pixbuf(captured_pix)
+            preview_box.pack_start(preview_img, True, True, 0)
+            card.pack_start(preview_box, False, False, 0)
+        else:
+            # Fallback sleek banner
+            fallback_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            fallback_box.set_halign(Gtk.Align.CENTER)
+            fallback_box.set_valign(Gtk.Align.CENTER)
+            fallback_box.set_size_request(380, 80)
+            fb_icon = Gtk.Image.new_from_icon_name("window-restore-symbolic", Gtk.IconSize.DIALOG)
+            fb_lbl = Gtk.Label(label="Ketuk untuk membuka jendela ini")
+            fb_lbl.get_style_context().add_class("spread-subtitle")
+            fallback_box.pack_start(fb_icon, False, False, 0)
+            fallback_box.pack_start(fb_lbl, False, False, 0)
+            preview_box.pack_start(fallback_box, True, True, 0)
+            card.pack_start(preview_box, False, False, 0)
 
         ev.add(card)
         ev.connect("button-press-event", lambda w, e: self.activate_window(wnck_win))
