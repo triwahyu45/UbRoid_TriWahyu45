@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Live Recent Apps
+Comment=Beralih Jendela & Multitasking Overview Ubuntu Touch
+Exec=/usr/local/bin/lomiri-task-spread
+Icon=/usr/share/icons/Yaru/48x48/apps/live-recent.png
+Terminal=false
+Categories=System;Utility;

@@ -187,6 +187,13 @@ echo -e "${CYAN}[1/7] Menyiapkan environment Termux & dependensi dasar...${NC}"
 pkg update -y
 pkg install -y proot-distro x11-repo termux-x11-nightly pulseaudio wget git tar bc python
 
+# Konfigurasi PulseAudio untuk Android (Native AAudio Sink & TCP Protocol)
+if [ -f "$PREFIX/etc/pulse/default.pa" ]; then
+    sed -i 's/^load-module module-sles-sink/#load-module module-sles-sink/' "$PREFIX/etc/pulse/default.pa"
+    sed -i 's/^#load-module module-aaudio-sink/load-module module-aaudio-sink/' "$PREFIX/etc/pulse/default.pa"
+    sed -i 's/^#load-module module-native-protocol-tcp/load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1/' "$PREFIX/etc/pulse/default.pa"
+fi
+
 # Pastikan permission external app diizinkan untuk launcher APK
 mkdir -p "$HOME/.termux"
 if [ -f "$HOME/.termux/termux.properties" ]; then

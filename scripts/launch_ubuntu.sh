@@ -96,12 +96,7 @@ chmod 1777 $TMPDIR/.X11-unix
 termux-wake-lock 2>/dev/null || true
 if [ -x "/data/data/com.termux/files/usr/bin/pulseaudio" ]; then
     env -i HOME=/data/data/com.termux/files/home PREFIX=/data/data/com.termux/files/usr PATH=/data/data/com.termux/files/usr/bin:/system/bin TMPDIR=/data/data/com.termux/files/usr/tmp \
-        /data/data/com.termux/files/usr/bin/pulseaudio --start \
-        --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
-        --load="module-aaudio-sink" \
-        --load="module-sles-sink" \
-        --load="module-sles-source" \
-        --exit-idle-time=-1 2>/dev/null || true
+        /data/data/com.termux/files/usr/bin/pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
 fi
 
 # 4. Deteksi Densitas Layar & Skala Otomatis (Dynamic Resolution & Scale for Phones & Tablets)
