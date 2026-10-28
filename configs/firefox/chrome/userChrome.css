@@ -1,0 +1,16 @@
+:root,
+#main-window,
+#navigator-toolbox,
+#TabsToolbar,
+#nav-bar,
+#urlbar-container {
+    min-width: 200px !important;
+}
+
+#nav-bar {
+    flex-wrap: nowrap !important;
+}
+
+#urlbar-container {
+    min-width: 60px !important;
+}

@@ -141,8 +141,8 @@ fi
 /system/bin/am force-stop com.termux.x11 2>/dev/null || true
 sleep 0.2
 
-# 6. Jalankan Termux-X11 display server
-termux-x11 :0 -ac &
+# 6. Jalankan Termux-X11 display server (Uncapped 120Hz native AMOLED refresh rate)
+termux-x11 :0 -ac -fakescreenfps 120 +extension COMPOSITE +extension DAMAGE +extension RANDR +extension GLX &
 
 # 7. Tunggu socket X0 siap
 for i in $(seq 1 30); do

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+UbRoid Window Snap Engine & Multi-Window Layout Manager
+Supports Full 3-Tier Vertical Stacking (Left/Right Top, Middle, Bottom)
+Custom-tailored for Android Portrait (808x1725)
+"""
+import ctypes
 import os
 import re
 import subprocess
@@ -9,6 +15,21 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
+
+
+class XSizeHints(ctypes.Structure):
+    _fields_ = [
+        ("flags", ctypes.c_long),
+        ("x", ctypes.c_int), ("y", ctypes.c_int),
+        ("width", ctypes.c_int), ("height", ctypes.c_int),
+        ("min_width", ctypes.c_int), ("min_height", ctypes.c_int),
+        ("max_width", ctypes.c_int), ("max_height", ctypes.c_int),
+        ("width_inc", ctypes.c_int), ("height_inc", ctypes.c_int),
+        ("min_aspect_x", ctypes.c_int), ("min_aspect_y", ctypes.c_int),
+        ("max_aspect_x", ctypes.c_int), ("max_aspect_y", ctypes.c_int),
+        ("base_width", ctypes.c_int), ("base_height", ctypes.c_int),
+        ("win_gravity", ctypes.c_int),
+    ]
 
 
 def run_cmd(cmd):
@@ -23,14 +44,10 @@ def get_workarea():
     m = re.search(r"=\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)", out)
     if m:
         return int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
-    return 0, 36, 1456, 878
+    return 0, 48, 808, 1530
 
 
 def get_frame_extents(wid_hex):
-    """Returns (is_csd, left, right, top, bottom).
-    If window uses GTK CSD (_GTK_FRAME_EXTENTS > 0), is_csd is True.
-    Otherwise, returns X11 window manager frame extents (_NET_FRAME_EXTENTS).
-    """
     gtk_out = run_cmd(f"xprop -id {wid_hex} _GTK_FRAME_EXTENTS")
     m = re.search(r"=\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)", gtk_out)
     if m:
@@ -46,15 +63,36 @@ def get_frame_extents(wid_hex):
     return False, 0, 0, 0, 0
 
 
+def relax_window_constraints(wid_hex):
+    try:
+        x11 = ctypes.CDLL("libX11.so.6")
+        disp = x11.XOpenDisplay(None)
+        if disp:
+            w_int = int(wid_hex, 16) if isinstance(wid_hex, str) else wid_hex
+            hints = XSizeHints()
+            hints.flags = (1 << 4) | (1 << 8)  # PMinSize | PBaseSize
+            hints.min_width = 200
+            hints.min_height = 100
+            hints.base_width = 200
+            hints.base_height = 100
+            x11.XSetWMNormalHints(disp, w_int, ctypes.byref(hints))
+            x11.XFlush(disp)
+            x11.XCloseDisplay(disp)
+    except Exception:
+        pass
+
+
 def get_normal_windows_stacking():
-    """Returns list of normal window hex IDs ordered from most-recently-active (topmost) to bottom."""
+    active_out = run_cmd("xprop -root _NET_ACTIVE_WINDOW")
+    m_act = re.search(r"0x[0-9a-fA-F]+", active_out)
+    active_wid = m_act.group(0) if m_act else None
+
     stack_out = run_cmd("xprop -root _NET_CLIENT_LIST_STACKING")
     raw_ids = re.findall(r"0x[0-9a-fA-F]+", stack_out)
     if not raw_ids:
         wm_out = run_cmd("wmctrl -l")
         raw_ids = [line.split()[0] for line in wm_out.splitlines() if line.strip()]
 
-    # Reverse so topmost window is first
     raw_ids = list(reversed(raw_ids))
     valid_windows = []
     for wid in raw_ids:
@@ -66,43 +104,49 @@ def get_normal_windows_stacking():
         if "xfce4-panel" in props.lower() or "xfdesktop" in props.lower() or "snap-layout" in props.lower() or "macos-launchpad" in props.lower():
             continue
         valid_windows.append(wid)
+
+    if active_wid and active_wid in valid_windows:
+        valid_windows.remove(active_wid)
+        valid_windows.insert(0, active_wid)
+
     return valid_windows
 
 
-def place_window(wid, x, y, w, h, gap=0):
-    """Unmaximizes and places window `wid` inside bounding box (x, y, w, h) accounting for SSD / CSD frame extents."""
+def place_window(wid, x, y, w, h, gap=2):
     bx = int(x + gap)
     by = int(y + gap)
-    bw = max(200, int(w - gap * 2))
-    bh = max(150, int(h - gap * 2))
+    bw = max(160, int(w - gap * 2))
+    bh = max(100, int(h - gap * 2))
 
-    # Remove maximized / fullscreen / shaded states first
+    relax_window_constraints(wid)
+
     subprocess.call(
         f"wmctrl -i -r {wid} -b remove,maximized_vert,maximized_horz,fullscreen,shaded",
         shell=True,
         stderr=subprocess.DEVNULL,
     )
     subprocess.call(f"xdotool windowmap {wid}", shell=True, stderr=subprocess.DEVNULL)
-    time.sleep(0.04)
 
     is_csd, left, right, top, bottom = get_frame_extents(wid)
 
     if is_csd:
-        # For CSD windows (e.g. Firefox), the application reserves invisible shadow margin inside its surface.
-        # To place visible content exactly at (bx, by, bw, bh), expand window surface and offset:
         target_x = bx - left
         target_y = by - top
         target_w = bw + left + right
         target_h = bh + top + bottom
     else:
-        # For standard SSD windows (e.g. xfce4-terminal), wmctrl sets client area size:
         target_x = bx
         target_y = by
-        target_w = max(150, bw - left - right)
-        target_h = max(120, bh - top - bottom)
+        target_w = max(160, bw - left - right)
+        target_h = max(100, bh - top - bottom)
 
     subprocess.call(
         f"wmctrl -i -r {wid} -e 0,{target_x},{target_y},{target_w},{target_h}",
+        shell=True,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.call(
+        f"xdotool windowsize {wid} {target_w} {target_h} && xdotool windowmove {wid} {target_x} {target_y}",
         shell=True,
         stderr=subprocess.DEVNULL,
     )
@@ -119,38 +163,15 @@ def apply_layout(mode, target_windows=None):
     w1 = wins[1] if len(wins) > 1 else None
     w2 = wins[2] if len(wins) > 2 else None
     w3 = wins[3] if len(wins) > 3 else None
+    w4 = wins[4] if len(wins) > 4 else None
+    w5 = wins[5] if len(wins) > 5 else None
 
     half_w = ww // 2
     half_h = wh // 2
+    tier_h = wh // 3
 
-    if mode == "split-lr-50":
-        if w1:
-            place_window(w1, wx + half_w, wy, ww - half_w, wh)
-        place_window(w0, wx, wy, half_w, wh)
-    elif mode == "split-lr-65":
-        left_w = int(ww * 0.62)
-        if w1:
-            place_window(w1, wx + left_w, wy, ww - left_w, wh)
-        place_window(w0, wx, wy, left_w, wh)
-    elif mode == "split-tb-50":
-        if w1:
-            place_window(w1, wx, wy + half_h, ww, wh - half_h)
-        place_window(w0, wx, wy, ww, half_h)
-    elif mode == "split-3":
-        if w2:
-            place_window(w2, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
-        if w1:
-            place_window(w1, wx + half_w, wy, ww - half_w, half_h)
-        place_window(w0, wx, wy, half_w, wh)
-    elif mode == "split-4":
-        if w3:
-            place_window(w3, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
-        if w2:
-            place_window(w2, wx, wy + half_h, half_w, wh - half_h)
-        if w1:
-            place_window(w1, wx + half_w, wy, ww - half_w, half_h)
-        place_window(w0, wx, wy, half_w, half_h)
-    elif mode == "left-half":
+    # Half Snaps
+    if mode == "left-half":
         place_window(w0, wx, wy, half_w, wh)
     elif mode == "right-half":
         place_window(w0, wx + half_w, wy, ww - half_w, wh)
@@ -158,6 +179,24 @@ def apply_layout(mode, target_windows=None):
         place_window(w0, wx, wy, ww, half_h)
     elif mode == "bottom-half":
         place_window(w0, wx, wy + half_h, ww, wh - half_h)
+
+    # 3-Tier Vertical Snaps for Left Side
+    elif mode == "left-top":
+        place_window(w0, wx, wy, half_w, tier_h)
+    elif mode == "left-middle":
+        place_window(w0, wx, wy + tier_h, half_w, tier_h)
+    elif mode == "left-bottom":
+        place_window(w0, wx, wy + tier_h * 2, half_w, wh - tier_h * 2)
+
+    # 3-Tier Vertical Snaps for Right Side
+    elif mode == "right-top":
+        place_window(w0, wx + half_w, wy, ww - half_w, tier_h)
+    elif mode == "right-middle":
+        place_window(w0, wx + half_w, wy + tier_h, ww - half_w, tier_h)
+    elif mode == "right-bottom":
+        place_window(w0, wx + half_w, wy + tier_h * 2, ww - half_w, wh - tier_h * 2)
+
+    # 4 Quarters
     elif mode == "top-left":
         place_window(w0, wx, wy, half_w, half_h)
     elif mode == "top-right":
@@ -166,6 +205,41 @@ def apply_layout(mode, target_windows=None):
         place_window(w0, wx, wy + half_h, half_w, wh - half_h)
     elif mode == "bottom-right":
         place_window(w0, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
+
+    # Multi-Window Automatic Split Layouts
+    elif mode == "split-lr-50":
+        if w1:
+            place_window(w1, wx + half_w, wy, ww - half_w, wh)
+        place_window(w0, wx, wy, half_w, wh)
+    elif mode == "split-tb-50":
+        if w1:
+            place_window(w1, wx, wy + half_h, ww, wh - half_h)
+        place_window(w0, wx, wy, ww, half_h)
+    elif mode == "split-vertical-3":
+        if w2:
+            place_window(w2, wx, wy + tier_h * 2, ww, wh - tier_h * 2)
+        if w1:
+            place_window(w1, wx, wy + tier_h, ww, tier_h)
+        place_window(w0, wx, wy, ww, tier_h)
+    elif mode == "split-3":
+        if w2:
+            place_window(w2, wx + half_w, wy + half_h, ww - half_w, wh - half_h)
+        if w1:
+            place_window(w1, wx + half_w, wy, ww - half_w, half_h)
+        place_window(w0, wx, wy, half_w, wh)
+    elif mode == "split-6":
+        # 3 on left, 3 on right
+        if w5:
+            place_window(w5, wx + half_w, wy + tier_h * 2, ww - half_w, wh - tier_h * 2)
+        if w4:
+            place_window(w4, wx + half_w, wy + tier_h, ww - half_w, tier_h)
+        if w3:
+            place_window(w3, wx + half_w, wy, ww - half_w, tier_h)
+        if w2:
+            place_window(w2, wx, wy + tier_h * 2, half_w, wh - tier_h * 2)
+        if w1:
+            place_window(w1, wx, wy + tier_h, half_w, tier_h)
+        place_window(w0, wx, wy, half_w, tier_h)
     elif mode == "maximize":
         subprocess.call(
             f"wmctrl -i -r {w0} -b add,maximized_vert,maximized_horz && wmctrl -i -a {w0}",
@@ -173,8 +247,8 @@ def apply_layout(mode, target_windows=None):
             stderr=subprocess.DEVNULL,
         )
     elif mode == "center":
-        cw = int(ww * 0.78)
-        ch = int(wh * 0.80)
+        cw = int(ww * 0.82)
+        ch = int(wh * 0.72)
         cx = wx + (ww - cw) // 2
         cy = wy + (wh - ch) // 2
         place_window(w0, cx, cy, cw, ch)
@@ -190,51 +264,53 @@ class SnapLayoutPopup(Gtk.Window):
         self.set_keep_above(True)
         self.set_skip_taskbar_hint(True)
         self.set_skip_pager_hint(True)
-        self.set_Resizable(False) if hasattr(self, "set_Resizable") else self.set_resizable(False)
+        self.set_resizable(False)
 
-        # Position right below top bar in the upper center of the screen
         wx, wy, ww, wh = get_workarea()
-        win_w = 640
+        win_w = 680
         self.move(wx + (ww - win_w) // 2, wy + 8)
 
         css = b"""
         window {
-            background-color: #1e1e1e;
+            background-color: #1a1a1c;
             border: 2px solid #e95420;
-            border-radius: 14px;
+            border-radius: 18px;
             color: #ffffff;
         }
         .header-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: #ffffff;
         }
         .header-sub {
-            font-size: 12px;
+            font-size: 11px;
             color: #b8b5ae;
         }
         .layout-btn {
-            background-color: #2b2b2b;
-            border: 1px solid #454545;
-            border-radius: 10px;
-            padding: 10px 12px;
-            color: #f2f2f2;
-            font-weight: bold;
-            font-size: 13px;
+            background-color: #27272a;
+            border: 1px solid #3f3f46;
+            border-radius: 12px;
+            padding: 8px 10px;
+            color: #f4f4f5;
+            font-weight: 600;
+            font-size: 12px;
         }
         .layout-btn:hover {
-            background-color: rgba(233, 84, 32, 0.28);
+            background-color: rgba(233, 84, 32, 0.35);
             border: 1px solid #e95420;
+            color: #ffffff;
         }
         .close-btn {
-            background-color: #383838;
-            border-radius: 8px;
-            padding: 4px 10px;
+            background-color: #3f3f46;
+            border-radius: 50%;
+            min-width: 32px;
+            min-height: 32px;
+            padding: 0;
             color: #ffffff;
             font-weight: bold;
         }
         .close-btn:hover {
-            background-color: #c7162b;
+            background-color: #df382c;
         }
         """
         provider = Gtk.CssProvider()
@@ -244,19 +320,19 @@ class SnapLayoutPopup(Gtk.Window):
         )
 
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        outer.set_margin_top(14)
+        outer.set_margin_top(12)
         outer.set_margin_bottom(14)
-        outer.set_margin_start(16)
-        outer.set_margin_end(16)
+        outer.set_margin_start(14)
+        outer.set_margin_end(14)
         self.add(outer)
 
         # Header row
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        lbl_title = Gtk.Label(label="⊞  Snap Layouts — Pilih Tata Letak Jendela", xalign=0)
+        lbl_title = Gtk.Label(label="⊞ Snap Windows (Sentuh Layout Pilihan)", xalign=0)
         lbl_title.get_style_context().add_class("header-title")
         lbl_sub = Gtk.Label(
-            label="Sentuh salah satu layout untuk merapikan jendela yang sedang terbuka secara otomatis:",
+            label="Mendukung Snap 3 Tingkat Vertikal (Atas, Tengah, Bawah) untuk HP Portrait:",
             xalign=0,
         )
         lbl_sub.get_style_context().add_class("header-sub")
@@ -270,23 +346,30 @@ class SnapLayoutPopup(Gtk.Window):
         header.pack_end(btn_close, False, False, 0)
         outer.pack_start(header, False, False, 0)
 
-        # Grid of Multi-Window Layouts (Row 1)
         grid = Gtk.Grid()
-        grid.set_column_spacing(10)
-        grid.set_row_spacing(10)
+        grid.set_column_spacing(8)
+        grid.set_row_spacing(8)
         grid.set_column_homogeneous(True)
         outer.pack_start(grid, True, True, 0)
 
         layouts = [
-            ("left-half", "◀  Kiri (Left)\n   Setengah Kiri", 0, 0),
-            ("top-half", "▲  Atas (Top)\n   Setengah Atas", 1, 0),
-            ("right-half", "▶  Kanan (Right)\n   Setengah Kanan", 2, 0),
-            ("split-tb-50", "⬒  Split 2 Atas-Bawah\n     (50% : 50%)", 0, 1),
-            ("bottom-half", "▼  Bawah (Bottom)\n   Setengah Bawah", 1, 1),
-            ("split-lr-50", "◧  Split 2 Kiri-Kanan\n     (50% : 50%)", 2, 1),
-            ("split-3", "◫  Split 3 Jendela\n  (1 Kiri + 2 Kanan)", 0, 2),
-            ("center", "▣  Rapi di Tengah\n    (Center Float)", 1, 2),
-            ("maximize", "⬜  Layar Penuh\n    (Maximize)", 2, 2),
+            # Row 0: Kiri 3 Tingkat
+            ("left-top", "◀▲ Kiri Atas\n(1/3 Tinggi)", 0, 0),
+            ("left-middle", "◀■ Kiri Tengah\n(1/3 Tinggi)", 1, 0),
+            ("left-bottom", "◀▼ Kiri Bawah\n(1/3 Tinggi)", 2, 0),
+            ("left-half", "◀ Kiri Penuh\n(Setengah Kiri)", 3, 0),
+
+            # Row 1: Kanan 3 Tingkat
+            ("right-top", "▶▲ Kanan Atas\n(1/3 Tinggi)", 0, 1),
+            ("right-middle", "▶■ Kanan Tengah\n(1/3 Tinggi)", 1, 1),
+            ("right-bottom", "▶▼ Kanan Bawah\n(1/3 Tinggi)", 2, 1),
+            ("right-half", "▶ Kanan Penuh\n(Setengah Kanan)", 3, 1),
+
+            # Row 2: Layar Penuh, Vertikal 3 & Multi Windows
+            ("top-half", "▲ Setengah Atas\n(Layar Lebar)", 0, 2),
+            ("bottom-half", "▼ Setengah Bawah\n(Layar Lebar)", 1, 2),
+            ("split-vertical-3", "☰ 3 Jendela Vertikal\n(Tingkat 1-2-3)", 2, 2),
+            ("maximize", "⬜ Layar Penuh\n(Maximize)", 3, 2),
         ]
 
         for mode, text, col, row in layouts:
@@ -311,12 +394,10 @@ class SnapLayoutPopup(Gtk.Window):
 
 
 def main():
-    # Prevent duplicate popups
     if len(sys.argv) > 1 and sys.argv[1] not in ("--popup", "--popup-top"):
         apply_layout(sys.argv[1])
         return
 
-    # If popup is already open, close it (toggle behavior)
     existing = run_cmd("pgrep -f '/usr/local/bin/snap-layout --popup'").splitlines()
     my_pid = str(os.getpid())
     other_pids = [p.strip() for p in existing if p.strip() and p.strip() != my_pid]
