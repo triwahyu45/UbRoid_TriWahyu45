@@ -63,21 +63,21 @@ rm -rf /root/.cache/sessions/* 2>/dev/null || true
 
 # Safe Inset Bezel & Floating Rounded Dock via xfconf-query
 xfconf-query -c xfce4-panel -p /panels/panel-1/length -t uint -s 100 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 38 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 24 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/size -t uint -s 48 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size -t uint -s 30 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=6;x=0;y=0" 2>/dev/null || true
 
-xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 86 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 64 2>/dev/null || true
-xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 44 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/length -t uint -s 88 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/size -t uint -s 74 2>/dev/null || true
+xfconf-query -c xfce4-panel -p /panels/panel-2/icon-size -t uint -s 52 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/length-adjust -s false 2>/dev/null || true
 xfconf-query -c xfce4-panel -p /panels/panel-2/position -s "p=10;x=0;y=0" 2>/dev/null || true
 
-# Matikan software compositing di PRoot agar UI 60 FPS instan tanpa lag
-xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
+# Aktifkan compositing ringan untuk sudut rounded dock & window tanpa lag (vblank off)
+xfconf-query -c xfwm4 -p /general/use_compositing -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/show_dock_shadow -s false 2>/dev/null || true
-xfconf-query -c xfwm4 -p /general/show_frame_shadow -s false 2>/dev/null || true
-xfconf-query -c xfwm4 -p /general/show_popup_shadow -s false 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/show_frame_shadow -s true 2>/dev/null || true
+xfconf-query -c xfwm4 -p /general/show_popup_shadow -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/move_opacity -s 100 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/resize_opacity -s 100 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/vblank_mode -s off 2>/dev/null || true
@@ -85,6 +85,12 @@ xfconf-query -c xfwm4 -p /general/unredirect_overlays -s true 2>/dev/null || tru
 xfconf-query -c xfwm4 -p /general/snap_resist -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/snap_to_border -s true 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/snap_width -s 48 2>/dev/null || true
+
+# Pastikan audio sink Termux (AAudio / OpenSL) terhubung dan default
+if command -v pactl >/dev/null 2>&1; then
+    pactl load-module module-aaudio-sink 2>/dev/null || pactl load-module module-sles-sink 2>/dev/null || true
+    pactl set-default-sink AAudio_sink 2>/dev/null || pactl set-default-sink 0 2>/dev/null || true
+fi
 
 # Window Bounds Limiter disabled (causes X11 connection storm & input freezing)
 # /usr/local/bin/window-bounds-limiter &

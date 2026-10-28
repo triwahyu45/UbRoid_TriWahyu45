@@ -13,6 +13,9 @@ void gtk_window_set_geometry_hints(GtkWindow *window, GtkWidget *geometry_widget
         geometry->width_inc = 1;
         geometry->height_inc = 1;
         geom_mask &= ~GDK_HINT_RESIZE_INC;
+        if (geom_mask & GDK_HINT_MIN_SIZE) {
+            if (geometry->min_width > 350) geometry->min_width = 350;
+        }
     }
     if (real_func) real_func(window, geometry_widget, geometry, geom_mask);
 }
@@ -287,13 +290,19 @@ void gtk_window_move(GtkWindow *window, gint x, gint y) {
         GdkScreen *scr = gtk_window_get_screen(window);
         int screen_h = scr ? gdk_screen_get_height(scr) : 711;
 
-        if (y >= screen_h - 110 && y <= screen_h - 20) {
-            /* Lift bottom dock (panel-2) 16px above the bottom edge so it floats
-             * above Android's navigation/gesture bar */
+        if (y >= screen_h - 130 && y <= screen_h - 15) {
+            /* Lift bottom dock (panel-2) 32px above the bottom edge so it floats
+             * cleanly above Android's navigation/gesture bar */
             GtkAllocation a;
             gtk_widget_get_allocation(GTK_WIDGET(window), &a);
             int ph = (a.height > 20) ? a.height : 74;
-            y = screen_h - ph - 16;
+            y = screen_h - ph - 32;
+
+            GdkVisual *rgba = scr ? gdk_screen_get_rgba_visual(scr) : NULL;
+            if (rgba && !gtk_widget_get_visual(GTK_WIDGET(window))) {
+                gtk_widget_set_visual(GTK_WIDGET(window), rgba);
+            }
+            gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
 
             GtkStyleContext *sc = gtk_widget_get_style_context(GTK_WIDGET(window));
             if (sc) gtk_style_context_add_class(sc, "ubroid-dock");

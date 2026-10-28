@@ -77,13 +77,19 @@ class EdgeWatcher:
                     sw = self.screen.get_width() if self.screen else 808
                     sh = self.screen.get_height() if self.screen else 1725
 
-                    if (py <= 52 or wy <= 46) and ww < (sw - 20):
-                        subprocess.Popen(["/usr/local/bin/snap-layout", "--popup"])
-                        self.cooldown_until = now + 2.0
-                    elif px >= (sw - 35) and 60 <= py <= (sh - 80) and ww < (sw - 20):
+                    if (py <= 56 or wy <= 50) and ww < (sw - 20):
+                        if px > 0 and (sw * 0.3) <= px <= (sw * 0.7):
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "maximize"])
+                        else:
+                            subprocess.Popen(["/usr/local/bin/snap-layout", "top-half"])
+                        self.cooldown_until = now + 1.5
+                    elif (py >= (sh - 110) or (wy + wh) >= (sh - 70)) and ww < (sw - 20):
+                        subprocess.Popen(["/usr/local/bin/snap-layout", "bottom-half"])
+                        self.cooldown_until = now + 1.5
+                    elif (px >= (sw - 45) or (wx + ww) >= (sw - 25)) and 55 <= py <= (sh - 80) and ww < (sw - 20):
                         subprocess.Popen(["/usr/local/bin/snap-layout", "right-half"])
                         self.cooldown_until = now + 1.5
-                    elif px <= 35 and 60 <= py <= (sh - 80) and ww < (sw - 20):
+                    elif (px <= 45 or wx <= 25) and 55 <= py <= (sh - 80) and ww < (sw - 20):
                         subprocess.Popen(["/usr/local/bin/snap-layout", "left-half"])
                         self.cooldown_until = now + 1.5
 

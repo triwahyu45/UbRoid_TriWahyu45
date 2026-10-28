@@ -154,6 +154,10 @@ def apply_layout(mode, target_windows=None):
         place_window(w0, wx, wy, half_w, wh)
     elif mode == "right-half":
         place_window(w0, wx + half_w, wy, ww - half_w, wh)
+    elif mode == "top-half":
+        place_window(w0, wx, wy, ww, half_h)
+    elif mode == "bottom-half":
+        place_window(w0, wx, wy + half_h, ww, wh - half_h)
     elif mode == "top-left":
         place_window(w0, wx, wy, half_w, half_h)
     elif mode == "top-right":
@@ -274,15 +278,15 @@ class SnapLayoutPopup(Gtk.Window):
         outer.pack_start(grid, True, True, 0)
 
         layouts = [
-            ("split-lr-50", "◧  Split 2 Kiri-Kanan\n     (50% : 50%)", 0, 0),
-            ("split-lr-65", "◨  Split 2 Fokus\n     (62% : 38%)", 1, 0),
-            ("split-tb-50", "⬒  Split 2 Atas-Bawah\n     (50% : 50%)", 2, 0),
-            ("split-3", "◫  Split 3 Jendela\n  (1 Kiri + 2 Kanan)", 0, 1),
-            ("split-4", "⊞  Split 4 Grid\n   (2x2 Empat Sudut)", 1, 1),
-            ("maximize", "⬜  Maximize Penuh\n    (Layar Penuh)", 2, 1),
-            ("left-half", "◀  Jendela Aktif\n    ke Setengah Kiri", 0, 2),
-            ("right-half", "▶  Jendela Aktif\n   ke Setengah Kanan", 1, 2),
-            ("center", "▣  Jendela Aktif\n    Rapi di Tengah", 2, 2),
+            ("left-half", "◀  Kiri (Left)\n   Setengah Kiri", 0, 0),
+            ("top-half", "▲  Atas (Top)\n   Setengah Atas", 1, 0),
+            ("right-half", "▶  Kanan (Right)\n   Setengah Kanan", 2, 0),
+            ("split-tb-50", "⬒  Split 2 Atas-Bawah\n     (50% : 50%)", 0, 1),
+            ("bottom-half", "▼  Bawah (Bottom)\n   Setengah Bawah", 1, 1),
+            ("split-lr-50", "◧  Split 2 Kiri-Kanan\n     (50% : 50%)", 2, 1),
+            ("split-3", "◫  Split 3 Jendela\n  (1 Kiri + 2 Kanan)", 0, 2),
+            ("center", "▣  Rapi di Tengah\n    (Center Float)", 1, 2),
+            ("maximize", "⬜  Layar Penuh\n    (Maximize)", 2, 2),
         ]
 
         for mode, text, col, row in layouts:

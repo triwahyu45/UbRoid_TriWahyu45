@@ -98,6 +98,8 @@ if [ -x "/data/data/com.termux/files/usr/bin/pulseaudio" ]; then
     env -i HOME=/data/data/com.termux/files/home PREFIX=/data/data/com.termux/files/usr PATH=/data/data/com.termux/files/usr/bin:/system/bin TMPDIR=/data/data/com.termux/files/usr/tmp \
         /data/data/com.termux/files/usr/bin/pulseaudio --start \
         --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
+        --load="module-aaudio-sink" \
+        --load="module-sles-sink" \
         --load="module-sles-source" \
         --exit-idle-time=-1 2>/dev/null || true
 fi
@@ -178,7 +180,9 @@ sleep 0.5
   --es notificationButton0Action "toggle soft keyboard" \
   --es volumeUpAction "no action" \
   --es volumeDownAction "toggle soft keyboard" \
-  --es enforceCharBasedInput true \
+  --ez enforceCharBasedInput true \
+  --ez preferScancodes false \
+  --ez hardwareKbdScancodesWorkaround false \
   --es mediaKeysAction "send media action" 2>/dev/null
 
 # 9. Pastikan DNS resolver disiapkan (Multi-tier Android Network DNS + Fallback)
