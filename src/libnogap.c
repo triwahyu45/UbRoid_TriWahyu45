@@ -13,40 +13,8 @@ void gtk_window_set_geometry_hints(GtkWindow *window, GtkWidget *geometry_widget
         geometry->width_inc = 1;
         geometry->height_inc = 1;
         geom_mask &= ~GDK_HINT_RESIZE_INC;
-        if (geom_mask & GDK_HINT_MIN_SIZE) {
-            if (geometry->min_width > 350) geometry->min_width = 350;
-        }
     }
     if (real_func) real_func(window, geometry_widget, geometry, geom_mask);
-}
-
-/* Screen bounds clamp: guarantees no window exceeds physical screen width or height */
-void gtk_window_set_default_size(GtkWindow *window, gint width, gint height) {
-    static void (*real_func)(GtkWindow*, gint, gint) = NULL;
-    if (!real_func) real_func = dlsym(RTLD_NEXT, "gtk_window_set_default_size");
-
-    GdkScreen *scr = window ? gtk_window_get_screen(window) : NULL;
-    int sw = scr ? gdk_screen_get_width(scr) : 808;
-    int sh = scr ? gdk_screen_get_height(scr) : 1725;
-
-    if (width > sw - 16) width = sw - 16;
-    if (height > sh - 90) height = sh - 90;
-
-    if (real_func) real_func(window, width, height);
-}
-
-void gtk_window_resize(GtkWindow *window, gint width, gint height) {
-    static void (*real_func)(GtkWindow*, gint, gint) = NULL;
-    if (!real_func) real_func = dlsym(RTLD_NEXT, "gtk_window_resize");
-
-    GdkScreen *scr = window ? gtk_window_get_screen(window) : NULL;
-    int sw = scr ? gdk_screen_get_width(scr) : 808;
-    int sh = scr ? gdk_screen_get_height(scr) : 1725;
-
-    if (width > sw - 16) width = sw - 16;
-    if (height > sh - 90) height = sh - 90;
-
-    if (real_func) real_func(window, width, height);
 }
 
 /* Arrow suppression hooks to remove all dropdown triangles from launchers */
@@ -290,19 +258,10 @@ void gtk_window_move(GtkWindow *window, gint x, gint y) {
         GdkScreen *scr = gtk_window_get_screen(window);
         int screen_h = scr ? gdk_screen_get_height(scr) : 711;
 
-        if (y >= screen_h - 130 && y <= screen_h - 15) {
-            /* Lift bottom dock (panel-2) 32px above the bottom edge so it floats
-             * cleanly above Android's navigation/gesture bar */
-            GtkAllocation a;
-            gtk_widget_get_allocation(GTK_WIDGET(window), &a);
-            int ph = (a.height > 20) ? a.height : 74;
-            y = screen_h - ph - 32;
-
-            GdkVisual *rgba = scr ? gdk_screen_get_rgba_visual(scr) : NULL;
-            if (rgba && !gtk_widget_get_visual(GTK_WIDGET(window))) {
-                gtk_widget_set_visual(GTK_WIDGET(window), rgba);
-            }
-            gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+        if (y >= screen_h - 65 && y <= screen_h - 35) {
+            /* Lift bottom dock (panel-2) 16px above the bottom edge so it floats
+             * above Android's navigation/gesture bar */
+            y = screen_h - 47 - 16;
 
             GtkStyleContext *sc = gtk_widget_get_style_context(GTK_WIDGET(window));
             if (sc) gtk_style_context_add_class(sc, "ubroid-dock");
