@@ -2,7 +2,7 @@
   "agentMode": "auto",
   "allowNonWorkspaceAccess": true,
   "artifactReviewPolicy": "always-proceed",
-  "model": "Gemini 3.8 Flash (Medium)",
+  "model": "Gemini 3.8 Flash (Low)",
   "runningLightSpeed": "fast",
   "toolPermission": "always-proceed",
   "trustedWorkspaces": [
