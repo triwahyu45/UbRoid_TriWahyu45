@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=USB Tether Watcher
+Comment=Auto Detect USB Tethering & Show IP Notification
+Exec=/usr/local/bin/usb-tether-watcher
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
+Terminal=false
