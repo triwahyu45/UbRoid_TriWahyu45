@@ -67,12 +67,19 @@ pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
 /usr/local/bin/ram-guardian &
 RAM_GUARDIAN_PID=$!
 
+# Start USB Tethering Watcher Daemon
+pkill -f "/usr/local/bin/usb-tether-watcher" 2>/dev/null || true
+/usr/local/bin/usb-tether-watcher &
+USB_TETHER_PID=$!
+
 cleanup_on_exit() {
     kill "$BOUNDS_LIMITER_PID" 2>/dev/null || true
     pkill -f "/usr/local/bin/window-bounds-limiter" 2>/dev/null || true
     kill "$PERF_GOV_PID" 2>/dev/null || true
     pkill -f "/usr/local/bin/perf-governor" 2>/dev/null || true
     kill "$RAM_GUARDIAN_PID" 2>/dev/null || true
+    kill "$USB_TETHER_PID" 2>/dev/null || true
+    pkill -f "/usr/local/bin/usb-tether-watcher" 2>/dev/null || true
     pkill -f "/usr/local/bin/ram-guardian" 2>/dev/null || true
     /usr/local/bin/linux-os-mode exit 2>/dev/null || true
 }

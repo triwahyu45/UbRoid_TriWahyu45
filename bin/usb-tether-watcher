@@ -4,6 +4,7 @@
 # Menampilkan IP Mini PC (Host) yang aktif (Sunshine / SSH / RDP)
 # ==============================================================================
 
+import concurrent.futures
 import socket
 import subprocess
 import time
@@ -19,7 +20,7 @@ def is_alive(ip):
     # Sunshine (47989/47984), SSH (22), RDP (3389)
     for port in [47989, 47984, 22, 3389]:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(0.08)
+        s.settimeout(0.1)
         try:
             s.connect((ip, port))
             s.close()
@@ -27,6 +28,15 @@ def is_alive(ip):
         except Exception:
             s.close()
     return False
+
+def check_target(args):
+    prefix, last, my_last = args
+    if last == my_last:
+        return None
+    target = f"{prefix}.{last}"
+    if is_alive(target):
+        return target
+    return None
 
 def find_mini_pc():
     for iface in ['rndis0', 'usb0', 'eth0']:
@@ -50,8 +60,8 @@ def find_mini_pc():
                     except Exception:
                         pass
 
-                    # 2. Cek IP kandidat cepat (gateway .1, host .172, .2, .100)
-                    quick_candidates = [1, 172, 2, 100, 254]
+                    # 2. Cek IP kandidat cepat (gateway .1, host .198, .172, .2, .100)
+                    quick_candidates = [1, 198, 172, 2, 100, 254]
                     for last in quick_candidates:
                         if last == my_last:
                             continue
@@ -64,18 +74,18 @@ def find_mini_pc():
                                 pass
                             return iface, target
 
-                    # 3. Pindai cepat seluruh range jika belum ketemu
-                    for last in range(1, 255):
-                        if last in quick_candidates or last == my_last:
-                            continue
-                        target = f"{prefix}.{last}"
-                        if is_alive(target):
-                            try:
-                                with open(CACHE_FILE, "w") as f:
-                                    f.write(target)
-                            except Exception:
-                                pass
-                            return iface, target
+                    # 3. Pindai cepat paralel seluruh range jika belum ketemu
+                    tasks = [(prefix, last, my_last) for last in range(1, 255) if last not in quick_candidates]
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+                        results = executor.map(check_target, tasks)
+                        for res in results:
+                            if res:
+                                try:
+                                    with open(CACHE_FILE, "w") as f:
+                                        f.write(res)
+                                except Exception:
+                                    pass
+                                return iface, res
 
                     # Fallback jika host belum menyalakan Sunshine/SSH tapi tethering aktif
                     return iface, f"{prefix}.1 (perkiraan)"
