@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# usb-tether-watcher: Pantau status USB Tethering dan kelola notifikasi ongoing
+# usb-tether-watcher: Pantau status USB Tethering dan deteksi IP Mini PC (Host)
 # ==============================================================================
 
 STATE_FILE="/tmp/.usb_tether_state"
@@ -9,17 +9,35 @@ NOTIF_ID="ubroid-usb-tether"
 TERMUX_NOTIF="/data/data/com.termux/files/usr/bin/termux-notification"
 TERMUX_NOTIF_REM="/data/data/com.termux/files/usr/bin/termux-notification-remove"
 
-get_tether_ip() {
-    # Periksa antarmuka USB Tethering umum: rndis0, usb0, eth0
-    for iface in rndis0 usb0 eth0; do
-        local addr
-        addr=$(ip -4 addr show "$iface" 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -n1)
-        if [ -n "$addr" ]; then
-            echo "$iface $addr"
-            return 0
-        fi
-    done
-    return 1
+find_mini_pc_ip() {
+    python3 -c "import socket
+for iface in ['rndis0', 'usb0', 'eth0']:
+    try:
+        import subprocess
+        out = subprocess.check_output(f'ip -4 addr show {iface}', shell=True, stderr=subprocess.DEVNULL).decode()
+        for line in out.splitlines():
+            line = line.strip()
+            if line.startswith('inet '):
+                my_ip = line.split()[1].split('/')[0]
+                prefix = '.'.join(my_ip.split('.')[:3])
+                my_last = int(my_ip.split('.')[3])
+                # Coba cari host aktif di subnet (prioritaskan 1, 100-254)
+                candidates = [1] + [i for i in range(100, 255) if i != my_last] + [i for i in range(2, 100)]
+                for i in candidates:
+                    target = f'{prefix}.{i}'
+                    for port in [47989, 47984, 22, 3389]:
+                        s = socket.socket()
+                        s.settimeout(0.04)
+                        try:
+                            s.connect((target, port))
+                            s.close()
+                            print(f'{iface} {target}')
+                            exit(0)
+                        except Exception:
+                            pass
+    except Exception:
+        pass
+" 2>/dev/null
 }
 
 show_ongoing_notif() {
@@ -45,12 +63,9 @@ show_ongoing_notif() {
 }
 
 remove_notif() {
-    # Hapus notifikasi Android secara otomatis
     if [ -x "$TERMUX_NOTIF_REM" ]; then
         "$TERMUX_NOTIF_REM" "$NOTIF_ID" 2>/dev/null || true
     fi
-
-    # Desktop pop-up saat terputus
     if [ -n "$DISPLAY" ] && command -v notify-send >/dev/null 2>&1; then
         notify-send -u low -i network-wired-disconnected "USB Tethering Terputus" "Koneksi USB Tethering telah dinonaktifkan." 2>/dev/null || true
     fi
@@ -59,18 +74,13 @@ remove_notif() {
 LAST_STATE="OFF"
 LAST_IP=""
 
-# Hapus notifikasi sisa sesi sebelumnya jika ada saat start
-if ! get_tether_ip >/dev/null 2>&1; then
-    remove_notif
-fi
-
 while true; do
-    if res=$(get_tether_ip); then
+    res=$(find_mini_pc_ip)
+    if [ -n "$res" ]; then
         curr_iface=$(echo "$res" | awk '{print $1}')
         curr_ip=$(echo "$res" | awk '{print $2}')
         curr_state="ON"
 
-        # Tampilkan atau perbarui notifikasi jika baru aktif atau IP berubah
         if [ "$LAST_STATE" != "ON" ] || [ "$LAST_IP" != "$curr_ip" ]; then
             show_ongoing_notif "$curr_iface" "$curr_ip"
             echo "ON:$curr_iface:$curr_ip" > "$STATE_FILE"
@@ -78,8 +88,8 @@ while true; do
             LAST_IP="$curr_ip"
         fi
     else
+        # Jika tidak ada host mini PC yang terdeteksi
         curr_state="OFF"
-        # Jika sebelumnya ON dan sekarang mati, hilangkan notifikasi secara otomatis
         if [ "$LAST_STATE" == "ON" ]; then
             remove_notif
             echo "OFF" > "$STATE_FILE"
