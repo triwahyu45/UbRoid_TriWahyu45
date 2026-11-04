@@ -1,102 +1,163 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # ==============================================================================
-# usb-tether-watcher: Pantau status USB Tethering dan deteksi IP Mini PC (Host)
+# usb-tether-watcher: Pantau status USB Tethering dan kelola notifikasi ongoing
+# Menampilkan IP Mini PC (Host) yang aktif (Sunshine / SSH / RDP)
 # ==============================================================================
 
-STATE_FILE="/tmp/.usb_tether_state"
-CHECK_INTERVAL=3
-NOTIF_ID="ubroid-usb-tether"
-TERMUX_NOTIF="/data/data/com.termux/files/usr/bin/termux-notification"
-TERMUX_NOTIF_REM="/data/data/com.termux/files/usr/bin/termux-notification-remove"
+import socket
+import subprocess
+import time
+import os
 
-find_mini_pc_ip() {
-    python3 -c "import socket
-for iface in ['rndis0', 'usb0', 'eth0']:
+STATE_FILE = "/tmp/.usb_tether_state"
+CACHE_FILE = "/tmp/.last_tether_ip"
+NOTIF_ID = "ubroid-usb-tether"
+TERMUX_NOTIF = "/data/data/com.termux/files/usr/bin/termux-notification"
+TERMUX_NOTIF_REM = "/data/data/com.termux/files/usr/bin/termux-notification-remove"
+
+def is_alive(ip):
+    # Sunshine (47989/47984), SSH (22), RDP (3389)
+    for port in [47989, 47984, 22, 3389]:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.08)
+        try:
+            s.connect((ip, port))
+            s.close()
+            return True
+        except Exception:
+            s.close()
+    return False
+
+def find_mini_pc():
+    for iface in ['rndis0', 'usb0', 'eth0']:
+        try:
+            out = subprocess.check_output(f"ip -4 addr show {iface}", shell=True, stderr=subprocess.DEVNULL).decode()
+            for line in out.splitlines():
+                line = line.strip()
+                if line.startswith("inet "):
+                    my_ip = line.split()[1].split("/")[0]
+                    parts = my_ip.split(".")
+                    prefix = ".".join(parts[:3])
+                    my_last = int(parts[3])
+
+                    # 1. Cek cache IP terakhir jika subnet masih cocok
+                    try:
+                        if os.path.exists(CACHE_FILE):
+                            with open(CACHE_FILE, "r") as f:
+                                cached = f.read().strip()
+                            if cached.startswith(prefix) and is_alive(cached):
+                                return iface, cached
+                    except Exception:
+                        pass
+
+                    # 2. Cek IP kandidat cepat (gateway .1, host .172, .2, .100)
+                    quick_candidates = [1, 172, 2, 100, 254]
+                    for last in quick_candidates:
+                        if last == my_last:
+                            continue
+                        target = f"{prefix}.{last}"
+                        if is_alive(target):
+                            try:
+                                with open(CACHE_FILE, "w") as f:
+                                    f.write(target)
+                            except Exception:
+                                pass
+                            return iface, target
+
+                    # 3. Pindai cepat seluruh range jika belum ketemu
+                    for last in range(1, 255):
+                        if last in quick_candidates or last == my_last:
+                            continue
+                        target = f"{prefix}.{last}"
+                        if is_alive(target):
+                            try:
+                                with open(CACHE_FILE, "w") as f:
+                                    f.write(target)
+                            except Exception:
+                                pass
+                            return iface, target
+
+                    # Fallback jika host belum menyalakan Sunshine/SSH tapi tethering aktif
+                    return iface, f"{prefix}.1 (perkiraan)"
+        except Exception:
+            pass
+    return None, None
+
+def show_notif(iface, ip_addr):
+    # 1. Ongoing Notification di Android (tidak bisa di-swipe)
+    cmd = [
+        TERMUX_NOTIF,
+        "--id", NOTIF_ID,
+        "--title", f"USB Tethering Aktif ({iface})",
+        "--content", f"IP Mini PC: {ip_addr}",
+        "--icon", "settings_ethernet",
+        "--priority", "high",
+        "--ongoing"
+    ]
     try:
-        import subprocess
-        out = subprocess.check_output(f'ip -4 addr show {iface}', shell=True, stderr=subprocess.DEVNULL).decode()
-        for line in out.splitlines():
-            line = line.strip()
-            if line.startswith('inet '):
-                my_ip = line.split()[1].split('/')[0]
-                prefix = '.'.join(my_ip.split('.')[:3])
-                my_last = int(my_ip.split('.')[3])
-                # Coba cari host aktif di subnet (prioritaskan 1, 100-254)
-                candidates = [1] + [i for i in range(100, 255) if i != my_last] + [i for i in range(2, 100)]
-                for i in candidates:
-                    target = f'{prefix}.{i}'
-                    for port in [47989, 47984, 22, 3389]:
-                        s = socket.socket()
-                        s.settimeout(0.04)
-                        try:
-                            s.connect((target, port))
-                            s.close()
-                            print(f'{iface} {target}')
-                            exit(0)
-                        except Exception:
-                            pass
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
         pass
-" 2>/dev/null
-}
 
-show_ongoing_notif() {
-    local iface="$1"
-    local ip_addr="$2"
+    # 2. X11 Desktop notify-send jika desktop session aktif
+    if os.environ.get("DISPLAY"):
+        try:
+            subprocess.run([
+                "notify-send", "-u", "normal", "-i", "network-wired",
+                "USB Tethering Terhubung", f"IP Mini PC: {ip_addr} ({iface})"
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
 
-    # Notifikasi Android Ongoing (pinned / tidak bisa di-swipe)
-    if [ -x "$TERMUX_NOTIF" ]; then
-        "$TERMUX_NOTIF" \
-            --id "$NOTIF_ID" \
-            --title "USB Tethering Aktif ($iface)" \
-            --content "IP Mini PC: $ip_addr" \
-            --icon "settings_ethernet" \
-            --priority "high" \
-            --ongoing \
-            2>/dev/null || true
-    fi
+def remove_notif():
+    # Hilangkan notifikasi di Android
+    try:
+        subprocess.run([TERMUX_NOTIF_REM, NOTIF_ID], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
 
-    # Notifikasi desktop Linux (sekali muncul)
-    if [ -n "$DISPLAY" ] && command -v notify-send >/dev/null 2>&1; then
-        notify-send -u normal -i network-wired "USB Tethering Terhubung" "IP Mini PC: $ip_addr ($iface)" 2>/dev/null || true
-    fi
-}
+    if os.environ.get("DISPLAY"):
+        try:
+            subprocess.run([
+                "notify-send", "-u", "low", "-i", "network-wired-disconnected",
+                "USB Tethering Terputus", "Koneksi USB Tethering telah dinonaktifkan."
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
 
-remove_notif() {
-    if [ -x "$TERMUX_NOTIF_REM" ]; then
-        "$TERMUX_NOTIF_REM" "$NOTIF_ID" 2>/dev/null || true
-    fi
-    if [ -n "$DISPLAY" ] && command -v notify-send >/dev/null 2>&1; then
-        notify-send -u low -i network-wired-disconnected "USB Tethering Terputus" "Koneksi USB Tethering telah dinonaktifkan." 2>/dev/null || true
-    fi
-}
+def main():
+    last_state = "OFF"
+    last_ip = ""
 
-LAST_STATE="OFF"
-LAST_IP=""
+    # Bersihkan notifikasi jika saat daemon start tethering tidak aktif
+    iface, ip_addr = find_mini_pc()
+    if not iface:
+        remove_notif()
 
-while true; do
-    res=$(find_mini_pc_ip)
-    if [ -n "$res" ]; then
-        curr_iface=$(echo "$res" | awk '{print $1}')
-        curr_ip=$(echo "$res" | awk '{print $2}')
-        curr_state="ON"
+    while True:
+        iface, ip_addr = find_mini_pc()
+        if iface and ip_addr:
+            if last_state != "ON" or last_ip != ip_addr:
+                show_notif(iface, ip_addr)
+                try:
+                    with open(STATE_FILE, "w") as f:
+                        f.write(f"ON:{iface}:{ip_addr}")
+                except Exception:
+                    pass
+                last_state = "ON"
+                last_ip = ip_addr
+        else:
+            if last_state == "ON":
+                remove_notif()
+                try:
+                    with open(STATE_FILE, "w") as f:
+                        f.write("OFF")
+                except Exception:
+                    pass
+                last_state = "OFF"
+                last_ip = ""
 
-        if [ "$LAST_STATE" != "ON" ] || [ "$LAST_IP" != "$curr_ip" ]; then
-            show_ongoing_notif "$curr_iface" "$curr_ip"
-            echo "ON:$curr_iface:$curr_ip" > "$STATE_FILE"
-            LAST_STATE="ON"
-            LAST_IP="$curr_ip"
-        fi
-    else
-        # Jika tidak ada host mini PC yang terdeteksi
-        curr_state="OFF"
-        if [ "$LAST_STATE" == "ON" ]; then
-            remove_notif
-            echo "OFF" > "$STATE_FILE"
-            LAST_STATE="OFF"
-            LAST_IP=""
-        fi
-    fi
+        time.sleep(3)
 
-    sleep "$CHECK_INTERVAL"
-done
+if __name__ == "__main__":
+    main()
