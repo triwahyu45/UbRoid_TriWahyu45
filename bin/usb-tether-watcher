@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# usb-tether-watcher: Pantau status USB Tethering dan kirim notifikasi otomatis
+# usb-tether-watcher: Pantau status USB Tethering dan kelola notifikasi ongoing
 # ==============================================================================
 
 STATE_FILE="/tmp/.usb_tether_state"
 CHECK_INTERVAL=3
+NOTIF_ID="ubroid-usb-tether"
 TERMUX_NOTIF="/data/data/com.termux/files/usr/bin/termux-notification"
+TERMUX_NOTIF_REM="/data/data/com.termux/files/usr/bin/termux-notification-remove"
 
 get_tether_ip() {
     # Periksa antarmuka USB Tethering umum: rndis0, usb0, eth0
@@ -20,30 +22,47 @@ get_tether_ip() {
     return 1
 }
 
-send_notif() {
-    local title="$1"
-    local message="$2"
-    local prio="${3:-high}"
+show_ongoing_notif() {
+    local iface="$1"
+    local ip_addr="$2"
 
-    # 1. Notifikasi Android langsung di HP (Termux API)
+    # Notifikasi Android Ongoing (pinned / tidak bisa di-swipe)
     if [ -x "$TERMUX_NOTIF" ]; then
         "$TERMUX_NOTIF" \
-            --id "ubroid-usb-tether" \
-            --title "$title" \
-            --content "$message" \
-            --priority "$prio" \
+            --id "$NOTIF_ID" \
+            --title "USB Tethering Aktif ($iface)" \
+            --content "IP Mini PC: $ip_addr" \
+            --icon "settings_ethernet" \
+            --priority "high" \
+            --ongoing \
             2>/dev/null || true
     fi
 
-    # 2. Notifikasi desktop X11 jika desktop sedang aktif
+    # Notifikasi desktop Linux (sekali muncul)
     if [ -n "$DISPLAY" ] && command -v notify-send >/dev/null 2>&1; then
-        notify-send -u normal -i network-wired "$title" "$message" 2>/dev/null || true
+        notify-send -u normal -i network-wired "USB Tethering Terhubung" "IP Mini PC: $ip_addr ($iface)" 2>/dev/null || true
     fi
 }
 
-# Inisialisasi state awal
+remove_notif() {
+    # Hapus notifikasi Android secara otomatis
+    if [ -x "$TERMUX_NOTIF_REM" ]; then
+        "$TERMUX_NOTIF_REM" "$NOTIF_ID" 2>/dev/null || true
+    fi
+
+    # Desktop pop-up saat terputus
+    if [ -n "$DISPLAY" ] && command -v notify-send >/dev/null 2>&1; then
+        notify-send -u low -i network-wired-disconnected "USB Tethering Terputus" "Koneksi USB Tethering telah dinonaktifkan." 2>/dev/null || true
+    fi
+}
+
 LAST_STATE="OFF"
 LAST_IP=""
+
+# Hapus notifikasi sisa sesi sebelumnya jika ada saat start
+if ! get_tether_ip >/dev/null 2>&1; then
+    remove_notif
+fi
 
 while true; do
     if res=$(get_tether_ip); then
@@ -51,17 +70,18 @@ while true; do
         curr_ip=$(echo "$res" | awk '{print $2}')
         curr_state="ON"
 
-        # Kirim notifikasi jika status baru menyala atau IP berubah
+        # Tampilkan atau perbarui notifikasi jika baru aktif atau IP berubah
         if [ "$LAST_STATE" != "ON" ] || [ "$LAST_IP" != "$curr_ip" ]; then
-            send_notif "USB Tethering Aktif ($curr_iface)" "IP Mini PC: $curr_ip" "high"
+            show_ongoing_notif "$curr_iface" "$curr_ip"
             echo "ON:$curr_iface:$curr_ip" > "$STATE_FILE"
             LAST_STATE="ON"
             LAST_IP="$curr_ip"
         fi
     else
         curr_state="OFF"
+        # Jika sebelumnya ON dan sekarang mati, hilangkan notifikasi secara otomatis
         if [ "$LAST_STATE" == "ON" ]; then
-            send_notif "USB Tethering Terputus" "Koneksi USB Tethering telah dinonaktifkan." "default"
+            remove_notif
             echo "OFF" > "$STATE_FILE"
             LAST_STATE="OFF"
             LAST_IP=""
