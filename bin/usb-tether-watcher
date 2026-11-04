@@ -2,6 +2,7 @@
 # ==============================================================================
 # usb-tether-watcher: Pantau status USB Tethering dan kelola notifikasi ongoing
 # Menampilkan IP Mini PC (Host) yang aktif (Sunshine / SSH / RDP)
+# Otomatis memperbarui /etc/hosts (minipc / AbhinayaNuc) secara permanen
 # ==============================================================================
 
 import concurrent.futures
@@ -9,6 +10,7 @@ import socket
 import subprocess
 import time
 import os
+import re
 
 STATE_FILE = "/tmp/.usb_tether_state"
 CACHE_FILE = "/tmp/.last_tether_ip"
@@ -37,6 +39,28 @@ def check_target(args):
     if is_alive(target):
         return target
     return None
+
+def update_hosts(ip, hostname="minipc", alias="AbhinayaNuc"):
+    hosts_path = "/etc/hosts"
+    try:
+        if not os.path.exists(hosts_path):
+            return
+        with open(hosts_path, "r") as f:
+            lines = f.readlines()
+        new_lines = []
+        replaced = False
+        for line in lines:
+            if re.search(r'\b' + hostname + r'\b', line) or re.search(r'\b' + alias + r'\b', line):
+                new_lines.append(f"{ip}\t{hostname}\t{alias}\n")
+                replaced = True
+            else:
+                new_lines.append(line)
+        if not replaced:
+            new_lines.append(f"{ip}\t{hostname}\t{alias}\n")
+        with open(hosts_path, "w") as f:
+            f.writelines(new_lines)
+    except Exception:
+        pass
 
 def find_mini_pc():
     for iface in ['rndis0', 'usb0', 'eth0']:
@@ -149,11 +173,13 @@ def main():
         if iface and ip_addr:
             if last_state != "ON" or last_ip != ip_addr:
                 show_notif(iface, ip_addr)
+                # Simpan state dan perbarui /etc/hosts otomatis permanen
                 try:
                     with open(STATE_FILE, "w") as f:
                         f.write(f"ON:{iface}:{ip_addr}")
                 except Exception:
                     pass
+                update_hosts(ip_addr)
                 last_state = "ON"
                 last_ip = ip_addr
         else:
