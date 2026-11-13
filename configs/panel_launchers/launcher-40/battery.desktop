@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=Status Baterai
-Comment=⚡ Baterai: 59% (Mengisi Daya) | Suhu: 32.7°C | Voltase: 4.10V (Klik untuk info detail)
+Comment=Baterai: 59% (Baterai) | Suhu: 32°C | Voltase: 4.0V (Klik untuk info detail)
 Exec=/usr/local/bin/dialog-battery
 Icon=/tmp/battery_live.svg
 Terminal=false

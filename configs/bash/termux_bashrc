@@ -37,7 +37,7 @@ alias uos-land="ubuntu-os --landscape"
 ubuntu-cli() {
     local c
     c=$(_get_ubroid_container)
-    proot-distro login "$c" --bind /sdcard:/sdcard "$@"
+    proot-distro login "$c" "$@"
 }
 alias uc="ubuntu-cli"
 alias find-minipc="ubuntu-cli -- find-minipc"
@@ -58,7 +58,7 @@ alias kill-ubuntu="stop-ubuntu"
 agy() {
     local c
     c=$(_get_ubroid_container)
-    proot-distro login "$c" --bind /sdcard:/sdcard -- agy "$@"
+    proot-distro login "$c" -- agy "$@"
 }
 
 # 1-Command Permanent Mode Switcher (Ubuntu Touch Mobile <-> Ubuntu Desktop)
@@ -66,7 +66,7 @@ switch-mode() {
     local target="${1:-touch}"
     local c
     c=$(_get_ubroid_container)
-    proot-distro login "$c" --bind /sdcard:/sdcard -- /usr/local/bin/ubroid-switch-mode "$target"
+    proot-distro login "$c" -- /usr/local/bin/ubroid-switch-mode "$target"
 }
 alias touch-mode="switch-mode touch"
 alias desktop-mode="switch-mode desktop"
