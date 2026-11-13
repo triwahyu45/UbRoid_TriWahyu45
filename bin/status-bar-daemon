@@ -9,6 +9,67 @@ def get_cmd(cmd):
     except Exception:
         return ""
 
+import json
+
+def get_battery_data():
+    # Priority 1: Check ADB if connected
+    binfo = ""
+    try:
+        binfo = subprocess.check_output(
+            "adb -s 127.0.0.1:5555 shell dumpsys battery",
+            shell=True, stderr=subprocess.DEVNULL, timeout=1
+        ).decode().strip()
+    except Exception:
+        pass
+
+    if binfo:
+        level = 50
+        charging = False
+        temp_c = "32°C"
+        volt_v = "4.0V"
+        for line in binfo.splitlines():
+            line = line.strip()
+            if line.startswith("level:"):
+                try: level = int(line.split(":")[1].strip())
+                except Exception: pass
+            elif line.startswith("status:"):
+                charging = (line.split(":")[1].strip() in ["2", "5"])
+            elif line.startswith("temperature:"):
+                try: temp_c = f"{int(line.split(':')[1].strip()) / 10:.1f}°C"
+                except Exception: pass
+            elif line.startswith("voltage:"):
+                try: volt_v = f"{int(line.split(':')[1].strip()) / 1000:.2f}V"
+                except Exception: pass
+        return level, charging, temp_c, volt_v
+
+    # Priority 2: Native Internal Termux API (No ADB needed, fully autonomous!)
+    try:
+        raw_json = subprocess.check_output(
+            "/data/data/com.termux/files/usr/libexec/termux-api BatteryStatus",
+            shell=True, stderr=subprocess.DEVNULL, timeout=5
+        ).decode().strip()
+        data = json.loads(raw_json)
+        lvl = int(data.get("percentage", data.get("level", 50)))
+        status_raw = str(data.get("status", "")).upper()
+        chg = ("CHARGING" in status_raw or "FULL" in status_raw)
+        t_val = data.get("temperature")
+        t_str = f"{float(t_val):.1f}°C" if t_val is not None else "32°C"
+        v_val = data.get("voltage")
+        v_str = f"{float(v_val) / 1000:.2f}V" if v_val is not None else "4.0V"
+        return lvl, chg, t_str, v_str
+    except Exception:
+        pass
+
+    # Priority 3: Retain last known percentage if available
+    fallback_lvl = 50
+    try:
+        with open("/tmp/battery_pct.txt") as f:
+            fallback_lvl = int(f.read().replace("%", "").strip())
+    except Exception:
+        pass
+
+    return fallback_lvl, False, "32°C", "4.0V"
+
 def update_file_if_changed(filepath, new_content):
     try:
         with open(filepath, "r") as f:
@@ -44,30 +105,7 @@ def update_status():
     # -------------------------------------------------------------
     # 1. Update Battery Info
     # -------------------------------------------------------------
-    binfo = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys battery")
-    level = 94
-    charging = False
-    temp_c = "33°C"
-    volt_v = "4.2V"
-    for line in binfo.splitlines():
-        line = line.strip()
-        if line.startswith("level:"):
-            try:
-                level = int(line.split(":")[1].strip())
-            except Exception:
-                pass
-        elif line.startswith("status:"):
-            charging = (line.split(":")[1].strip() in ["2", "5"])
-        elif line.startswith("temperature:"):
-            try:
-                temp_c = f"{int(line.split(':')[1].strip()) / 10:.1f}°C"
-            except Exception:
-                pass
-        elif line.startswith("voltage:"):
-            try:
-                volt_v = f"{int(line.split(':')[1].strip()) / 1000:.2f}V"
-            except Exception:
-                pass
+    level, charging, temp_c, volt_v = get_battery_data()
 
     bolt = "⚡ " if charging else ""
     status_label = "Mengisi Daya" if charging else "Baterai"

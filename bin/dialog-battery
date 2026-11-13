@@ -4,6 +4,61 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 import subprocess
 import os
+import json
+
+def get_battery_dialog_info():
+    # Priority 1: ADB if connected
+    info = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys battery")
+    if info:
+        level = "50%"
+        status = "Menggunakan Baterai"
+        temp = "36.0°C"
+        volt = "4.00V"
+        health = "Baik (Good)"
+        for line in info.splitlines():
+            line = line.strip()
+            if line.startswith("level:"):
+                level = line.split(":")[1].strip() + "%"
+            elif line.startswith("status:"):
+                st = line.split(":")[1].strip()
+                status = "⚡ Sedang Mengisi Daya (Charging)" if st == "2" else "Menggunakan Baterai (Discharging)"
+            elif line.startswith("temperature:"):
+                try: temp = f"{int(line.split(':')[1].strip()) / 10:.1f}°C"
+                except Exception: pass
+            elif line.startswith("voltage:"):
+                try: volt = f"{int(line.split(':')[1].strip()) / 1000:.2f}V"
+                except Exception: pass
+        return level, status, health, temp, volt
+
+    # Priority 2: Termux Internal API
+    try:
+        raw_json = subprocess.check_output(
+            "/data/data/com.termux/files/usr/libexec/termux-api BatteryStatus",
+            shell=True, stderr=subprocess.DEVNULL, timeout=5
+        ).decode().strip()
+        data = json.loads(raw_json)
+        lvl_val = data.get("percentage", data.get("level", 50))
+        level = f"{lvl_val}%"
+        status_raw = str(data.get("status", "")).upper()
+        status = "⚡ Sedang Mengisi Daya (Charging)" if ("CHARGING" in status_raw or "FULL" in status_raw) else "Menggunakan Baterai (Discharging)"
+        health_raw = str(data.get("health", "GOOD")).title()
+        health = f"Baik ({health_raw})" if health_raw == "Good" else health_raw
+        t_val = data.get("temperature")
+        temp = f"{float(t_val):.1f}°C" if t_val is not None else "32.0°C"
+        v_val = data.get("voltage")
+        volt = f"{float(v_val) / 1000:.2f}V" if v_val is not None else "4.00V"
+        return level, status, health, temp, volt
+    except Exception:
+        pass
+
+    # Priority 3: Fallback from live text
+    lvl = "50%"
+    try:
+        with open("/tmp/battery_pct.txt") as f:
+            lvl = f.read().strip()
+    except Exception:
+        pass
+    return lvl, "Menggunakan Baterai", "Baik (Good)", "32.0°C", "4.00V"
 
 def get_cmd(cmd):
     try:
@@ -66,30 +121,7 @@ class BatteryDialog(Gtk.Window):
         lbl_title.get_style_context().add_class("title")
         main_box.pack_start(lbl_title, False, False, 0)
 
-        info = get_cmd("adb -s 127.0.0.1:5555 shell dumpsys battery")
-        level = "50%"
-        status = "Menggunakan Baterai"
-        temp = "36.0°C"
-        volt = "4.00V"
-        health = "Baik (Good)"
-
-        for line in info.splitlines():
-            line = line.strip()
-            if line.startswith("level:"):
-                level = line.split(":")[1].strip() + "%"
-            elif line.startswith("status:"):
-                st = line.split(":")[1].strip()
-                status = "⚡ Sedang Mengisi Daya (Charging)" if st == "2" else "Menggunakan Baterai (Discharging)"
-            elif line.startswith("temperature:"):
-                try:
-                    temp = f"{int(line.split(':')[1].strip()) / 10:.1f}°C"
-                except Exception:
-                    pass
-            elif line.startswith("voltage:"):
-                try:
-                    volt = f"{int(line.split(':')[1].strip()) / 1000:.2f}V"
-                except Exception:
-                    pass
+        level, status, health, temp, volt = get_battery_dialog_info()
 
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.get_style_context().add_class("card")
