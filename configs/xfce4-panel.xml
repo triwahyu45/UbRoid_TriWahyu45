@@ -31,7 +31,7 @@
     </property>
     <property name="panel-2" type="empty">
       <property name="mode" type="uint" value="0"/>
-      <property name="autohide-behavior" type="uint" value="2"/>
+      <property name="autohide-behavior" type="uint" value="0"/>
       <property name="position" type="string" value="p=10;x=0;y=0"/>
       <property name="length" type="uint" value="1"/>
       <property name="position-locked" type="bool" value="true"/>

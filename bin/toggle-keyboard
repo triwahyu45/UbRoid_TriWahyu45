@@ -1,14 +1,31 @@
 #!/bin/bash
 unset LD_PRELOAD
-export DISPLAY=:0
+export DISPLAY="${DISPLAY:-:0}"
+
+# 1. Pastikan DBUS_SESSION_BUS_ADDRESS terhubung jika dipanggil dari launcher XFCE
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    DBUS_FILE=$(ls -t /root/.dbus/session-bus/* 2>/dev/null | head -n 1)
+    if [ -n "$DBUS_FILE" ] && [ -r "$DBUS_FILE" ]; then
+        eval $(grep -E "^DBUS_SESSION_BUS_ADDRESS=" "$DBUS_FILE")
+        export DBUS_SESSION_BUS_ADDRESS
+    fi
+fi
+
 # Prefer Onboard (Linux Native Touch Keyboard) for reliable touch typing in X11
 if command -v onboard >/dev/null 2>&1; then
-    if pgrep -f "/usr/bin/onboard" >/dev/null; then
-        dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible 2>/dev/null || {
-            killall onboard 2>/dev/null
-        }
+    if pgrep -x "onboard" >/dev/null; then
+        # Onboard sudah berjalan: cek status Visible apakah true atau false
+        IS_VIS=$(dbus-send --print-reply --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.freedesktop.DBus.Properties.Get string:org.onboard.Onboard.Keyboard string:Visible 2>/dev/null | grep -o "true\|false")
+        
+        if [ "$IS_VIS" = "true" ]; then
+            dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.Hide 2>/dev/null || pkill -x "onboard"
+        else
+            dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.Show 2>/dev/null || nohup onboard >/dev/null 2>&1 &
+        fi
     else
         nohup onboard >/dev/null 2>&1 &
+        sleep 0.5
+        dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.Show 2>/dev/null || true
     fi
 else
     # Fallback to Android Soft Keyboard in Termux-X11
